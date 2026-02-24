@@ -272,10 +272,16 @@ const AppContent: Component = () => {
         setCurrentView("profile")
         break
       case "vcpButtonClicked":
-        setCurrentView("vcp")
+        setSettingsTab("vcp")
+        setCurrentView("settings")
         break
+      case "providersButtonClicked":
       case "settingsButtonClicked":
         setSettingsTab("providers")
+        setCurrentView("settings")
+        break
+      case "terminalButtonClicked":
+        setSettingsTab("terminal")
         setCurrentView("settings")
         break
       case "promptsButtonClicked":

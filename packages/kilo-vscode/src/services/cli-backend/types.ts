@@ -213,6 +213,13 @@ export interface ProviderAuthAuthorization {
   instructions: string
 }
 
+export interface ProviderAuthMethod {
+  type: "oauth" | "api"
+  label: string
+}
+
+export type ProviderAuthResponse = Record<string, ProviderAuthMethod[]>
+
 // Kilo notification from kilo-gateway
 export interface KilocodeNotificationAction {
   actionText: string

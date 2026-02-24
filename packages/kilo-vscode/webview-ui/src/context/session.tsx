@@ -128,6 +128,11 @@ interface SessionContextValue {
   dequeuePrompt: (itemID?: string) => void
   reorderPromptQueue: (itemIDs: string[]) => void
   compact: () => void
+  undo: () => void
+  redo: () => void
+  fork: () => void
+  share: () => void
+  unshare: () => void
   respondToPermission: (permissionId: string, response: "once" | "always" | "reject") => void
   replyToQuestion: (requestID: string, answers: string[][]) => void
   rejectQuestion: (requestID: string) => void
@@ -824,6 +829,70 @@ export const SessionProvider: ParentComponent = (props) => {
     })
   }
 
+  function undo() {
+    const sessionID = currentSessionID()
+    if (!sessionID) {
+      console.warn("[Kilo New] Cannot undo: no current session")
+      return
+    }
+    const lastUser = [...messages()].reverse().find((m) => m.role === "user")
+    vscode.postMessage({
+      type: "sessionUndo",
+      sessionID,
+      messageID: lastUser?.id,
+    })
+  }
+
+  function redo() {
+    const sessionID = currentSessionID()
+    if (!sessionID) {
+      console.warn("[Kilo New] Cannot redo: no current session")
+      return
+    }
+    vscode.postMessage({
+      type: "sessionRedo",
+      sessionID,
+    })
+  }
+
+  function fork() {
+    const sessionID = currentSessionID()
+    if (!sessionID) {
+      console.warn("[Kilo New] Cannot fork: no current session")
+      return
+    }
+    const lastUser = [...messages()].reverse().find((m) => m.role === "user")
+    vscode.postMessage({
+      type: "sessionFork",
+      sessionID,
+      messageID: lastUser?.id,
+    })
+  }
+
+  function share() {
+    const sessionID = currentSessionID()
+    if (!sessionID) {
+      console.warn("[Kilo New] Cannot share: no current session")
+      return
+    }
+    vscode.postMessage({
+      type: "sessionShare",
+      sessionID,
+    })
+  }
+
+  function unshare() {
+    const sessionID = currentSessionID()
+    if (!sessionID) {
+      console.warn("[Kilo New] Cannot unshare: no current session")
+      return
+    }
+    vscode.postMessage({
+      type: "sessionUnshare",
+      sessionID,
+    })
+  }
+
   const promptQueue = () => {
     const id = currentSessionID()
     return id ? (promptQueueMap[id] ?? []) : []
@@ -1056,6 +1125,11 @@ export const SessionProvider: ParentComponent = (props) => {
     enqueuePrompt,
     dequeuePrompt,
     reorderPromptQueue,
+    undo,
+    redo,
+    fork,
+    share,
+    unshare,
     variantList,
     currentVariant,
     selectVariant,

@@ -6,7 +6,7 @@
 
 import { createContext, useContext, createSignal, createMemo, onCleanup, ParentComponent, Accessor } from "solid-js"
 import { useVSCode } from "./vscode"
-import type { Provider, ProviderModel, ModelSelection, ExtensionMessage } from "../types/messages"
+import type { Provider, ProviderModel, ModelSelection, ProviderAuthMethod, ExtensionMessage } from "../types/messages"
 import { flattenModels, findModel as _findModel } from "./provider-utils"
 
 export type EnrichedModel = ProviderModel & { providerID: string; providerName: string }
@@ -16,6 +16,7 @@ interface ProviderContextValue {
   connected: Accessor<string[]>
   defaults: Accessor<Record<string, string>>
   defaultSelection: Accessor<ModelSelection>
+  providerAuth: Accessor<Record<string, ProviderAuthMethod[]>>
   models: Accessor<EnrichedModel[]>
   findModel: (selection: ModelSelection | null) => EnrichedModel | undefined
 }
@@ -31,6 +32,7 @@ export const ProviderProvider: ParentComponent = (props) => {
   const [connected, setConnected] = createSignal<string[]>([])
   const [defaults, setDefaults] = createSignal<Record<string, string>>({})
   const [defaultSelection, setDefaultSelection] = createSignal<ModelSelection>(KILO_AUTO)
+  const [providerAuth, setProviderAuth] = createSignal<Record<string, ProviderAuthMethod[]>>({})
 
   const models = createMemo<EnrichedModel[]>(() => flattenModels(providers()))
 
@@ -49,6 +51,7 @@ export const ProviderProvider: ParentComponent = (props) => {
     setConnected(message.connected)
     setDefaults(message.defaults)
     setDefaultSelection(message.defaultSelection)
+    setProviderAuth(message.providerAuth ?? {})
   })
 
   onCleanup(unsubscribe)
@@ -78,6 +81,7 @@ export const ProviderProvider: ParentComponent = (props) => {
     connected,
     defaults,
     defaultSelection,
+    providerAuth,
     models,
     findModel,
   }

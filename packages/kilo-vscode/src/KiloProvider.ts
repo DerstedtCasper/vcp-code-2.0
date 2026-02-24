@@ -371,8 +371,35 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         case "requestProviders":
           await this.fetchAndSendProviders()
           break
+        case "providerSetApiKey":
+          await this.handleProviderSetApiKey(message.requestId, message.providerID, message.apiKey)
+          break
+        case "providerOauthAuthorize":
+          await this.handleProviderOauthAuthorize(message.requestId, message.providerID, message.method)
+          break
+        case "providerOauthCallback":
+          await this.handleProviderOauthCallback(message.requestId, message.providerID, message.method, message.code)
+          break
+        case "providerDisconnect":
+          await this.handleProviderDisconnect(message.requestId, message.providerID)
+          break
         case "compact":
           await this.handleCompact(message.sessionID, message.providerID, message.modelID)
+          break
+        case "sessionUndo":
+          await this.handleSessionUndo(message.sessionID, message.messageID)
+          break
+        case "sessionRedo":
+          await this.handleSessionRedo(message.sessionID)
+          break
+        case "sessionFork":
+          await this.handleSessionFork(message.sessionID, message.messageID)
+          break
+        case "sessionShare":
+          await this.handleSessionShare(message.sessionID)
+          break
+        case "sessionUnshare":
+          await this.handleSessionUnshare(message.sessionID)
           break
         case "requestAgents":
           await this.fetchAndSendAgents()
@@ -909,6 +936,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     try {
       const workspaceDir = this.getWorkspaceDirectory()
       const response = await this.httpClient.listProviders(workspaceDir)
+      const providerAuth = await this.httpClient.listProviderAuthMethods(workspaceDir).catch(() => ({}))
 
       const normalized = normalizeProviders(response.all)
 
@@ -922,6 +950,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         connected: response.connected,
         defaults: response.default,
         defaultSelection: { providerID, modelID },
+        providerAuth,
       }
       this.cachedProvidersMessage = message
       this.postMessage(message)
@@ -1276,6 +1305,312 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       this.postMessage({
         type: "error",
         message: error instanceof Error ? error.message : "Failed to compact session",
+      })
+    }
+  }
+
+  /**
+   * Revert the current session to the previous user message.
+   */
+  private async handleSessionUndo(sessionID?: string, messageID?: string): Promise<void> {
+    if (!this.httpClient) {
+      this.postMessage({ type: "error", message: "Not connected to CLI backend" })
+      return
+    }
+    const target = sessionID || this.currentSession?.id
+    if (!target) {
+      this.postMessage({ type: "error", message: "No active session to undo" })
+      return
+    }
+    try {
+      const workspaceDir = this.getWorkspaceDirectory(target)
+      const updated = await this.httpClient.revertSession(target, workspaceDir, messageID)
+      if (this.currentSession?.id === target) {
+        this.currentSession = updated
+      }
+      this.postMessage({ type: "sessionUpdated", session: this.sessionToWebview(updated) })
+      await this.handleLoadMessages(target)
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to undo session:", error)
+      this.postMessage({
+        type: "error",
+        message: error instanceof Error ? error.message : "Failed to undo session",
+      })
+    }
+  }
+
+  /**
+   * Restore previously reverted messages in the current session.
+   */
+  private async handleSessionRedo(sessionID?: string): Promise<void> {
+    if (!this.httpClient) {
+      this.postMessage({ type: "error", message: "Not connected to CLI backend" })
+      return
+    }
+    const target = sessionID || this.currentSession?.id
+    if (!target) {
+      this.postMessage({ type: "error", message: "No active session to redo" })
+      return
+    }
+    try {
+      const workspaceDir = this.getWorkspaceDirectory(target)
+      const updated = await this.httpClient.unrevertSession(target, workspaceDir)
+      if (this.currentSession?.id === target) {
+        this.currentSession = updated
+      }
+      this.postMessage({ type: "sessionUpdated", session: this.sessionToWebview(updated) })
+      await this.handleLoadMessages(target)
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to redo session:", error)
+      this.postMessage({
+        type: "error",
+        message: error instanceof Error ? error.message : "Failed to redo session",
+      })
+    }
+  }
+
+  /**
+   * Fork the current session to a new branch session.
+   */
+  private async handleSessionFork(sessionID?: string, messageID?: string): Promise<void> {
+    if (!this.httpClient) {
+      this.postMessage({ type: "error", message: "Not connected to CLI backend" })
+      return
+    }
+    const target = sessionID || this.currentSession?.id
+    if (!target) {
+      this.postMessage({ type: "error", message: "No active session to fork" })
+      return
+    }
+    try {
+      const workspaceDir = this.getWorkspaceDirectory(target)
+      const forked = await this.httpClient.forkSession(target, workspaceDir, messageID)
+      this.currentSession = forked
+      this.trackedSessionIds.add(forked.id)
+      this.postMessage({ type: "sessionCreated", session: this.sessionToWebview(forked) })
+      await this.handleLoadMessages(forked.id)
+      await this.handleLoadSessions()
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to fork session:", error)
+      this.postMessage({
+        type: "error",
+        message: error instanceof Error ? error.message : "Failed to fork session",
+      })
+    }
+  }
+
+  /**
+   * Create a public share URL for the current session.
+   */
+  private async handleSessionShare(sessionID?: string): Promise<void> {
+    if (!this.httpClient) {
+      this.postMessage({ type: "error", message: "Not connected to CLI backend" })
+      return
+    }
+    const target = sessionID || this.currentSession?.id
+    if (!target) {
+      this.postMessage({ type: "error", message: "No active session to share" })
+      return
+    }
+    try {
+      const workspaceDir = this.getWorkspaceDirectory(target)
+      const updated = await this.httpClient.shareSession(target, workspaceDir)
+      if (this.currentSession?.id === target) {
+        this.currentSession = updated
+      }
+      this.postMessage({ type: "sessionUpdated", session: this.sessionToWebview(updated) })
+      if (updated.share) {
+        await vscode.env.clipboard.writeText(updated.share)
+        void vscode.window.showInformationMessage("Session share URL copied to clipboard.")
+      } else {
+        void vscode.window.showInformationMessage("Session shared.")
+      }
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to share session:", error)
+      this.postMessage({
+        type: "error",
+        message: error instanceof Error ? error.message : "Failed to share session",
+      })
+    }
+  }
+
+  /**
+   * Remove public share URL for the current session.
+   */
+  private async handleSessionUnshare(sessionID?: string): Promise<void> {
+    if (!this.httpClient) {
+      this.postMessage({ type: "error", message: "Not connected to CLI backend" })
+      return
+    }
+    const target = sessionID || this.currentSession?.id
+    if (!target) {
+      this.postMessage({ type: "error", message: "No active session to unshare" })
+      return
+    }
+    try {
+      const workspaceDir = this.getWorkspaceDirectory(target)
+      const updated = await this.httpClient.unshareSession(target, workspaceDir)
+      if (this.currentSession?.id === target) {
+        this.currentSession = updated
+      }
+      this.postMessage({ type: "sessionUpdated", session: this.sessionToWebview(updated) })
+      void vscode.window.showInformationMessage("Session share link removed.")
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to unshare session:", error)
+      this.postMessage({
+        type: "error",
+        message: error instanceof Error ? error.message : "Failed to unshare session",
+      })
+    }
+  }
+
+  private async handleProviderSetApiKey(requestId: string, providerID: string, apiKey: string): Promise<void> {
+    if (!this.httpClient) {
+      this.postMessage({
+        type: "providerActionResult",
+        requestId,
+        providerID,
+        stage: "apiKey",
+        ok: false,
+        error: "Not connected to CLI backend",
+      })
+      return
+    }
+
+    try {
+      await this.httpClient.setApiAuth(providerID, apiKey)
+      await this.fetchAndSendProviders()
+      this.postMessage({
+        type: "providerActionResult",
+        requestId,
+        providerID,
+        stage: "apiKey",
+        ok: true,
+      })
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to set API auth:", error)
+      this.postMessage({
+        type: "providerActionResult",
+        requestId,
+        providerID,
+        stage: "apiKey",
+        ok: false,
+        error: error instanceof Error ? error.message : "Failed to set API auth",
+      })
+    }
+  }
+
+  private async handleProviderOauthAuthorize(requestId: string, providerID: string, method: number): Promise<void> {
+    if (!this.httpClient) {
+      this.postMessage({
+        type: "providerActionResult",
+        requestId,
+        providerID,
+        stage: "oauthAuthorize",
+        ok: false,
+        error: "Not connected to CLI backend",
+      })
+      return
+    }
+
+    try {
+      const workspaceDir = this.getWorkspaceDirectory()
+      const authorization = await this.httpClient.oauthAuthorize(providerID, method, workspaceDir)
+      this.postMessage({
+        type: "providerActionResult",
+        requestId,
+        providerID,
+        stage: "oauthAuthorize",
+        ok: true,
+        authorization,
+      })
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to authorize provider OAuth:", error)
+      this.postMessage({
+        type: "providerActionResult",
+        requestId,
+        providerID,
+        stage: "oauthAuthorize",
+        ok: false,
+        error: error instanceof Error ? error.message : "Failed to authorize provider OAuth",
+      })
+    }
+  }
+
+  private async handleProviderOauthCallback(
+    requestId: string,
+    providerID: string,
+    method: number,
+    code?: string,
+  ): Promise<void> {
+    if (!this.httpClient) {
+      this.postMessage({
+        type: "providerActionResult",
+        requestId,
+        providerID,
+        stage: "oauthCallback",
+        ok: false,
+        error: "Not connected to CLI backend",
+      })
+      return
+    }
+
+    try {
+      const workspaceDir = this.getWorkspaceDirectory()
+      await this.httpClient.oauthCallback(providerID, method, workspaceDir, code)
+      await this.fetchAndSendProviders()
+      this.postMessage({
+        type: "providerActionResult",
+        requestId,
+        providerID,
+        stage: "oauthCallback",
+        ok: true,
+      })
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to complete provider OAuth callback:", error)
+      this.postMessage({
+        type: "providerActionResult",
+        requestId,
+        providerID,
+        stage: "oauthCallback",
+        ok: false,
+        error: error instanceof Error ? error.message : "Failed to complete provider OAuth callback",
+      })
+    }
+  }
+
+  private async handleProviderDisconnect(requestId: string, providerID: string): Promise<void> {
+    if (!this.httpClient) {
+      this.postMessage({
+        type: "providerActionResult",
+        requestId,
+        providerID,
+        stage: "disconnect",
+        ok: false,
+        error: "Not connected to CLI backend",
+      })
+      return
+    }
+
+    try {
+      await this.httpClient.removeAuth(providerID)
+      await this.fetchAndSendProviders()
+      this.postMessage({
+        type: "providerActionResult",
+        requestId,
+        providerID,
+        stage: "disconnect",
+        ok: true,
+      })
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to disconnect provider:", error)
+      this.postMessage({
+        type: "providerActionResult",
+        requestId,
+        providerID,
+        stage: "disconnect",
+        ok: false,
+        error: error instanceof Error ? error.message : "Failed to disconnect provider",
       })
     }
   }

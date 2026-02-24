@@ -1,4 +1,4 @@
-import { Component, createSignal, createMemo, For, Show, onCleanup, onMount } from "solid-js"
+import { Component, createSignal, createMemo, For, Show, onCleanup, onMount, createEffect } from "solid-js"
 import { Select } from "@kilocode/kilo-ui/select"
 import { TextField } from "@kilocode/kilo-ui/text-field"
 import { Card } from "@kilocode/kilo-ui/card"
@@ -36,12 +36,17 @@ interface SelectOption {
 
 import SettingsRow from "./SettingsRow"
 
-const AgentBehaviourTab: Component = () => {
+interface AgentBehaviourTabProps {
+  initialSubtab?: SubtabId
+  lockedSubtab?: SubtabId
+}
+
+const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
   const language = useLanguage()
   const vscode = useVSCode()
   const { config, updateConfig } = useConfig()
   const session = useSession()
-  const [activeSubtab, setActiveSubtab] = createSignal<SubtabId>("agents")
+  const [activeSubtab, setActiveSubtab] = createSignal<SubtabId>(props.initialSubtab ?? props.lockedSubtab ?? "agents")
   const [selectedAgent, setSelectedAgent] = createSignal<string>("")
   const [newSkillPath, setNewSkillPath] = createSignal("")
   const [newSkillUrl, setNewSkillUrl] = createSignal("")
@@ -74,6 +79,16 @@ const AgentBehaviourTab: Component = () => {
     }, retryMs)
 
     onCleanup(() => window.clearInterval(retryTimer))
+  })
+
+  createEffect(() => {
+    if (props.lockedSubtab) {
+      setActiveSubtab(props.lockedSubtab)
+      return
+    }
+    if (props.initialSubtab) {
+      setActiveSubtab(props.initialSubtab)
+    }
   })
 
   const agentNames = createMemo(() => {
@@ -992,50 +1007,50 @@ const AgentBehaviourTab: Component = () => {
 
   return (
     <div>
-      {/* Horizontal subtab bar */}
-      <div
-        style={{
-          display: "flex",
-          gap: "0",
-          "border-bottom": "1px solid var(--vscode-panel-border)",
-          "margin-bottom": "16px",
-        }}
-      >
-        <For each={subtabs}>
-          {(subtab) => (
-            <button
-              onClick={() => setActiveSubtab(subtab.id)}
-              style={{
-                padding: "8px 16px",
-                border: "none",
-                background: "transparent",
-                color:
-                  activeSubtab() === subtab.id ? "var(--vscode-foreground)" : "var(--vscode-descriptionForeground)",
-                "font-size": "13px",
-                "font-family": "var(--vscode-font-family)",
-                cursor: "pointer",
-                "border-bottom":
-                  activeSubtab() === subtab.id ? "2px solid var(--vscode-foreground)" : "2px solid transparent",
-                "margin-bottom": "-1px",
-              }}
-              onMouseEnter={(e) => {
-                if (activeSubtab() !== subtab.id) {
-                  e.currentTarget.style.color = "var(--vscode-foreground)"
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (activeSubtab() !== subtab.id) {
-                  e.currentTarget.style.color = "var(--vscode-descriptionForeground)"
-                }
-              }}
-            >
-              {language.t(subtab.labelKey)}
-            </button>
-          )}
-        </For>
-      </div>
+      <Show when={!props.lockedSubtab}>
+        <div
+          style={{
+            display: "flex",
+            gap: "0",
+            "border-bottom": "1px solid var(--vscode-panel-border)",
+            "margin-bottom": "16px",
+          }}
+        >
+          <For each={subtabs}>
+            {(subtab) => (
+              <button
+                onClick={() => setActiveSubtab(subtab.id)}
+                style={{
+                  padding: "8px 16px",
+                  border: "none",
+                  background: "transparent",
+                  color:
+                    activeSubtab() === subtab.id ? "var(--vscode-foreground)" : "var(--vscode-descriptionForeground)",
+                  "font-size": "13px",
+                  "font-family": "var(--vscode-font-family)",
+                  cursor: "pointer",
+                  "border-bottom":
+                    activeSubtab() === subtab.id ? "2px solid var(--vscode-foreground)" : "2px solid transparent",
+                  "margin-bottom": "-1px",
+                }}
+                onMouseEnter={(e) => {
+                  if (activeSubtab() !== subtab.id) {
+                    e.currentTarget.style.color = "var(--vscode-foreground)"
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeSubtab() !== subtab.id) {
+                    e.currentTarget.style.color = "var(--vscode-descriptionForeground)"
+                  }
+                }}
+              >
+                {language.t(subtab.labelKey)}
+              </button>
+            )}
+          </For>
+        </div>
+      </Show>
 
-      {/* Subtab content */}
       {renderSubtabContent()}
     </div>
   )

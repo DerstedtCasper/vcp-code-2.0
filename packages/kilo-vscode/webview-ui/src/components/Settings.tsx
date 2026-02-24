@@ -1,4 +1,4 @@
-import { Component, createEffect, createSignal } from "solid-js"
+import { Component, createEffect, createSignal, on } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { Tabs } from "@kilocode/kilo-ui/tabs"
@@ -30,10 +30,15 @@ const Settings: Component<SettingsProps> = (props) => {
   const language = useLanguage()
   const [activeTab, setActiveTab] = createSignal(props.initialTab ?? "providers")
 
-  createEffect(() => {
-    if (!props.initialTab) return
-    setActiveTab(props.initialTab)
-  })
+  createEffect(
+    on(
+      () => props.initialTab,
+      (tab) => {
+        if (!tab) return
+        setActiveTab(tab)
+      },
+    ),
+  )
 
   return (
     <div style={{ display: "flex", "flex-direction": "column", height: "100%" }}>
@@ -60,63 +65,71 @@ const Settings: Component<SettingsProps> = (props) => {
         orientation="vertical"
         variant="settings"
         value={activeTab()}
-        onValueChange={(value) => setActiveTab(value)}
+        onChange={(value) => {
+          if (typeof value === "string") {
+            setActiveTab(value)
+          }
+        }}
         style={{ flex: 1, overflow: "hidden" }}
       >
         <Tabs.List>
-          <Tabs.Trigger value="providers">
+          <Tabs.Trigger value="providers" onClick={() => setActiveTab("providers")}>
             <Icon name="providers" />
             {language.t("settings.providers.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="agentBehaviour">
+          <Tabs.Trigger value="agentBehaviour" onClick={() => setActiveTab("agentBehaviour")}>
             <Icon name="brain" />
             {language.t("settings.agentBehaviour.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="autoApprove">
+          <Tabs.Trigger value="vcp" onClick={() => setActiveTab("vcp")}>
+            <Icon name="settings-gear" />
+            {language.t("settings.agentBehaviour.subtab.vcp")}
+          </Tabs.Trigger>
+          <Tabs.Trigger value="autoApprove" onClick={() => setActiveTab("autoApprove")}>
             <Icon name="checklist" />
             {language.t("settings.autoApprove.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="browser">
+          <Tabs.Trigger value="browser" onClick={() => setActiveTab("browser")}>
             <Icon name="window-cursor" />
             {language.t("settings.browser.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="checkpoints">
+          <Tabs.Trigger value="checkpoints" onClick={() => setActiveTab("checkpoints")}>
             <Icon name="branch" />
             {language.t("settings.checkpoints.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="display">
+          <Tabs.Trigger value="display" onClick={() => setActiveTab("display")}>
             <Icon name="eye" />
             {language.t("settings.display.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="autocomplete">
+          <Tabs.Trigger value="autocomplete" onClick={() => setActiveTab("autocomplete")}>
             <Icon name="code-lines" />
             {language.t("settings.autocomplete.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="notifications">
+          <Tabs.Trigger value="notifications" onClick={() => setActiveTab("notifications")}>
             <Icon name="circle-check" />
             {language.t("settings.notifications.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="context">
+          <Tabs.Trigger value="context" onClick={() => setActiveTab("context")}>
             <Icon name="server" />
             {language.t("settings.context.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="terminal">
+          <Tabs.Trigger value="terminal" onClick={() => setActiveTab("terminal")}>
             <Icon name="console" />
             {language.t("settings.terminal.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="prompts">
+          <Tabs.Trigger value="prompts" onClick={() => setActiveTab("prompts")}>
             <Icon name="comment" />
             {language.t("settings.prompts.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="experimental">
+          <Tabs.Trigger value="experimental" onClick={() => setActiveTab("experimental")}>
             <Icon name="settings-gear" />
             {language.t("settings.experimental.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="language">
+          <Tabs.Trigger value="language" onClick={() => setActiveTab("language")}>
             <Icon name="speech-bubble" />
             {language.t("settings.language.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="aboutKiloCode">
+          <Tabs.Trigger value="aboutKiloCode" onClick={() => setActiveTab("aboutKiloCode")}>
             <Icon name="help" />
             {language.t("settings.aboutKiloCode.title")}
           </Tabs.Trigger>
@@ -129,6 +142,10 @@ const Settings: Component<SettingsProps> = (props) => {
         <Tabs.Content value="agentBehaviour">
           <h3>{language.t("settings.agentBehaviour.title")}</h3>
           <AgentBehaviourTab />
+        </Tabs.Content>
+        <Tabs.Content value="vcp">
+          <h3>{language.t("settings.agentBehaviour.subtab.vcp")}</h3>
+          <AgentBehaviourTab lockedSubtab="vcp" />
         </Tabs.Content>
         <Tabs.Content value="autoApprove">
           <h3>{language.t("settings.autoApprove.title")}</h3>

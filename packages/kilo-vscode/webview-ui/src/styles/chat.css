@@ -453,6 +453,16 @@
   height: 16px;
 }
 
+.file-mention-agent-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+}
+
 .file-mention-name {
   flex-shrink: 0;
   font-weight: 500;
@@ -472,7 +482,66 @@
   text-align: right;
 }
 
+.file-mention-dir--kind {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .file-mention-empty {
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  text-align: center;
+}
+
+.slash-command-dropdown {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 11;
+  background: var(--vscode-editorWidget-background, var(--vscode-input-background));
+  border: 1px solid var(--vscode-editorWidget-border, var(--vscode-input-border));
+  border-radius: 4px;
+  overflow: hidden;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.slash-command-item {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--vscode-foreground);
+}
+
+.slash-command-item--active {
+  background: var(--vscode-list-activeSelectionBackground);
+  color: var(--vscode-list-activeSelectionForeground);
+}
+
+.slash-command-trigger {
+  color: var(--vscode-textLink-foreground, #3794ff);
+  font-weight: 600;
+}
+
+.slash-command-title {
+  font-weight: 500;
+}
+
+.slash-command-description {
+  opacity: 0.8;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.slash-command-empty {
   padding: 8px 10px;
   font-size: 12px;
   color: var(--vscode-descriptionForeground);

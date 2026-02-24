@@ -8,6 +8,7 @@ import type {
   SkillInfo,
   ProfileData,
   ProviderAuthAuthorization,
+  ProviderAuthResponse,
   ProviderListResponse,
   McpStatus,
   McpConfig,
@@ -185,6 +186,13 @@ export class HttpClient {
    */
   async listProviders(directory: string): Promise<ProviderListResponse> {
     return this.request<ProviderListResponse>("GET", "/provider", undefined, { directory })
+  }
+
+  /**
+   * List auth methods for providers (OAuth/API key).
+   */
+  async listProviderAuthMethods(directory: string): Promise<ProviderAuthResponse> {
+    return this.request<ProviderAuthResponse>("GET", "/provider/auth", undefined, { directory })
   }
 
   // ============================================
@@ -388,6 +396,52 @@ export class HttpClient {
     )
   }
 
+  /**
+   * Revert a session to a previous user message.
+   * If messageID is omitted, backend will decide default revert point.
+   */
+  async revertSession(sessionId: string, directory: string, messageID?: string): Promise<SessionInfo> {
+    return this.request<SessionInfo>(
+      "POST",
+      `/session/${sessionId}/revert`,
+      messageID ? { messageID } : {},
+      { directory },
+    )
+  }
+
+  /**
+   * Restore reverted messages for a session.
+   */
+  async unrevertSession(sessionId: string, directory: string): Promise<SessionInfo> {
+    return this.request<SessionInfo>("POST", `/session/${sessionId}/unrevert`, {}, { directory })
+  }
+
+  /**
+   * Fork a session at a specific message.
+   */
+  async forkSession(sessionId: string, directory: string, messageID?: string): Promise<SessionInfo> {
+    return this.request<SessionInfo>(
+      "POST",
+      `/session/${sessionId}/fork`,
+      messageID ? { messageID } : {},
+      { directory },
+    )
+  }
+
+  /**
+   * Share a session and return updated session info with share URL.
+   */
+  async shareSession(sessionId: string, directory: string): Promise<SessionInfo> {
+    return this.request<SessionInfo>("POST", `/session/${sessionId}/share`, {}, { directory })
+  }
+
+  /**
+   * Unshare a session (remove public URL).
+   */
+  async unshareSession(sessionId: string, directory: string): Promise<SessionInfo> {
+    return this.request<SessionInfo>("DELETE", `/session/${sessionId}/share`, undefined, { directory })
+  }
+
   // ============================================
   // Question Methods
   // ============================================
@@ -558,6 +612,13 @@ export class HttpClient {
   }
 
   /**
+   * Set API key auth credentials for a provider.
+   */
+  async setApiAuth(providerId: string, key: string): Promise<boolean> {
+    return this.request<boolean>("PUT", `/auth/${providerId}`, { type: "api", key })
+  }
+
+  /**
    * Initiate OAuth authorization for a provider.
    * Returns the authorization URL and instructions.
    */
@@ -574,8 +635,8 @@ export class HttpClient {
    * Complete OAuth callback for a provider.
    * For "auto" method providers (like kilo), this blocks until polling completes.
    */
-  async oauthCallback(providerId: string, method: number, directory: string): Promise<boolean> {
-    return this.request<boolean>("POST", `/provider/${providerId}/oauth/callback`, { method }, { directory })
+  async oauthCallback(providerId: string, method: number, directory: string, code?: string): Promise<boolean> {
+    return this.request<boolean>("POST", `/provider/${providerId}/oauth/callback`, { method, code }, { directory })
   }
 
   // ============================================

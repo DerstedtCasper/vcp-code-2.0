@@ -231,6 +231,17 @@ export interface Provider {
   models: Record<string, ProviderModel>
 }
 
+export interface ProviderAuthMethod {
+  type: "oauth" | "api"
+  label: string
+}
+
+export interface ProviderAuthAuthorization {
+  url: string
+  method: "auto" | "code"
+  instructions: string
+}
+
 export interface ModelSelection {
   providerID: string
   modelID: string
@@ -255,6 +266,9 @@ export interface AgentConfig {
 
 export interface ProviderConfig {
   name?: string
+  env?: string[]
+  npm?: string
+  api?: string
   api_key?: string
   base_url?: string
   models?: Record<string, unknown>
@@ -263,9 +277,19 @@ export interface ProviderConfig {
     baseURL?: string
     modelsPath?: string
     modelsURL?: string
+    headers?: Record<string, string>
+    stream?: boolean
+    includeMaxTokens?: boolean
+    useAzure?: boolean
+    azureApiVersion?: string
+    reasoningEffort?: string
+    maxOutputTokens?: number
+    contextWindow?: number
+    includeUsage?: boolean
     enterpriseUrl?: string
     setCacheKey?: boolean
     timeout?: number | false
+    [key: string]: unknown
   }
 }
 
@@ -569,6 +593,17 @@ export interface ProvidersLoadedMessage {
   connected: string[]
   defaults: Record<string, string>
   defaultSelection: ModelSelection
+  providerAuth: Record<string, ProviderAuthMethod[]>
+}
+
+export interface ProviderActionResultMessage {
+  type: "providerActionResult"
+  requestId: string
+  providerID: string
+  stage: "apiKey" | "oauthAuthorize" | "oauthCallback" | "disconnect"
+  ok: boolean
+  authorization?: ProviderAuthAuthorization
+  error?: string
 }
 
 export interface AgentsLoadedMessage {
@@ -897,6 +932,7 @@ export type ExtensionMessage =
   | DeviceAuthCancelledMessage
   | NavigateMessage
   | ProvidersLoadedMessage
+  | ProviderActionResultMessage
   | AgentsLoadedMessage
   | SkillsLoadedMessage
   | AutocompleteSettingsLoadedMessage
@@ -1039,11 +1075,66 @@ export interface RequestProvidersMessage {
   type: "requestProviders"
 }
 
+export interface ProviderSetApiKeyMessage {
+  type: "providerSetApiKey"
+  requestId: string
+  providerID: string
+  apiKey: string
+}
+
+export interface ProviderOauthAuthorizeMessage {
+  type: "providerOauthAuthorize"
+  requestId: string
+  providerID: string
+  method: number
+}
+
+export interface ProviderOauthCallbackMessage {
+  type: "providerOauthCallback"
+  requestId: string
+  providerID: string
+  method: number
+  code?: string
+}
+
+export interface ProviderDisconnectMessage {
+  type: "providerDisconnect"
+  requestId: string
+  providerID: string
+}
+
 export interface CompactRequest {
   type: "compact"
   sessionID: string
   providerID?: string
   modelID?: string
+}
+
+export interface SessionUndoRequest {
+  type: "sessionUndo"
+  sessionID: string
+  messageID?: string
+}
+
+export interface SessionRedoRequest {
+  type: "sessionRedo"
+  sessionID: string
+}
+
+export interface SessionForkRequest {
+  type: "sessionFork"
+  sessionID: string
+  messageID?: string
+}
+
+export interface SessionShareRequest {
+  type: "sessionShare"
+  sessionID: string
+}
+
+export interface SessionUnshareRequest {
+  type: "sessionUnshare"
+  sessionID: string
 }
 
 export interface RequestAgentsMessage {
@@ -1337,7 +1428,16 @@ export type WebviewMessage =
   | SetOrganizationRequest
   | WebviewReadyRequest
   | RequestProvidersMessage
+  | ProviderSetApiKeyMessage
+  | ProviderOauthAuthorizeMessage
+  | ProviderOauthCallbackMessage
+  | ProviderDisconnectMessage
   | CompactRequest
+  | SessionUndoRequest
+  | SessionRedoRequest
+  | SessionForkRequest
+  | SessionShareRequest
+  | SessionUnshareRequest
   | RequestAgentsMessage
   | RequestSkillsMessage
   | SetLanguageRequest
