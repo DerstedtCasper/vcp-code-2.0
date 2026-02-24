@@ -27,11 +27,11 @@ The migrator reads custom modes from these locations (in order, later entries ov
 
 ### Global Modes (VSCode Extension Storage)
 
-| Platform | Path                                                                                                  |
-| -------- | ----------------------------------------------------------------------------------------------------- |
-| macOS    | `~/Library/Application Support/Code/User/globalStorage/kilocode.kilo-code/settings/custom_modes.yaml` |
-| Windows  | `%APPDATA%/Code/User/globalStorage/kilocode.kilo-code/settings/custom_modes.yaml`                     |
-| Linux    | `~/.config/Code/User/globalStorage/kilocode.kilo-code/settings/custom_modes.yaml`                     |
+| Platform | Preferred Path                                                                                      | Legacy Path                                                                                          |
+| -------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| macOS    | `~/Library/Application Support/Code/User/globalStorage/vcpcode.vcp-code/settings/custom_modes.yaml` | `~/Library/Application Support/Code/User/globalStorage/kilocode.kilo-code/settings/custom_modes.yaml` |
+| Windows  | `%APPDATA%/Code/User/globalStorage/vcpcode.vcp-code/settings/custom_modes.yaml`                     | `%APPDATA%/Code/User/globalStorage/kilocode.kilo-code/settings/custom_modes.yaml`                     |
+| Linux    | `~/.config/Code/User/globalStorage/vcpcode.vcp-code/settings/custom_modes.yaml`                     | `~/.config/Code/User/globalStorage/kilocode.kilo-code/settings/custom_modes.yaml`                     |
 
 ### Project Modes
 
@@ -226,11 +226,11 @@ Running from `packages/my-package/` discovers both `package-skill` and `project-
 
 ### VSCode Extension Storage (Marketplace Skills)
 
-| Platform | Path                                                                               |
-| -------- | ---------------------------------------------------------------------------------- |
-| macOS    | `~/Library/Application Support/Code/User/globalStorage/kilocode.kilo-code/skills/` |
-| Windows  | `%APPDATA%/Code/User/globalStorage/kilocode.kilo-code/skills/`                     |
-| Linux    | `~/.config/Code/User/globalStorage/kilocode.kilo-code/skills/`                     |
+| Platform | Preferred Path                                                                    | Legacy Path                                                                                        |
+| -------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| macOS    | `~/Library/Application Support/Code/User/globalStorage/vcpcode.vcp-code/skills/` | `~/Library/Application Support/Code/User/globalStorage/kilocode.kilo-code/skills/`                 |
+| Windows  | `%APPDATA%/Code/User/globalStorage/vcpcode.vcp-code/skills/`                     | `%APPDATA%/Code/User/globalStorage/kilocode.kilo-code/skills/`                                     |
+| Linux    | `~/.config/Code/User/globalStorage/vcpcode.vcp-code/skills/`                     | `~/.config/Code/User/globalStorage/kilocode.kilo-code/skills/`                                     |
 
 ## Skill File Format
 

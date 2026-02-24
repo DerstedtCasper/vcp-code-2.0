@@ -6,7 +6,7 @@
 
 import { createContext, useContext, createSignal, onCleanup, ParentComponent, Accessor } from "solid-js"
 import { useVSCode } from "./vscode"
-import type { Config, ExtensionMessage } from "../types/messages"
+import type { Config, ConfigConflictMessage, ConfigUpdatedMessage, ExtensionMessage } from "../types/messages"
 
 interface ConfigContextValue {
   config: Accessor<Config>
@@ -21,17 +21,135 @@ export const ConfigProvider: ParentComponent = (props) => {
 
   const [config, setConfig] = createSignal<Config>({})
   const [loading, setLoading] = createSignal(true)
+  const [revision, setRevision] = createSignal<number | undefined>(undefined)
+  let staged: Partial<Config> | null = null
+  let running = false
+  let nextMutationID = 0
+  let inflight:
+    | {
+        mutationID: number
+        resolve: (value: ConfigUpdatedMessage) => void
+        reject: (reason: ConfigConflictMessage | Error) => void
+      }
+    | null = null
+
+  const isRecord = (value: unknown): value is Record<string, unknown> =>
+    !!value && typeof value === "object" && !Array.isArray(value)
+
+  const mergeConfig = <T extends Record<string, unknown>>(left: T, right: Partial<T>): T => {
+    const next = { ...left }
+    for (const [key, value] of Object.entries(right)) {
+      if (value === undefined) continue
+      const prev = next[key]
+      next[key] =
+        isRecord(prev) && isRecord(value)
+          ? mergeConfig(prev as Record<string, unknown>, value as Record<string, unknown>)
+          : (value as unknown)
+    }
+    return next as T
+  }
+
+  const waitConfigMutation = (mutationID: number) =>
+    new Promise<ConfigUpdatedMessage>((resolve, reject) => {
+      inflight = { mutationID, resolve, reject }
+    })
+
+  const sendNext = async () => {
+    if (!staged) {
+      running = false
+      return
+    }
+
+    const patch = staged
+    staged = null
+    const mutationID = ++nextMutationID
+    const expectedRevision = revision()
+    console.debug("[Kilo New] Config queue: send", { mutationID, expectedRevision, hasPending: !!staged })
+    const waiter = waitConfigMutation(mutationID)
+    vscode.postMessage({
+      type: "updateConfig",
+      config: patch,
+      expectedRevision,
+    })
+
+    try {
+      const updated = await waiter
+      setConfig(updated.config)
+      setRevision(updated.revision ?? revision())
+    } catch (error) {
+      if (typeof error === "object" && error !== null && "type" in error && error.type === "configConflict") {
+        const conflict = error as ConfigConflictMessage
+        console.warn("[Kilo New] Config queue: conflict", {
+          mutationID,
+          revision: conflict.revision,
+        })
+        setConfig(conflict.config)
+        setRevision(conflict.revision)
+      } else {
+        console.error("[Kilo New] Config update failed", error)
+      }
+    }
+
+    await sendNext()
+  }
+
+  const enqueueConfigMutation = (partial: Partial<Config>) => {
+    const current = staged ?? {}
+    staged = mergeConfig(current as Record<string, unknown>, partial as Record<string, unknown>) as Partial<Config>
+    console.debug("[Kilo New] Config queue: enqueue", { running, hasPending: !!staged })
+    if (running) return
+    running = true
+    void sendNext()
+  }
 
   // Register handler immediately (not in onMount) so we never miss
   // a configLoaded message that arrives before the DOM mount.
   const unsubscribe = vscode.onMessage((message: ExtensionMessage) => {
     if (message.type === "configLoaded") {
       setConfig(message.config)
+      setRevision(message.revision)
       setLoading(false)
       return
     }
     if (message.type === "configUpdated") {
+      if (!inflight) {
+        console.debug("[Kilo New] Config queue: stale configUpdated dropped (no inflight)")
+        return
+      }
+      if (
+        typeof message.revision === "number" &&
+        typeof revision() === "number" &&
+        message.revision < (revision() as number)
+      ) {
+        console.warn("[Kilo New] Config queue: stale configUpdated dropped", {
+          inflightMutationID: inflight.mutationID,
+          incomingRevision: message.revision,
+          currentRevision: revision(),
+        })
+        inflight.reject(new Error("Stale config update response dropped"))
+        inflight = null
+        return
+      }
       setConfig(message.config)
+      setRevision(message.revision)
+      inflight?.resolve(message)
+      inflight = null
+      return
+    }
+    if (message.type === "configConflict") {
+      if (!inflight) {
+        console.debug("[Kilo New] Config queue: stale configConflict dropped (no inflight)")
+        return
+      }
+      setConfig(message.config)
+      setRevision(message.revision)
+      inflight?.reject(message)
+      inflight = null
+      return
+    }
+    if (message.type === "error") {
+      inflight?.reject(new Error(message.message))
+      inflight = null
       return
     }
   })
@@ -60,9 +178,9 @@ export const ConfigProvider: ParentComponent = (props) => {
 
   function updateConfig(partial: Partial<Config>) {
     // Optimistically update local state
-    setConfig((prev) => ({ ...prev, ...partial }))
+    setConfig((prev) => mergeConfig(prev as Record<string, unknown>, partial as Record<string, unknown>) as Config)
     // Send to extension for persistence
-    vscode.postMessage({ type: "updateConfig", config: partial })
+    enqueueConfigMutation(partial)
   }
 
   const value: ConfigContextValue = {

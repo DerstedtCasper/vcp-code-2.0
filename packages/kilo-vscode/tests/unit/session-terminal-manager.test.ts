@@ -41,7 +41,7 @@ describe("SessionTerminalManager structure", () => {
   it("dispose clears the context key, disposes terminals, and clears the map", () => {
     const text = body("dispose")
     // All three are required for clean shutdown — missing any would leak resources
-    expect(text).toContain("kilo-code.agentTerminalFocus")
+    expect(text).toContain("vcp-code.agentTerminalFocus")
     expect(text).toContain("terminal.dispose()")
     expect(text).toContain("terminals.clear()")
   })

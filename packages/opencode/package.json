@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "version": "7.0.27",
+  "version": "7.0.29",
   "name": "@kilocode/cli",
   "type": "module",
   "license": "MIT",
@@ -135,3 +135,4 @@
   },
   "peerDependencies": {}
 }
+

@@ -22,6 +22,12 @@ const parameters = z.object({
     )
     .optional(),
   command: z.string().describe("The command that triggered this task").optional(),
+  team_id: z.string().describe("Optional team identifier for orchestrated multi-agent execution.").optional(),
+  wave_id: z.string().describe("Optional wave identifier for this delegated subtask.").optional(),
+  handoff: z
+    .string()
+    .describe("Optional handoff contract this subtask should satisfy in its final response.")
+    .optional(),
 })
 
 export const TaskTool = Tool.define("task", async (ctx) => {
@@ -54,6 +60,8 @@ export const TaskTool = Tool.define("task", async (ctx) => {
           metadata: {
             description: params.description,
             subagent_type: params.subagent_type,
+            team_id: params.team_id,
+            wave_id: params.wave_id,
           },
         })
       }
@@ -113,6 +121,12 @@ export const TaskTool = Tool.define("task", async (ctx) => {
         metadata: {
           sessionId: session.id,
           model,
+          team: params.team_id
+            ? {
+                teamID: params.team_id,
+                waveID: params.wave_id,
+              }
+            : undefined,
         },
       })
 
@@ -124,6 +138,20 @@ export const TaskTool = Tool.define("task", async (ctx) => {
       ctx.abort.addEventListener("abort", cancel)
       using _ = defer(() => ctx.abort.removeEventListener("abort", cancel))
       const promptParts = await SessionPrompt.resolvePromptParts(params.prompt)
+      const handoffReminder = params.handoff?.trim()
+        ? [
+            {
+              type: "text" as const,
+              text: `<system-reminder>
+You are part of an agent-team workflow.
+Team ID: ${params.team_id ?? "N/A"}
+Wave ID: ${params.wave_id ?? "N/A"}
+Handoff contract:
+${params.handoff}
+</system-reminder>`,
+            },
+          ]
+        : []
 
       const result = await SessionPrompt.prompt({
         messageID,
@@ -139,17 +167,27 @@ export const TaskTool = Tool.define("task", async (ctx) => {
           ...(hasTaskPermission ? {} : { task: false }),
           ...Object.fromEntries((config.experimental?.primary_tools ?? []).map((t) => [t, false])),
         },
-        parts: promptParts,
+        parts: [...promptParts, ...handoffReminder],
       })
 
       const text = result.parts.findLast((x) => x.type === "text")?.text ?? ""
 
       const output = [
         `task_id: ${session.id} (for resuming to continue this task if needed)`,
+        ...(params.team_id ? [`team_id: ${params.team_id}`] : []),
+        ...(params.wave_id ? [`wave_id: ${params.wave_id}`] : []),
         "",
         "<task_result>",
         text,
         "</task_result>",
+        ...(params.handoff?.trim()
+          ? [
+              "",
+              "<team_handoff>",
+              params.handoff.trim(),
+              "</team_handoff>",
+            ]
+          : []),
       ].join("\n")
 
       return {

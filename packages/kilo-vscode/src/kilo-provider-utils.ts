@@ -60,6 +60,36 @@ export type WebviewMessage =
   | { type: "questionResolved"; requestID: string }
   | { type: "sessionCreated"; session: ReturnType<typeof sessionToWebview> }
   | { type: "sessionUpdated"; session: ReturnType<typeof sessionToWebview> }
+  | { type: "vcpInfo"; sessionID: string; messageID: string; content: string }
+  | {
+      type: "vcpToolRequest"
+      sessionID: string
+      messageID: string
+      tool: string
+      arguments?: unknown
+      raw: string
+    }
+  | {
+      type: "vcpToolRequestResult"
+      sessionID: string
+      messageID: string
+      tool: string
+      resolvedTool?: string
+      status: "completed" | "error" | "skipped"
+      output?: string
+      error?: string
+    }
+  | {
+      type: "vcpMemoryRefresh"
+      sessionID: string
+      messageID: string
+      tool: string
+      resolvedTool?: string
+      status: "completed" | "error" | "skipped"
+      trigger: "tool_request_after"
+      profileWeight: number
+      folderWeight: number
+    }
   | null
 
 export function mapSSEEventToWebviewMessage(event: SSEEvent, sessionID: string | undefined): WebviewMessage {
@@ -140,6 +170,45 @@ export function mapSSEEventToWebviewMessage(event: SSEEvent, sessionID: string |
       return {
         type: "sessionUpdated",
         session: sessionToWebview(event.properties.info),
+      }
+    case "session.vcpinfo":
+      return {
+        type: "vcpInfo",
+        sessionID: event.properties.sessionID,
+        messageID: event.properties.messageID,
+        content: event.properties.content,
+      }
+    case "session.vcp.toolrequest":
+      return {
+        type: "vcpToolRequest",
+        sessionID: event.properties.sessionID,
+        messageID: event.properties.messageID,
+        tool: event.properties.tool,
+        arguments: event.properties.arguments,
+        raw: event.properties.raw,
+      }
+    case "session.vcp.toolrequest.result":
+      return {
+        type: "vcpToolRequestResult",
+        sessionID: event.properties.sessionID,
+        messageID: event.properties.messageID,
+        tool: event.properties.tool,
+        resolvedTool: event.properties.resolvedTool,
+        status: event.properties.status,
+        output: event.properties.output,
+        error: event.properties.error,
+      }
+    case "session.vcp.memory.refresh":
+      return {
+        type: "vcpMemoryRefresh",
+        sessionID: event.properties.sessionID,
+        messageID: event.properties.messageID,
+        tool: event.properties.tool,
+        resolvedTool: event.properties.resolvedTool,
+        status: event.properties.status,
+        trigger: event.properties.trigger,
+        profileWeight: event.properties.profileWeight,
+        folderWeight: event.properties.folderWeight,
       }
     default:
       return null

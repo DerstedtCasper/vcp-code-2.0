@@ -1,29 +1,26 @@
 import * as path from "path"
+import { promises as fs } from "fs"
 import * as vscode from "vscode"
 import { z } from "zod"
 import {
   type HttpClient,
+  ConfigConflictError,
   type SessionInfo,
   type SSEEvent,
   type KiloConnectionService,
   type KilocodeNotification,
+  type SkillInfo,
 } from "./services/cli-backend"
-import type { EditorContext } from "./services/cli-backend/types"
+import type { Config, EditorContext } from "./services/cli-backend/types"
 import { FileIgnoreController } from "./services/autocomplete/shims/FileIgnoreController"
 import { handleChatCompletionRequest } from "./services/autocomplete/chat-autocomplete/handleChatCompletionRequest"
 import { handleChatCompletionAccepted } from "./services/autocomplete/chat-autocomplete/handleChatCompletionAccepted"
 import { buildWebviewHtml } from "./utils"
 import { TelemetryProxy, type TelemetryPropertiesProvider } from "./services/telemetry"
-import {
-  sessionToWebview,
-  normalizeProviders,
-  filterVisibleAgents,
-  buildSettingPath,
-  mapSSEEventToWebviewMessage,
-} from "./kilo-provider-utils"
+import { sessionToWebview, normalizeProviders, filterVisibleAgents, buildSettingPath, mapSSEEventToWebviewMessage } from "./kilo-provider-utils"
 
 export class KiloProvider implements vscode.WebviewViewProvider, TelemetryPropertiesProvider {
-  public static readonly viewType = "kilo-code.new.sidebarView"
+  public static readonly viewType = "vcp-code.new.sidebarView"
 
   private webview: vscode.Webview | null = null
   private currentSession: SessionInfo | null = null
@@ -31,13 +28,15 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   private loginAttempt = 0
   private isWebviewReady = false
   private readonly extensionVersion =
-    vscode.extensions.getExtension("kilocode.kilo-code")?.packageJSON?.version ?? "unknown"
+    vscode.extensions.getExtension("vcpcode.vcp-code")?.packageJSON?.version ?? "unknown"
   /** Cached providersLoaded payload so requestProviders can be served before httpClient is ready */
   private cachedProvidersMessage: unknown = null
   /** Cached agentsLoaded payload so requestAgents can be served before httpClient is ready */
   private cachedAgentsMessage: unknown = null
   /** Cached configLoaded payload so requestConfig can be served before httpClient is ready */
   private cachedConfigMessage: unknown = null
+  /** Cached skillsLoaded payload so requestSkills can be served before httpClient is ready */
+  private cachedSkillsMessage: unknown = null
   /** Cached notificationsLoaded payload */
   private cachedNotificationsMessage: unknown = null
 
@@ -50,6 +49,24 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   private unsubscribeState: (() => void) | null = null
   private unsubscribeNotificationDismiss: (() => void) | null = null
   private webviewMessageDisposable: vscode.Disposable | null = null
+  private sessionStatus = new Map<string, "idle" | "busy" | "retry">()
+  private pendingPermission = new Map<string, number>()
+  private pendingQuestion = new Map<string, number>()
+  private promptQueue = new Map<
+    string,
+    Array<{
+      id: string
+      text: string
+      files?: Array<{ mime: string; url: string }>
+      policy: "guide" | "queue" | "interrupt"
+      priority: number
+      createdAt: string
+      providerID?: string
+      modelID?: string
+      agent?: string
+      variant?: string
+    }>
+  >()
 
   /** Lazily initialized ignore controller for .kilocodeignore filtering */
   private ignoreController: FileIgnoreController | null = null
@@ -69,7 +86,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
   getTelemetryProperties(): Record<string, unknown> {
     return {
-      appName: "kilo-code",
+      appName: "vcp-code",
       appVersion: this.extensionVersion,
       platform: "vscode",
       editorName: vscode.env.appName,
@@ -119,7 +136,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
     // Re-send ready so the webview can recover after refresh.
     if (serverInfo) {
-      const langConfig = vscode.workspace.getConfiguration("kilo-code.new")
+      const langConfig = vscode.workspace.getConfiguration("vcp-code.new")
       this.postMessage({
         type: "ready",
         serverInfo,
@@ -295,6 +312,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
             message.agent,
             message.variant,
             files,
+            message.busyMode,
           )
           break
         }
@@ -368,12 +386,53 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         case "requestConfig":
           await this.fetchAndSendConfig()
           break
+        case "requestPromptQueue":
+          if (typeof message.sessionID === "string") this.sendPromptQueue(message.sessionID)
+          break
+        case "enqueuePrompt":
+          if (typeof message.sessionID === "string" && message.item) this.enqueuePrompt(message.sessionID, message.item)
+          break
+        case "dequeuePrompt":
+          if (typeof message.sessionID === "string") this.dequeuePrompt(message.sessionID, message.itemID)
+          break
+        case "reorderPromptQueue":
+          if (typeof message.sessionID === "string" && Array.isArray(message.itemIDs)) {
+            this.reorderPromptQueue(message.sessionID, message.itemIDs)
+          }
+          break
+        case "requestSkills":
+          await this.fetchAndSendSkills()
+          break
         case "updateConfig":
-          await this.handleUpdateConfig(message.config)
+          await this.handleUpdateConfig(message.config, message.expectedRevision)
+          break
+        case "requestMemoryOverview":
+          await this.handleRequestMemoryOverview(message.requestID, message.limit, message.folderID)
+          break
+        case "searchMemory":
+          await this.handleSearchMemory(message.requestID, message)
+          break
+        case "updateMemoryAtomic":
+          await this.handleUpdateMemoryAtomic(message.requestID, message.id, message)
+          break
+        case "deleteMemoryAtomic":
+          await this.handleDeleteMemoryAtomic(message.requestID, message.id)
+          break
+        case "previewMemoryContext":
+          await this.handlePreviewMemoryContext(
+            message.requestID,
+            message.query,
+            message.directory,
+            message.topKAtomic,
+            message.maxChars,
+            message.removeAtomicIDs,
+            message.pinAtomicIDs,
+            message.compress,
+          )
           break
         case "setLanguage":
           await vscode.workspace
-            .getConfiguration("kilo-code.new")
+            .getConfiguration("vcp-code.new")
             .update("language", message.locale || undefined, vscode.ConfigurationTarget.Global)
           break
         case "requestAutocompleteSettings":
@@ -387,7 +446,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           ])
           if (allowedKeys.has(message.key)) {
             await vscode.workspace
-              .getConfiguration("kilo-code.new.autocomplete")
+              .getConfiguration("vcp-code.new.autocomplete")
               .update(message.key, message.value, vscode.ConfigurationTarget.Global)
             this.sendAutocompleteSettings()
           }
@@ -531,7 +590,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       this.connectionState = this.connectionService.getConnectionState()
 
       if (serverInfo) {
-        const langConfig = vscode.workspace.getConfiguration("kilo-code.new")
+        const langConfig = vscode.workspace.getConfiguration("vcp-code.new")
         this.postMessage({
           type: "ready",
           serverInfo,
@@ -548,6 +607,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       await this.fetchAndSendProviders()
       await this.fetchAndSendAgents()
       await this.fetchAndSendConfig()
+      await this.fetchAndSendSkills()
       await this.fetchAndSendNotifications()
       this.sendNotificationSettings()
 
@@ -852,7 +912,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
       const normalized = normalizeProviders(response.all)
 
-      const config = vscode.workspace.getConfiguration("kilo-code.new.model")
+      const config = vscode.workspace.getConfiguration("vcp-code.new.model")
       const providerID = config.get<string>("providerID", "kilo")
       const modelID = config.get<string>("modelID", "kilo/auto")
 
@@ -919,15 +979,44 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     try {
       const workspaceDir = this.getWorkspaceDirectory()
       const config = await this.httpClient.getConfig(workspaceDir)
+      const revision = await this.httpClient.getGlobalConfigRevision().catch(() => undefined)
 
       const message = {
         type: "configLoaded",
         config,
+        revision,
       }
       this.cachedConfigMessage = message
       this.postMessage(message)
     } catch (error) {
       console.error("[Kilo New] KiloProvider: Failed to fetch config:", error)
+    }
+  }
+
+  /**
+   * Fetch loaded skills from the backend and send to webview.
+   */
+  private async fetchAndSendSkills(): Promise<void> {
+    if (!this.httpClient) {
+      if (this.cachedSkillsMessage) {
+        this.postMessage(this.cachedSkillsMessage)
+      }
+      return
+    }
+
+    try {
+      const workspaceDir = this.getWorkspaceDirectory()
+      const skills = await this.httpClient.listSkills(workspaceDir)
+      const sorted = [...skills].sort((a, b) => a.name.localeCompare(b.name))
+
+      const message: { type: "skillsLoaded"; skills: SkillInfo[] } = {
+        type: "skillsLoaded",
+        skills: sorted,
+      }
+      this.cachedSkillsMessage = message
+      this.postMessage(message)
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to fetch skills:", error)
     }
   }
 
@@ -976,8 +1065,8 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Read notification/sound settings from VS Code config and push to webview.
    */
   private sendNotificationSettings(): void {
-    const notifications = vscode.workspace.getConfiguration("kilo-code.new.notifications")
-    const sounds = vscode.workspace.getConfiguration("kilo-code.new.sounds")
+    const notifications = vscode.workspace.getConfiguration("vcp-code.new.notifications")
+    const sounds = vscode.workspace.getConfiguration("vcp-code.new.sounds")
     this.postMessage({
       type: "notificationSettingsLoaded",
       settings: {
@@ -991,27 +1080,52 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     })
   }
 
+  private shouldNotifyAgentEvents(): boolean {
+    return vscode.workspace.getConfiguration("vcp-code.new.notifications").get<boolean>("agent", true)
+  }
+
+  private summarizeNotificationText(text: string, maxLength = 180): string {
+    const normalized = text.replace(/\s+/g, " ").trim()
+    if (normalized.length <= maxLength) {
+      return normalized
+    }
+    return `${normalized.slice(0, maxLength - 1)}…`
+  }
+
   /**
    * Handle config update request from the webview.
    * Applies a partial config update via the global config endpoint, then pushes
    * the full merged config back to the webview.
    */
-  private async handleUpdateConfig(partial: Record<string, unknown>): Promise<void> {
+  private async handleUpdateConfig(partial: Record<string, unknown>, expectedRevision?: number): Promise<void> {
     if (!this.httpClient) {
       this.postMessage({ type: "error", message: "Not connected to CLI backend" })
       return
     }
 
     try {
-      const updated = await this.httpClient.updateConfig(partial)
+      const updated = await this.httpClient.updateConfig(partial, expectedRevision)
 
       const message = {
         type: "configUpdated",
-        config: updated,
+        config: updated.config,
+        revision: updated.revision,
       }
-      this.cachedConfigMessage = { type: "configLoaded", config: updated }
+      this.cachedConfigMessage = { type: "configLoaded", config: updated.config, revision: updated.revision }
       this.postMessage(message)
+      await this.fetchAndSendSkills()
     } catch (error) {
+      if (error instanceof ConfigConflictError) {
+        this.postMessage({
+          type: "configConflict",
+          error: error.payload.error,
+          code: error.payload.code,
+          config: error.payload.config,
+          revision: error.payload.revision,
+          expectedRevision: error.payload.expectedRevision,
+        })
+        return
+      }
       console.error("[Kilo New] KiloProvider: Failed to update config:", error)
       this.postMessage({
         type: "error",
@@ -1031,6 +1145,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     agent?: string,
     variant?: string,
     files?: Array<{ mime: string; url: string }>,
+    busyMode?: "guide" | "queue" | "interrupt",
   ): Promise<void> {
     if (!this.httpClient) {
       this.postMessage({
@@ -1057,6 +1172,22 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       const targetSessionID = sessionID || this.currentSession?.id
       if (!targetSessionID) {
         throw new Error("No session available")
+      }
+      if (busyMode === "queue" && this.sessionStatus.get(targetSessionID) === "busy") {
+        this.enqueuePrompt(targetSessionID, {
+          text,
+          files,
+          policy: "queue",
+          priority: 0,
+          providerID,
+          modelID,
+          agent,
+          variant,
+        })
+        return
+      }
+      if (busyMode === "interrupt" && this.sessionStatus.get(targetSessionID) === "busy") {
+        await this.handleAbort(targetSessionID)
       }
 
       // Build parts array with file context and user text
@@ -1170,6 +1301,10 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     try {
       const workspaceDir = this.getWorkspaceDirectory(targetSessionID)
       await this.httpClient.respondToPermission(targetSessionID, permissionId, response, workspaceDir)
+      this.decrementPending(this.pendingPermission, targetSessionID)
+      if (this.sessionStatus.get(targetSessionID) === "idle") {
+        void this.flushPromptQueue(targetSessionID)
+      }
     } catch (error) {
       console.error("[Kilo New] KiloProvider: Failed to respond to permission:", error)
     }
@@ -1367,32 +1502,32 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
   /**
    * Handle a generic setting update from the webview.
-   * The key uses dot notation relative to `kilo-code.new` (e.g. "browserAutomation.enabled").
+   * The key uses dot notation relative to `vcp-code.new` (e.g. "browserAutomation.enabled").
    */
   private async handleUpdateSetting(key: string, value: unknown): Promise<void> {
     const { section, leaf } = buildSettingPath(key)
-    const config = vscode.workspace.getConfiguration(`kilo-code.new${section ? `.${section}` : ""}`)
+    const config = vscode.workspace.getConfiguration(`vcp-code.new${section ? `.${section}` : ""}`)
     await config.update(leaf, value, vscode.ConfigurationTarget.Global)
   }
 
   /**
-   * Reset all "kilo-code.new.*" extension settings to their defaults by reading
+   * Reset all "vcp-code.new.*" extension settings to their defaults by reading
    * contributes.configuration from the extension's package.json at runtime.
-   * Only resets settings under the "kilo-code.new." namespace to avoid touching
+   * Only resets settings under the "vcp-code.new." namespace to avoid touching
    * settings from the previous version of the extension which shares the same
-   * extension ID and "kilo-code.*" namespace.
+   * extension ID and "vcp-code.*" namespace.
    */
   // kilocode_change start
   private async handleResetAllSettings(): Promise<void> {
     const confirmed = await vscode.window.showWarningMessage(
-      "Reset all Kilo Code extension settings to defaults?",
+      "Reset all VCP Code 2.0 extension settings to defaults?",
       { modal: true },
       "Reset",
     )
     if (confirmed !== "Reset") return
 
-    const prefix = "kilo-code.new."
-    const ext = vscode.extensions.getExtension("kilocode.kilo-code")
+    const prefix = "vcp-code.new."
+    const ext = vscode.extensions.getExtension("vcpcode.vcp-code")
     const properties = ext?.packageJSON?.contributes?.configuration?.properties as Record<string, unknown> | undefined
     if (!properties) return
 
@@ -1416,7 +1551,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Read the current browser automation settings and push them to the webview.
    */
   private sendBrowserSettings(): void {
-    const config = vscode.workspace.getConfiguration("kilo-code.new.browserAutomation")
+    const config = vscode.workspace.getConfiguration("vcp-code.new.browserAutomation")
     this.postMessage({
       type: "browserSettingsLoaded",
       settings: {
@@ -1455,12 +1590,63 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
     // Forward relevant events to webview
     // Side effects that must happen before the webview message is sent
+    if (event.type === "session.status") {
+      this.sessionStatus.set(event.properties.sessionID, event.properties.status.type)
+      if (event.properties.status.type === "idle") {
+        void this.flushPromptQueue(event.properties.sessionID)
+      }
+    }
+    if (event.type === "permission.asked") {
+      this.incrementPending(this.pendingPermission, event.properties.sessionID)
+    }
+    if (event.type === "permission.replied") {
+      this.decrementPending(this.pendingPermission, event.properties.sessionID)
+      if (this.sessionStatus.get(event.properties.sessionID) === "idle") {
+        void this.flushPromptQueue(event.properties.sessionID)
+      }
+    }
+    if (event.type === "question.asked") {
+      this.incrementPending(this.pendingQuestion, event.properties.sessionID)
+    }
+    if (event.type === "question.replied" || event.type === "question.rejected") {
+      this.decrementPending(this.pendingQuestion, event.properties.sessionID)
+      if (this.sessionStatus.get(event.properties.sessionID) === "idle") {
+        void this.flushPromptQueue(event.properties.sessionID)
+      }
+    }
     if (event.type === "session.created" && !this.currentSession) {
       this.currentSession = event.properties.info
       this.trackedSessionIds.add(event.properties.info.id)
     }
     if (event.type === "session.updated" && this.currentSession?.id === event.properties.info.id) {
       this.currentSession = event.properties.info
+    }
+    if (event.type === "session.vcpinfo" && this.shouldNotifyAgentEvents()) {
+      void vscode.window.showInformationMessage(`VCPInfo: ${this.summarizeNotificationText(event.properties.content)}`)
+    }
+    if (event.type === "session.vcp.toolrequest" && this.shouldNotifyAgentEvents()) {
+      const tool = this.summarizeNotificationText(event.properties.tool, 64)
+      void vscode.window.showInformationMessage(`VCP Tool Request: ${tool}`)
+    }
+    if (event.type === "session.vcp.toolrequest.result" && this.shouldNotifyAgentEvents()) {
+      const resolved = this.summarizeNotificationText(event.properties.resolvedTool ?? event.properties.tool, 64)
+      if (event.properties.status === "completed") {
+        void vscode.window.showInformationMessage(`VCP Tool Result: ${resolved} completed`)
+      } else if (event.properties.status === "error") {
+        const reason = this.summarizeNotificationText(event.properties.error ?? "unknown error", 96)
+        void vscode.window.showWarningMessage(`VCP Tool Result: ${resolved} failed (${reason})`)
+      } else {
+        const reason = this.summarizeNotificationText(event.properties.error ?? "skipped", 96)
+        void vscode.window.showInformationMessage(`VCP Tool Result: ${resolved} skipped (${reason})`)
+      }
+    }
+    if (event.type === "session.vcp.memory.refresh" && this.shouldNotifyAgentEvents()) {
+      const resolved = this.summarizeNotificationText(event.properties.resolvedTool ?? event.properties.tool, 64)
+      const profileWeight = event.properties.profileWeight.toFixed(2)
+      const folderWeight = event.properties.folderWeight.toFixed(2)
+      void vscode.window.showInformationMessage(
+        `VCP Memory Refresh: ${resolved} (${event.properties.status}) [p=${profileWeight}, f=${folderWeight}]`,
+      )
     }
 
     const msg = mapSSEEventToWebviewMessage(event, sessionID)
@@ -1469,11 +1655,258 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     }
   }
 
+  private async handleRequestMemoryOverview(requestID: string, limit?: number, folderID?: string): Promise<void> {
+    if (!this.httpClient) return
+    try {
+      const data = await this.httpClient.getMemoryOverview({ limit, folderID })
+      this.postMessage({ type: "memoryOverview", requestID, data })
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to load memory overview:", error)
+      this.postMessage({ type: "error", message: error instanceof Error ? error.message : "Failed to load memory overview" })
+    }
+  }
+
+  private async handleSearchMemory(
+    requestID: string,
+    input: {
+      query: string
+      topK?: number
+      scope?: "user" | "folder" | "both"
+      folderID?: string
+      tagsAny?: string[]
+      timeFrom?: string | number
+      timeTo?: string | number
+    },
+  ): Promise<void> {
+    if (!this.httpClient) return
+    try {
+      const items = await this.httpClient.searchMemory(input)
+      this.postMessage({ type: "memorySearchResult", requestID, items })
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to search memory:", error)
+      this.postMessage({ type: "error", message: error instanceof Error ? error.message : "Failed to search memory" })
+    }
+  }
+
+  private async handleUpdateMemoryAtomic(
+    requestID: string,
+    id: string,
+    patch: {
+      text?: string
+      tags?: string[]
+      scope?: "user" | "folder"
+      folderID?: string
+    },
+  ): Promise<void> {
+    if (!this.httpClient) return
+    try {
+      const result = await this.httpClient.updateMemoryAtomic(id, patch)
+      this.postMessage({ type: "memoryAtomicUpdated", requestID, ...result })
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to update memory:", error)
+      this.postMessage({ type: "error", message: error instanceof Error ? error.message : "Failed to update memory" })
+    }
+  }
+
+  private async handleDeleteMemoryAtomic(requestID: string, id: string): Promise<void> {
+    if (!this.httpClient) return
+    try {
+      const result = await this.httpClient.deleteMemoryAtomic(id)
+      this.postMessage({ type: "memoryAtomicDeleted", requestID, ...result })
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to delete memory:", error)
+      this.postMessage({ type: "error", message: error instanceof Error ? error.message : "Failed to delete memory" })
+    }
+  }
+
+  private async handlePreviewMemoryContext(
+    requestID: string,
+    query: string,
+    directory?: string,
+    topKAtomic?: number,
+    maxChars?: number,
+    removeAtomicIDs?: string[],
+    pinAtomicIDs?: string[],
+    compress?: boolean,
+  ): Promise<void> {
+    if (!this.httpClient) return
+    try {
+      const workspaceDir = directory || this.getWorkspaceDirectory()
+      const result = await this.httpClient.previewMemoryContext({
+        query,
+        directory: workspaceDir,
+        topKAtomic,
+        maxChars,
+        removeAtomicIDs,
+        pinAtomicIDs,
+        compress,
+      })
+      this.postMessage({ type: "memoryContextPreview", requestID, preview: result.preview })
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to preview memory context:", error)
+      this.postMessage({
+        type: "error",
+        message: error instanceof Error ? error.message : "Failed to preview memory context",
+      })
+    }
+  }
+
+  public async exportGlobalConfig(): Promise<void> {
+    if (!this.httpClient) {
+      void vscode.window.showErrorMessage("Not connected to CLI backend.")
+      return
+    }
+
+    try {
+      const directory = this.getWorkspaceDirectory()
+      const config = await this.httpClient.getConfig(directory)
+      const target = await vscode.window.showSaveDialog({
+        title: "Export VCP Code Config",
+        filters: { JSON: ["json"] },
+        saveLabel: "Export",
+        defaultUri: vscode.Uri.file(path.join(directory, "vcp-code.config.json")),
+      })
+      if (!target) return
+      await fs.writeFile(target.fsPath, `${JSON.stringify(config, null, 2)}\n`, "utf8")
+      void vscode.window.showInformationMessage(`Config exported to ${target.fsPath}`)
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to export config:", error)
+      void vscode.window.showErrorMessage(error instanceof Error ? error.message : "Failed to export config")
+    }
+  }
+
+  public async importGlobalConfig(): Promise<void> {
+    if (!this.httpClient) {
+      void vscode.window.showErrorMessage("Not connected to CLI backend.")
+      return
+    }
+
+    try {
+      const picked = await vscode.window.showOpenDialog({
+        title: "Import VCP Code Config",
+        canSelectMany: false,
+        filters: { JSON: ["json"] },
+      })
+      const file = picked?.[0]
+      if (!file) return
+
+      const raw = await fs.readFile(file.fsPath, "utf8")
+      const parsed = JSON.parse(raw) as Partial<Config>
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("Invalid config JSON: expected an object.")
+      }
+
+      await this.httpClient.updateConfig(parsed)
+      await this.fetchAndSendConfig()
+      void vscode.window.showInformationMessage(`Config imported from ${file.fsPath}`)
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to import config:", error)
+      void vscode.window.showErrorMessage(error instanceof Error ? error.message : "Failed to import config")
+    }
+  }
+
+  private sendPromptQueue(sessionID: string): void {
+    this.postMessage({
+      type: "promptQueueUpdated",
+      sessionID,
+      items: this.promptQueue.get(sessionID) ?? [],
+    })
+  }
+
+  private incrementPending(map: Map<string, number>, sessionID: string): void {
+    map.set(sessionID, (map.get(sessionID) ?? 0) + 1)
+  }
+
+  private decrementPending(map: Map<string, number>, sessionID: string): void {
+    const current = map.get(sessionID) ?? 0
+    if (current <= 1) {
+      map.delete(sessionID)
+      return
+    }
+    map.set(sessionID, current - 1)
+  }
+
+  private isPromptQueuePaused(sessionID: string): boolean {
+    return (this.pendingPermission.get(sessionID) ?? 0) > 0 || (this.pendingQuestion.get(sessionID) ?? 0) > 0
+  }
+
+  private enqueuePrompt(
+    sessionID: string,
+    item: {
+      text: string
+      files?: Array<{ mime: string; url: string }>
+      policy: "guide" | "queue" | "interrupt"
+      priority?: number
+      providerID?: string
+      modelID?: string
+      agent?: string
+      variant?: string
+    },
+  ): void {
+    const current = this.promptQueue.get(sessionID) ?? []
+    const next = [
+      ...current,
+      {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        text: item.text,
+        files: item.files,
+        policy: item.policy,
+        priority: item.priority ?? 0,
+        createdAt: new Date().toISOString(),
+        providerID: item.providerID,
+        modelID: item.modelID,
+        agent: item.agent,
+        variant: item.variant,
+      },
+    ]
+    this.promptQueue.set(sessionID, next)
+    this.sendPromptQueue(sessionID)
+  }
+
+  private dequeuePrompt(sessionID: string, itemID?: string): void {
+    const current = this.promptQueue.get(sessionID) ?? []
+    if (current.length === 0) {
+      this.sendPromptQueue(sessionID)
+      return
+    }
+    const next = itemID ? current.filter((item) => item.id !== itemID) : current.slice(1)
+    this.promptQueue.set(sessionID, next)
+    this.sendPromptQueue(sessionID)
+  }
+
+  private reorderPromptQueue(sessionID: string, itemIDs: string[]): void {
+    const current = this.promptQueue.get(sessionID) ?? []
+    const byId = new Map(current.map((item) => [item.id, item]))
+    const ordered = itemIDs.map((id) => byId.get(id)).filter((item) => !!item)
+    const missing = current.filter((item) => !itemIDs.includes(item.id))
+    this.promptQueue.set(sessionID, [...ordered, ...missing])
+    this.sendPromptQueue(sessionID)
+  }
+
+  private async flushPromptQueue(sessionID: string): Promise<void> {
+    if (this.sessionStatus.get(sessionID) === "busy") return
+    if (this.isPromptQueuePaused(sessionID)) return
+    const queue = this.promptQueue.get(sessionID) ?? []
+    const item = queue[0]
+    if (!item) return
+    this.dequeuePrompt(sessionID, item.id)
+    await this.handleSendMessage(
+      item.text,
+      sessionID,
+      item.providerID,
+      item.modelID,
+      item.agent,
+      item.variant,
+      item.files,
+      "guide",
+    )
+  }
+
   /**
    * Read autocomplete settings from VS Code configuration and push to the webview.
    */
   private sendAutocompleteSettings(): void {
-    const config = vscode.workspace.getConfiguration("kilo-code.new.autocomplete")
+    const config = vscode.workspace.getConfiguration("vcp-code.new.autocomplete")
     this.postMessage({
       type: "autocompleteSettingsLoaded",
       settings: {
@@ -1607,7 +2040,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       scriptUri: webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "dist", "webview.js")),
       styleUri: webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "dist", "webview.css")),
       iconsBaseUri: webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "assets", "icons")),
-      title: "Kilo Code",
+      title: "VCP Code 2.0",
       port: this.connectionService.getServerInfo()?.port,
       extraStyles: `.container { height: 100%; display: flex; flex-direction: column; height: 100vh; }`,
     })

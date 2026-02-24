@@ -14,7 +14,7 @@ function getTerminalSelection(): string {
 
 export function registerTerminalActions(context: vscode.ExtensionContext, provider: KiloProvider): void {
   context.subscriptions.push(
-    vscode.commands.registerCommand("kilo-code.new.terminalAddToContext", () => {
+    vscode.commands.registerCommand("vcp-code.new.terminalAddToContext", () => {
       const content = getTerminalSelection()
       if (!content) {
         vscode.window.showInformationMessage("No terminal content available. Select text in the terminal first.")
@@ -28,7 +28,7 @@ export function registerTerminalActions(context: vscode.ExtensionContext, provid
       provider.postMessage({ type: "action", action: "focusInput" })
     }),
 
-    vscode.commands.registerCommand("kilo-code.new.terminalFixCommand", () => {
+    vscode.commands.registerCommand("vcp-code.new.terminalFixCommand", () => {
       const content = getTerminalSelection()
       if (!content) {
         vscode.window.showInformationMessage("No terminal content available. Select text in the terminal first.")
@@ -41,7 +41,7 @@ export function registerTerminalActions(context: vscode.ExtensionContext, provid
       provider.postMessage({ type: "triggerTask", text: prompt })
     }),
 
-    vscode.commands.registerCommand("kilo-code.new.terminalExplainCommand", () => {
+    vscode.commands.registerCommand("vcp-code.new.terminalExplainCommand", () => {
       const content = getTerminalSelection()
       if (!content) {
         vscode.window.showInformationMessage("No terminal content available. Select text in the terminal first.")

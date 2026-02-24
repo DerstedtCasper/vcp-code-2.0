@@ -19,7 +19,7 @@ import { formatKeybinding } from "./format-keybinding"
  * SESSIONS (bottom) with unassociated workspace sessions.
  */
 export class AgentManagerProvider implements vscode.Disposable {
-  public static readonly viewType = "kilo-code.new.AgentManagerPanel"
+  public static readonly viewType = "vcp-code.new.AgentManagerPanel"
 
   private panel: vscode.WebviewPanel | undefined
   private provider: KiloProvider | undefined
@@ -601,17 +601,17 @@ export class AgentManagerProvider implements vscode.Disposable {
   // ---------------------------------------------------------------------------
 
   private sendKeybindings(): void {
-    const ext = vscode.extensions.getExtension("kilocode.kilo-code")
+    const ext = vscode.extensions.getExtension("vcpcode.vcp-code")
     const keybindings: Array<{ command: string; key?: string; mac?: string }> =
       ext?.packageJSON?.contributes?.keybindings ?? []
 
     const mac = process.platform === "darwin"
-    const prefix = "kilo-code.new.agentManager."
+    const prefix = "vcp-code.new.agentManager."
     const bindings: Record<string, string> = {}
 
     // Global keybindings exposed to the shortcuts dialog
     const globals: Record<string, string> = {
-      "kilo-code.new.agentManagerOpen": "agentManagerOpen",
+      "vcp-code.new.agentManagerOpen": "agentManagerOpen",
     }
 
     for (const kb of keybindings) {

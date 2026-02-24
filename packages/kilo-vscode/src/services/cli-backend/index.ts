@@ -12,6 +12,7 @@ export type {
   SSEEvent,
   TodoItem,
   AgentInfo,
+  SkillInfo,
   ServerConfig,
   KilocodeOrganization,
   KilocodeProfile,
@@ -33,7 +34,7 @@ export type {
 export { ServerManager } from "./server-manager"
 export type { ServerInstance } from "./server-manager"
 
-export { HttpClient } from "./http-client"
+export { HttpClient, ConfigConflictError } from "./http-client"
 
 export { SSEClient } from "./sse-client"
 export type { SSEEventHandler, SSEErrorHandler, SSEStateHandler } from "./sse-client"

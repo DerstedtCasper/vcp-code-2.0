@@ -33,6 +33,37 @@ describe("resolveEventSessionId", () => {
     expect(resolveEventSessionId(event, noLookup)).toBe("s3")
   })
 
+  it("returns sessionID from session.vcpinfo", () => {
+    const event: SSEEvent = {
+      type: "session.vcpinfo",
+      properties: { sessionID: "s3-vcp", messageID: "m-vcp", content: "sync complete" },
+    }
+    expect(resolveEventSessionId(event, noLookup)).toBe("s3-vcp")
+  })
+
+  it("returns sessionID from session.vcp.toolrequest", () => {
+    const event: SSEEvent = {
+      type: "session.vcp.toolrequest",
+      properties: { sessionID: "s3-tool", messageID: "m-tool", tool: "search_memory", raw: "{}" },
+    }
+    expect(resolveEventSessionId(event, noLookup)).toBe("s3-tool")
+  })
+
+  it("returns sessionID from session.vcp.toolrequest.result", () => {
+    const event: SSEEvent = {
+      type: "session.vcp.toolrequest.result",
+      properties: {
+        sessionID: "s3-tool-result",
+        messageID: "m-tool-result",
+        tool: "search_memory",
+        resolvedTool: "search_memory",
+        status: "completed",
+        output: "ok",
+      },
+    }
+    expect(resolveEventSessionId(event, noLookup)).toBe("s3-tool-result")
+  })
+
   it("returns sessionID from todo.updated", () => {
     const event: SSEEvent = {
       type: "todo.updated",

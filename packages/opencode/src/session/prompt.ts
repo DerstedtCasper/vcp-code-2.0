@@ -32,6 +32,7 @@ import { ulid } from "ulid"
 import { spawn } from "child_process"
 import { Command } from "../command"
 import { $, fileURLToPath, pathToFileURL } from "bun"
+import { Config } from "../config/config"
 import { ConfigMarkdown } from "../config/markdown"
 import { SessionSummary } from "./summary"
 import { NamedError } from "@opencode-ai/util/error"
@@ -46,6 +47,7 @@ import { iife } from "@/util/iife"
 import { Shell } from "@/shell/shell"
 import { Truncate } from "@/tool/truncation"
 import { PlanFollowup } from "@/kilocode/plan-followup" // kilocode_change
+import { VcpMemoryRuntime } from "@/kilocode/memory-runtime"
 
 // @ts-ignore
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -173,6 +175,19 @@ export namespace SessionPrompt {
 
     const message = await createUserMessage(input)
     await Session.touch(input.sessionID)
+
+    const userTextForMemory = extractTextForMemory(message)
+    if (userTextForMemory) {
+      const isFirstUserMessageInSession = await isFirstUserMessage(input.sessionID)
+      VcpMemoryRuntime.enqueueWriteFromUserMessage({
+        sessionID: input.sessionID,
+        messageID: message.info.id,
+        directory: session.directory,
+        role: "user",
+        text: userTextForMemory,
+        isFirstUserMessageInSession,
+      })
+    }
 
     // this is backwards compatibility for allowing `tools` to be specified when
     // prompting
@@ -676,7 +691,21 @@ export namespace SessionPrompt {
       await Plugin.trigger("experimental.chat.messages.transform", {}, { messages: sessionMessages })
 
       // Build system prompt, adding structured output instruction if needed
+      const config = await Config.get()
       const system = [...(await SystemPrompt.environment(model, lastUser.editorContext)), ...(await InstructionPrompt.system())] // kilocode_change
+      const passiveMemoryPrompt = await VcpMemoryRuntime.buildPassiveSystemPrompt({
+        config,
+        sessionID,
+        directory: session.directory,
+        userMessageID: lastUser.id,
+        messages: sessionMessages,
+      }).catch((error) => {
+        log.error("build passive memory prompt failed", { sessionID, messageID: lastUser.id, error })
+        return undefined
+      })
+      if (passiveMemoryPrompt) {
+        system.push(passiveMemoryPrompt)
+      }
       const format = lastUser.format ?? { type: "text" }
       if (format.type === "json_schema") {
         system.push(STRUCTURED_OUTPUT_SYSTEM_PROMPT)
@@ -765,6 +794,29 @@ export namespace SessionPrompt {
       if (item.info.role === "user" && item.info.model) return item.info.model
     }
     return Provider.defaultModel()
+  }
+
+  function extractTextForMemory(message: MessageV2.WithParts): string {
+    const chunks: string[] = []
+    for (const part of message.parts) {
+      if (part.type === "text" && !part.synthetic && part.text.trim()) {
+        chunks.push(part.text.trim())
+      }
+      if (part.type === "reasoning" && part.text.trim()) {
+        chunks.push(part.text.trim())
+      }
+    }
+    return chunks.join("\n").replace(/\s+/g, " ").trim()
+  }
+
+  async function isFirstUserMessage(sessionID: string): Promise<boolean> {
+    let count = 0
+    for await (const item of MessageV2.stream(sessionID)) {
+      if (item.info.role !== "user") continue
+      count += 1
+      if (count > 1) return false
+    }
+    return count === 1
   }
 
   /** @internal Exported for testing */
@@ -1367,6 +1419,42 @@ export namespace SessionPrompt {
   async function insertReminders(input: { messages: MessageV2.WithParts[]; agent: Agent.Info; session: Session.Info }) {
     const userMessage = input.messages.findLast((msg) => msg.info.role === "user")
     if (!userMessage) return input.messages
+    const config = await Config.get()
+
+    const teamConfig = config.vcp?.agentTeam
+    const teamEnabled = teamConfig?.enabled ?? false
+    if (teamEnabled && (input.agent.name === "orchestrator" || input.agent.name === "agent_team")) {
+      const marker = "<agent-team-policy>"
+      const hasPolicy = userMessage.parts.some(
+        (part) => part.type === "text" && part.synthetic && part.text.includes(marker),
+      )
+      if (!hasPolicy) {
+        const maxParallel = teamConfig?.maxParallel ?? 3
+        const waveStrategy = teamConfig?.waveStrategy ?? "auto"
+        const requireFileSeparation = teamConfig?.requireFileSeparation ?? true
+        const handoffFormat = teamConfig?.handoffFormat ?? "summary"
+        userMessage.parts.push({
+          id: Identifier.ascending("part"),
+          messageID: userMessage.info.id,
+          sessionID: userMessage.info.sessionID,
+          type: "text",
+          synthetic: true,
+          text: `<agent-team-policy>
+Agent Team policy is enabled for this task.
+- maxParallelPerWave: ${maxParallel}
+- waveStrategy: ${waveStrategy}
+- requireFileSeparationBeforeParallel: ${requireFileSeparation ? "yes" : "no"}
+- handoffFormat: ${handoffFormat}
+
+Execution contract:
+1. Decompose work into waves.
+2. Run subtasks in parallel only when their touched files do not overlap.
+3. Use task tool metadata when available: team_id, wave_id, handoff.
+4. After each wave, synthesize blockers, risks, and next wave plan.
+</agent-team-policy>`,
+        })
+      }
+    }
 
     // Original logic when experimental plan mode is disabled
     if (!Flag.KILO_EXPERIMENTAL_PLAN_MODE) {

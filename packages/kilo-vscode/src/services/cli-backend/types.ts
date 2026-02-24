@@ -74,6 +74,36 @@ export type SSEEvent =
   | { type: "session.updated"; properties: { info: SessionInfo } }
   | { type: "session.status"; properties: { sessionID: string; status: SessionStatusInfo } }
   | { type: "session.idle"; properties: { sessionID: string } }
+  | { type: "session.vcpinfo"; properties: { sessionID: string; messageID: string; content: string } }
+  | {
+      type: "session.vcp.toolrequest"
+      properties: { sessionID: string; messageID: string; tool: string; arguments?: unknown; raw: string }
+    }
+  | {
+      type: "session.vcp.toolrequest.result"
+      properties: {
+        sessionID: string
+        messageID: string
+        tool: string
+        resolvedTool?: string
+        status: "completed" | "error" | "skipped"
+        output?: string
+        error?: string
+      }
+    }
+  | {
+      type: "session.vcp.memory.refresh"
+      properties: {
+        sessionID: string
+        messageID: string
+        tool: string
+        resolvedTool?: string
+        status: "completed" | "error" | "skipped"
+        trigger: "tool_request_after"
+        profileWeight: number
+        folderWeight: number
+      }
+    }
   | { type: "message.updated"; properties: { info: MessageInfo } }
   | { type: "message.part.updated"; properties: { part: MessagePart; delta?: string } }
   | { type: "permission.asked"; properties: PermissionRequest }
@@ -124,6 +154,13 @@ export interface AgentInfo {
   native?: boolean
   hidden?: boolean
   color?: string
+}
+
+// Skill info from the CLI /skill endpoint
+export interface SkillInfo {
+  name: string
+  description: string
+  location: string
 }
 
 // Provider/model types from provider catalog
@@ -268,6 +305,15 @@ export interface ProviderConfig {
   api_key?: string
   base_url?: string
   models?: Record<string, unknown>
+  options?: {
+    apiKey?: string
+    baseURL?: string
+    modelsPath?: string
+    modelsURL?: string
+    enterpriseUrl?: string
+    setCacheKey?: boolean
+    timeout?: number | false
+  }
 }
 
 /** MCP server configuration (backend config shape) */
@@ -281,8 +327,11 @@ export interface McpServerConfig {
 
 /** Custom command configuration */
 export interface CommandConfig {
-  command: string
+  template: string
   description?: string
+  agent?: string
+  model?: string
+  subtask?: boolean
 }
 
 /** Skills configuration */
@@ -311,6 +360,104 @@ export interface ExperimentalConfig {
   mcp_timeout?: number
 }
 
+export interface KeybindsConfig {
+  terminal_suspend?: string
+  terminal_title_toggle?: string
+}
+
+export interface TuiConfig {
+  scroll_speed?: number
+  diff_style?: "auto" | "stacked"
+}
+
+export interface VcpContextFoldConfig {
+  enabled?: boolean
+  startMarker?: string
+  endMarker?: string
+  outputStyle?: "details" | "plain"
+}
+
+export interface VcpInfoConfig {
+  enabled?: boolean
+  startMarker?: string
+  endMarker?: string
+}
+
+export interface VcpHtmlConfig {
+  enabled?: boolean
+}
+
+export interface VcpToolRequestConfig {
+  enabled?: boolean
+  startMarker?: string
+  endMarker?: string
+  keepBlockInText?: boolean
+  bridgeMode?: "event" | "execute"
+  maxPerMessage?: number
+  allowTools?: string[]
+  denyTools?: string[]
+}
+
+export interface VcpAgentTeamConfig {
+  enabled?: boolean
+  maxParallel?: number
+  waveStrategy?: "auto" | "conservative" | "aggressive"
+  requireFileSeparation?: boolean
+  handoffFormat?: "summary" | "checklist"
+}
+
+export interface VcpMemoryPassiveConfig {
+  enabled?: boolean
+  includeProfile?: boolean
+  includeFolderDoc?: boolean
+  includeSessionSnippets?: boolean
+  topKAtomic?: number
+  topKSession?: number
+  maxChars?: number
+}
+
+export interface VcpMemoryWriterConfig {
+  enabled?: boolean
+  minChars?: number
+  maxAtomic?: number
+  maxPerMessage?: number
+  forceFirstMessage?: boolean
+  updateProfile?: boolean
+  updateFolderDoc?: boolean
+}
+
+export interface VcpMemoryRetrievalConfig {
+  enabled?: boolean
+  semanticWeight?: number
+  timeWeight?: number
+  defaultTopK?: number
+}
+
+export interface VcpMemoryRefreshConfig {
+  enabled?: boolean
+  afterToolCall?: boolean
+  profileWeight?: number
+  folderWeight?: number
+}
+
+export interface VcpMemoryConfig {
+  enabled?: boolean
+  passive?: VcpMemoryPassiveConfig
+  writer?: VcpMemoryWriterConfig
+  retrieval?: VcpMemoryRetrievalConfig
+  refresh?: VcpMemoryRefreshConfig
+}
+
+export interface VcpConfig {
+  enabled?: boolean
+  contextFold?: VcpContextFoldConfig
+  vcpInfo?: VcpInfoConfig
+  html?: VcpHtmlConfig
+  toolRequest?: VcpToolRequestConfig
+  agentTeam?: VcpAgentTeamConfig
+  memory?: VcpMemoryConfig
+}
+
 /** Full backend Config object (partial — all fields optional for PATCH) */
 export interface Config {
   permission?: PermissionConfig
@@ -335,6 +482,56 @@ export interface Config {
   tools?: Record<string, boolean>
   layout?: "auto" | "stretch"
   experimental?: ExperimentalConfig
+  keybinds?: KeybindsConfig
+  tui?: TuiConfig
+  vcp?: VcpConfig
+}
+
+export interface ConfigSnapshot {
+  config: Config
+  revision: number
+}
+
+export interface MemoryAtomicItem {
+  id: string
+  text: string
+  tags: string[]
+  scope: "user" | "folder"
+  role: "user" | "assistant"
+  folderID?: string
+  sessionID: string
+  messageID: string
+  createdAt: number
+  updatedAt: number
+}
+
+export interface MemoryFolderDoc {
+  folderID: string
+  summary: string
+  highlights: string[]
+  updatedAt: number
+}
+
+export interface MemoryProfile {
+  preferences: string[]
+  style: string[]
+  facts: string[]
+  updatedAt: number
+}
+
+export interface MemoryOverviewResponse {
+  atomicTotal: number
+  profile: MemoryProfile
+  folders: MemoryFolderDoc[]
+  recentAtomic: MemoryAtomicItem[]
+}
+
+export interface ConfigConflictPayload {
+  error: string
+  code: "config_conflict"
+  config: Config
+  revision: number
+  expectedRevision?: number
 }
 
 /** VS Code editor context sent alongside messages to the CLI backend */

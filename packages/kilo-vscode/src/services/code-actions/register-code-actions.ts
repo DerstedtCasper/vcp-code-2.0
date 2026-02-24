@@ -12,7 +12,7 @@ export function registerCodeActions(
   const target = () => (agentManager?.isActive() ? agentManager : provider)
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("kilo-code.new.explainCode", () => {
+    vscode.commands.registerCommand("vcp-code.new.explainCode", () => {
       const ctx = getEditorContext()
       if (!ctx) return
       const prompt = createPrompt("EXPLAIN", {
@@ -25,7 +25,7 @@ export function registerCodeActions(
       provider.postMessage({ type: "triggerTask", text: prompt })
     }),
 
-    vscode.commands.registerCommand("kilo-code.new.fixCode", () => {
+    vscode.commands.registerCommand("vcp-code.new.fixCode", () => {
       const ctx = getEditorContext()
       if (!ctx) return
       const prompt = createPrompt("FIX", {
@@ -39,7 +39,7 @@ export function registerCodeActions(
       provider.postMessage({ type: "triggerTask", text: prompt })
     }),
 
-    vscode.commands.registerCommand("kilo-code.new.improveCode", () => {
+    vscode.commands.registerCommand("vcp-code.new.improveCode", () => {
       const ctx = getEditorContext()
       if (!ctx) return
       const prompt = createPrompt("IMPROVE", {
@@ -52,7 +52,7 @@ export function registerCodeActions(
       provider.postMessage({ type: "triggerTask", text: prompt })
     }),
 
-    vscode.commands.registerCommand("kilo-code.new.addToContext", () => {
+    vscode.commands.registerCommand("vcp-code.new.addToContext", () => {
       const ctx = getEditorContext()
       if (!ctx) return
       const prompt = createPrompt("ADD_TO_CONTEXT", {
@@ -65,7 +65,7 @@ export function registerCodeActions(
       target().postMessage({ type: "action", action: "focusInput" })
     }),
 
-    vscode.commands.registerCommand("kilo-code.new.focusChatInput", () => {
+    vscode.commands.registerCommand("vcp-code.new.focusChatInput", () => {
       target().postMessage({ type: "action", action: "focusInput" })
     }),
   )

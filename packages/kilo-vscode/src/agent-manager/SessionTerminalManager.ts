@@ -23,7 +23,7 @@ export class SessionTerminalManager {
       }),
       vscode.window.onDidChangeActiveTerminal((terminal) => {
         const managed = terminal ? this.isManaged(terminal) : false
-        vscode.commands.executeCommand("setContext", "kilo-code.agentTerminalFocus", managed)
+        vscode.commands.executeCommand("setContext", "vcp-code.agentTerminalFocus", managed)
       }),
     )
   }
@@ -82,7 +82,7 @@ export class SessionTerminalManager {
   }
 
   dispose(): void {
-    vscode.commands.executeCommand("setContext", "kilo-code.agentTerminalFocus", false)
+    vscode.commands.executeCommand("setContext", "vcp-code.agentTerminalFocus", false)
     for (const entry of this.terminals.values()) entry.terminal.dispose()
     this.terminals.clear()
     for (const d of this.disposables) d.dispose()
@@ -98,7 +98,7 @@ export class SessionTerminalManager {
   private updateContextKey(): void {
     const active = vscode.window.activeTerminal
     const managed = active ? this.isManaged(active) : false
-    vscode.commands.executeCommand("setContext", "kilo-code.agentTerminalFocus", managed)
+    vscode.commands.executeCommand("setContext", "vcp-code.agentTerminalFocus", managed)
   }
 
   private showOrCreate(sessionId: string, cwd: string, name: string): void {

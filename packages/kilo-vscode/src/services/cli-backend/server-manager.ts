@@ -69,7 +69,7 @@ export class ServerManager {
           KILO_CLIENT: "vscode",
           KILOCODE_FEATURE: "vscode-extension", // kilocode_change - feature tracking
           KILO_TELEMETRY_LEVEL: vscode.env.isTelemetryEnabled ? "all" : "off",
-          KILO_APP_NAME: "kilo-code",
+          KILO_APP_NAME: "vcp-code",
           KILO_EDITOR_NAME: vscode.env.appName,
           KILO_PLATFORM: "vscode",
           KILO_MACHINE_ID: vscode.env.machineId,

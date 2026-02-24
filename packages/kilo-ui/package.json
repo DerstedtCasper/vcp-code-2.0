@@ -1,6 +1,6 @@
 {
   "name": "@kilocode/kilo-ui",
-  "version": "7.0.27",
+  "version": "7.0.29",
   "type": "module",
   "license": "MIT",
   "exports": {
@@ -100,3 +100,4 @@
     "@kobalte/core": "0.13.11"
   }
 }
+

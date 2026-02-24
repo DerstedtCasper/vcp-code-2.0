@@ -16,6 +16,18 @@ import { SessionCompaction } from "./compaction"
 import { PermissionNext } from "@/permission/next"
 import { Question } from "@/question"
 import { Telemetry } from "@kilocode/kilo-telemetry" // kilocode_change
+import { VcpContentCompatibility } from "@/kilocode/vcp-content"
+import { ToolRegistry } from "@/tool/registry"
+import type { Tool } from "@/tool/tool"
+import { ulid } from "ulid"
+import {
+  buildToolCandidates,
+  deriveSkillDispatchName,
+  isToolAllowed,
+  limitToolRequests,
+  normalizeToolName,
+  resolveBridgeMode,
+} from "@/kilocode/vcp-tool-request"
 
 export namespace SessionProcessor {
   const DOOM_LOOP_THRESHOLD = 3
@@ -36,6 +48,256 @@ export namespace SessionProcessor {
     let attempt = 0
     let needsCompaction = false
     let stepStart = 0 // kilocode_change
+    let cachedBridgeTools: Awaited<ReturnType<typeof ToolRegistry.tools>> | undefined
+
+    function coerceToolRequestArgs(toolID: string, args: unknown): Record<string, unknown> {
+      if (args && typeof args === "object" && !Array.isArray(args)) {
+        return args as Record<string, unknown>
+      }
+      if (toolID === "bash" && typeof args === "string") {
+        return { command: args }
+      }
+      if (toolID === "read" && typeof args === "string") {
+        return { filePath: args }
+      }
+      if (toolID === "glob" && typeof args === "string") {
+        return { pattern: args }
+      }
+      if (toolID === "grep" && typeof args === "string") {
+        return { pattern: args }
+      }
+      if (toolID === "websearch" && typeof args === "string") {
+        return { query: args }
+      }
+      if (toolID === "codesearch" && typeof args === "string") {
+        return { query: args }
+      }
+      return {}
+    }
+
+    async function executeVcpToolRequests(inputRequests: { tool: string; arguments?: unknown; raw: string }[]) {
+      if (inputRequests.length === 0) return
+
+      try {
+        const runtimeConfig = await Config.get()
+        const policy = runtimeConfig.vcp?.toolRequest
+        const memoryRefresh = runtimeConfig.vcp?.memory?.refresh
+        const shouldPublishMemoryRefresh = memoryRefresh?.enabled === true && memoryRefresh.afterToolCall === true
+        const profileWeight = memoryRefresh?.profileWeight ?? 1
+        const folderWeight = memoryRefresh?.folderWeight ?? 1
+        if (resolveBridgeMode(policy) !== "execute") return
+
+        const requests = limitToolRequests(inputRequests, policy?.maxPerMessage)
+        const skipped = inputRequests.slice(requests.length)
+        for (const item of skipped) {
+          Bus.publish(Session.Event.VCPToolRequestResult, {
+            sessionID: input.sessionID,
+            messageID: input.assistantMessage.id,
+            tool: item.tool,
+            status: "skipped",
+            error: "Skipped: reached maxPerMessage limit",
+          })
+        }
+
+        const sessionInfo = await Session.get(input.sessionID)
+        const agent = await Agent.get(input.assistantMessage.agent)
+        const messages = await Session.messages({ sessionID: input.sessionID, limit: 300 })
+        cachedBridgeTools =
+          cachedBridgeTools ??
+          (await ToolRegistry.tools({ modelID: input.model.api.id, providerID: input.model.providerID }, agent))
+
+        for (const request of requests) {
+          const candidates = buildToolCandidates(request.tool)
+          let match = cachedBridgeTools.find((item) => {
+            const normalizedID = normalizeToolName(item.id)
+            return candidates.includes(item.id) || candidates.includes(normalizedID)
+          })
+          const skillDispatchName = deriveSkillDispatchName(request.tool)
+          if (!match && skillDispatchName) {
+            match = cachedBridgeTools.find((item) => normalizeToolName(item.id) === "skill")
+          }
+          if (!match) {
+            Bus.publish(Session.Event.VCPToolRequestResult, {
+              sessionID: input.sessionID,
+              messageID: input.assistantMessage.id,
+              tool: request.tool,
+              status: "skipped",
+              error: "Skipped: no matching tool registered",
+            })
+            continue
+          }
+
+          const allow = isToolAllowed(match.id, policy)
+          if (!allow.allowed) {
+            Bus.publish(Session.Event.VCPToolRequestResult, {
+              sessionID: input.sessionID,
+              messageID: input.assistantMessage.id,
+              tool: request.tool,
+              resolvedTool: match.id,
+              status: "skipped",
+              error: `Skipped: ${allow.reason}`,
+            })
+            continue
+          }
+
+          const callID = ulid()
+          const initialInput = coerceToolRequestArgs(match.id, request.arguments)
+          if (normalizeToolName(match.id) === "skill" && skillDispatchName) {
+            if (typeof initialInput.name !== "string" || !initialInput.name.trim()) {
+              initialInput.name = skillDispatchName
+            }
+          }
+          let toolPart = (await Session.updatePart({
+            id: Identifier.ascending("part"),
+            messageID: input.assistantMessage.id,
+            sessionID: input.assistantMessage.sessionID,
+            type: "tool",
+            tool: match.id,
+            callID,
+            state: {
+              status: "running",
+              input: initialInput,
+              metadata: {
+                source: "vcp_tool_request",
+                requestedTool: request.tool,
+                raw: request.raw,
+              },
+              time: { start: Date.now() },
+            },
+          })) as MessageV2.ToolPart
+
+          const context: Tool.Context = {
+            sessionID: input.sessionID,
+            messageID: input.assistantMessage.id,
+            agent: input.assistantMessage.agent,
+            abort: input.abort,
+            callID,
+            extra: {
+              source: "vcp_tool_request",
+              requestedTool: request.tool,
+            },
+            messages,
+            async metadata(meta) {
+              if (toolPart.state.status !== "running") return
+              toolPart = (await Session.updatePart({
+                ...toolPart,
+                state: {
+                  ...toolPart.state,
+                  title: meta.title ?? toolPart.state.title,
+                  metadata: meta.metadata ?? toolPart.state.metadata,
+                },
+              })) as MessageV2.ToolPart
+            },
+            async ask(req) {
+              await PermissionNext.ask({
+                ...req,
+                sessionID: input.sessionID,
+                tool: { messageID: input.assistantMessage.id, callID },
+                ruleset: PermissionNext.merge(agent.permission, sessionInfo.permission ?? []),
+              })
+            },
+          }
+
+          try {
+            await Plugin.trigger(
+              "tool.execute.before",
+              {
+                tool: match.id,
+                sessionID: input.sessionID,
+                callID,
+              },
+              { args: initialInput },
+            )
+
+            const result = await match.execute(initialInput, context)
+
+            await Plugin.trigger(
+              "tool.execute.after",
+              {
+                tool: match.id,
+                sessionID: input.sessionID,
+                callID,
+                args: initialInput,
+              },
+              result,
+            )
+
+            toolPart = (await Session.updatePart({
+              ...toolPart,
+              state: {
+                status: "completed",
+                input: initialInput,
+                output: result.output,
+                title: result.title,
+                metadata: result.metadata,
+                time: {
+                  start: toolPart.state.status === "running" ? toolPart.state.time.start : Date.now(),
+                  end: Date.now(),
+                },
+                attachments: result.attachments,
+              },
+            })) as MessageV2.ToolPart
+
+            Bus.publish(Session.Event.VCPToolRequestResult, {
+              sessionID: input.sessionID,
+              messageID: input.assistantMessage.id,
+              tool: request.tool,
+              resolvedTool: match.id,
+              status: "completed",
+              output: result.output,
+            })
+            if (shouldPublishMemoryRefresh) {
+              Bus.publish(Session.Event.VCPMemoryRefresh, {
+                sessionID: input.sessionID,
+                messageID: input.assistantMessage.id,
+                tool: request.tool,
+                resolvedTool: match.id,
+                status: "completed",
+                trigger: "tool_request_after",
+                profileWeight,
+                folderWeight,
+              })
+            }
+          } catch (error: any) {
+            const message = error instanceof Error ? error.message : String(error)
+            await Session.updatePart({
+              ...toolPart,
+              state: {
+                status: "error",
+                input: initialInput,
+                error: message,
+                time: {
+                  start: toolPart.state.status === "running" ? toolPart.state.time.start : Date.now(),
+                  end: Date.now(),
+                },
+              },
+            })
+            Bus.publish(Session.Event.VCPToolRequestResult, {
+              sessionID: input.sessionID,
+              messageID: input.assistantMessage.id,
+              tool: request.tool,
+              resolvedTool: match.id,
+              status: "error",
+              error: message,
+            })
+            if (shouldPublishMemoryRefresh) {
+              Bus.publish(Session.Event.VCPMemoryRefresh, {
+                sessionID: input.sessionID,
+                messageID: input.assistantMessage.id,
+                tool: request.tool,
+                resolvedTool: match.id,
+                status: "error",
+                trigger: "tool_request_after",
+                profileWeight,
+                folderWeight,
+              })
+            }
+          }
+        }
+      } catch (error) {
+        log.error("vcp tool request bridge failed", { error })
+      }
+    }
 
     const result = {
       get message() {
@@ -47,7 +309,9 @@ export namespace SessionProcessor {
       async process(streamInput: LLM.StreamInput) {
         log.info("process")
         needsCompaction = false
-        const shouldBreak = (await Config.get()).experimental?.continue_loop_on_deny !== true
+        const runtimeConfig = await Config.get()
+        const shouldBreak = runtimeConfig.experimental?.continue_loop_on_deny !== true
+        const vcpCompatibility = runtimeConfig.vcp
         while (true) {
           try {
             let currentText: MessageV2.TextPart | undefined
@@ -339,6 +603,25 @@ export namespace SessionProcessor {
                 case "text-end":
                   if (currentText) {
                     currentText.text = currentText.text.trimEnd()
+                    const vcpProcessed = VcpContentCompatibility.process(currentText.text, vcpCompatibility)
+                    currentText.text = vcpProcessed.text
+                    for (const content of vcpProcessed.notifications) {
+                      Bus.publish(Session.Event.VCPInfo, {
+                        sessionID: input.sessionID,
+                        messageID: input.assistantMessage.id,
+                        content,
+                      })
+                    }
+                    for (const toolRequest of vcpProcessed.toolRequests) {
+                      Bus.publish(Session.Event.VCPToolRequest, {
+                        sessionID: input.sessionID,
+                        messageID: input.assistantMessage.id,
+                        tool: toolRequest.tool,
+                        arguments: toolRequest.arguments,
+                        raw: toolRequest.raw,
+                      })
+                    }
+                    await executeVcpToolRequests(vcpProcessed.toolRequests)
                     const textOutput = await Plugin.trigger(
                       "experimental.text.complete",
                       {

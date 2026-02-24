@@ -28,6 +28,14 @@ const normalizeKiloBaseURL = (baseURL: string | undefined, orgId: string | undef
   return `${trimmed}/api/openrouter`
 } // kilocode_change end
 
+const normalizeOptionalBaseURL = (baseURL: string | undefined): string | undefined => {
+  const raw = baseURL?.trim()
+  if (!raw) return undefined
+  return raw.replace(/\/+$/, "")
+}
+
+const ensureTrailingSlash = (value: string): string => (value.endsWith("/") ? value : `${value}/`)
+
 export namespace ModelsDev {
   const log = Log.create({ service: "models.dev" })
   const filepath = path.join(Global.Path.cache, "models.json")
@@ -122,6 +130,7 @@ export namespace ModelsDev {
     const result = await Data()
     // kilocode_change start
     const providers = result as Record<string, Provider>
+    const config = await Config.get()
 
     if (providers["kilo"]) {
       delete providers["kilo"]
@@ -129,7 +138,6 @@ export namespace ModelsDev {
 
     // Inject kilo provider with dynamic model fetching
     if (!providers["kilo"]) {
-      const config = await Config.get()
       const kiloOptions = config.provider?.kilo?.options
       // kilocode_change start - resolve org ID from auth (OAuth accountId) not just config
       const kiloAuth = await Auth.get("kilo")
@@ -144,19 +152,48 @@ export namespace ModelsDev {
       const defaultBaseURL = kiloOrgId
         ? `https://api.kilo.ai/api/organizations/${kiloOrgId}`
         : "https://api.kilo.ai/api/openrouter"
-      const providerBaseURL = normalizedBaseURL ?? defaultBaseURL
-      const ensureTrailingSlash = (value: string): string => (value.endsWith("/") ? value : `${value}/`)
       const kiloModels = await ModelCache.fetch("kilo", kiloFetchOptions).catch(() => ({}))
       providers["kilo"] = {
         id: "kilo",
         name: "Kilo Gateway",
         env: ["KILO_API_KEY"],
-        api: ensureTrailingSlash(KILO_OPENROUTER_BASE),
+        api: ensureTrailingSlash(normalizedBaseURL ?? defaultBaseURL ?? KILO_OPENROUTER_BASE),
         npm: "@kilocode/kilo-gateway",
         models: kiloModels,
       }
       if (Object.keys(kiloModels).length === 0) {
         ModelCache.refresh("kilo", kiloFetchOptions).catch(() => {})
+      }
+    }
+
+    if (!providers["vcptoolbox"]) {
+      const vcptoolboxOptions = config.provider?.vcptoolbox?.options
+      const vcptoolboxBaseURL = normalizeOptionalBaseURL(
+        vcptoolboxOptions?.baseURL ?? process.env.VCPTOOLBOX_BASE_URL ?? process.env.VCP_BASE_URL,
+      )
+      const vcptoolboxModelsPath =
+        vcptoolboxOptions?.modelsPath ?? process.env.VCPTOOLBOX_MODELS_PATH ?? process.env.VCP_MODELS_PATH
+      const vcptoolboxModelsURL =
+        vcptoolboxOptions?.modelsURL ?? process.env.VCPTOOLBOX_MODELS_URL ?? process.env.VCP_MODELS_URL
+
+      const vcptoolboxFetchOptions = {
+        ...(vcptoolboxBaseURL ? { baseURL: vcptoolboxBaseURL } : {}),
+        ...(vcptoolboxModelsPath ? { modelsPath: vcptoolboxModelsPath } : {}),
+        ...(vcptoolboxModelsURL ? { modelsURL: vcptoolboxModelsURL } : {}),
+      }
+      const vcptoolboxModels = await ModelCache.fetch("vcptoolbox", vcptoolboxFetchOptions).catch(() => ({}))
+
+      providers["vcptoolbox"] = {
+        id: "vcptoolbox",
+        name: "VCPToolBox",
+        env: ["VCPTOOLBOX_API_KEY", "VCP_API_KEY"],
+        api: vcptoolboxBaseURL ? ensureTrailingSlash(vcptoolboxBaseURL) : undefined,
+        npm: "@ai-sdk/openai-compatible",
+        models: vcptoolboxModels,
+      }
+
+      if (Object.keys(vcptoolboxModels).length === 0) {
+        ModelCache.refresh("vcptoolbox", vcptoolboxFetchOptions).catch(() => {})
       }
     }
 

@@ -3,28 +3,49 @@ import os from "os"
 import { Filesystem } from "../util/filesystem"
 
 export namespace KilocodePaths {
-  /**
-   * Get the platform-specific VSCode global storage path for Kilocode extension.
-   * - macOS: ~/Library/Application Support/Code/User/globalStorage/kilocode.kilo-code
-   * - Windows: %APPDATA%/Code/User/globalStorage/kilocode.kilo-code
-   * - Linux: ~/.config/Code/User/globalStorage/kilocode.kilo-code
-   */
-  export function vscodeGlobalStorage(): string {
+  const VSCODE_EXTENSION_IDS = ["vcpcode.vcp-code", "kilocode.kilo-code"] as const
+
+  function dedupePaths(paths: string[]): string[] {
+    const seen = new Set<string>()
+    const result: string[] = []
+
+    for (const value of paths) {
+      const key = process.platform === "win32" ? value.toLowerCase() : value
+      if (seen.has(key)) continue
+      seen.add(key)
+      result.push(value)
+    }
+
+    return result
+  }
+
+  function vscodeGlobalStorageRoot(): string {
     const home = os.homedir()
     switch (process.platform) {
       case "darwin":
-        return path.join(home, "Library", "Application Support", "Code", "User", "globalStorage", "kilocode.kilo-code")
+        return path.join(home, "Library", "Application Support", "Code", "User", "globalStorage")
       case "win32":
-        return path.join(
-          process.env.APPDATA || path.join(home, "AppData", "Roaming"),
-          "Code",
-          "User",
-          "globalStorage",
-          "kilocode.kilo-code",
-        )
+        return path.join(process.env.APPDATA || path.join(home, "AppData", "Roaming"), "Code", "User", "globalStorage")
       default:
-        return path.join(home, ".config", "Code", "User", "globalStorage", "kilocode.kilo-code")
+        return path.join(home, ".config", "Code", "User", "globalStorage")
     }
+  }
+
+  /**
+   * Get all platform-specific VSCode global storage paths for supported extension IDs.
+   * Ordered by preference: vcpcode.vcp-code, then kilocode.kilo-code.
+   */
+  export function vscodeGlobalStorages(): string[] {
+    const root = vscodeGlobalStorageRoot()
+    return dedupePaths(VSCODE_EXTENSION_IDS.map((id) => path.join(root, id)))
+  }
+
+  /**
+   * Get the preferred VSCode global storage path for compatibility callers.
+   * For full compatibility scanning, use `vscodeGlobalStorages()`.
+   */
+  export function vscodeGlobalStorage(): string {
+    return vscodeGlobalStorages()[0]
   }
 
   /** Global Kilocode directory in user home: ~/.kilocode */
@@ -77,13 +98,14 @@ export namespace KilocodePaths {
       }
 
       // 3. VSCode extension global storage (marketplace-installed skills)
-      const vscode = vscodeGlobalStorage()
-      const vscodeSkills = path.join(vscode, "skills")
-      if (await Filesystem.isDir(vscodeSkills)) {
-        directories.push(vscode) // Return parent, not skills/
+      for (const vscode of vscodeGlobalStorages()) {
+        const vscodeSkills = path.join(vscode, "skills")
+        if (await Filesystem.isDir(vscodeSkills)) {
+          directories.push(vscode) // Return parent, not skills/
+        }
       }
     }
 
-    return directories
+    return dedupePaths(directories)
   }
 }

@@ -5,6 +5,16 @@ import path from "path"
 import fs from "fs/promises"
 
 describe("KilocodePaths", () => {
+  describe("vscodeGlobalStorages", () => {
+    test("returns both vcpcode and kilocode storage paths in priority order", () => {
+      const paths = KilocodePaths.vscodeGlobalStorages()
+
+      expect(paths.length).toBeGreaterThanOrEqual(2)
+      expect(paths[0]).toEndWith(path.join("globalStorage", "vcpcode.vcp-code"))
+      expect(paths.some((p) => p.endsWith(path.join("globalStorage", "kilocode.kilo-code")))).toBe(true)
+    })
+  })
+
   describe("skillDirectories", () => {
     test("discovers skills from .kilocode/skills/", async () => {
       await using tmp = await tmpdir({
@@ -83,8 +93,9 @@ description: Nested skill
       })
 
       expect(result).toHaveLength(2)
-      expect(result.some((d) => d.includes("packages/nested"))).toBe(true)
-      expect(result.some((d) => !d.includes("packages/nested"))).toBe(true)
+      const nestedSegment = path.join("packages", "nested")
+      expect(result.some((d) => d.includes(nestedSegment))).toBe(true)
+      expect(result.some((d) => !d.includes(nestedSegment))).toBe(true)
     })
 
     test("handles .kilocode directory without skills subdirectory", async () => {

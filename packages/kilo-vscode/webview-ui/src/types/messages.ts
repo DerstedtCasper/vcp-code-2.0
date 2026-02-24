@@ -156,6 +156,12 @@ export interface AgentInfo {
   color?: string
 }
 
+export interface SkillInfo {
+  name: string
+  description: string
+  location: string
+}
+
 // Server info
 export interface ServerInfo {
   port: number
@@ -252,6 +258,15 @@ export interface ProviderConfig {
   api_key?: string
   base_url?: string
   models?: Record<string, unknown>
+  options?: {
+    apiKey?: string
+    baseURL?: string
+    modelsPath?: string
+    modelsURL?: string
+    enterpriseUrl?: string
+    setCacheKey?: boolean
+    timeout?: number | false
+  }
 }
 
 export interface McpConfig {
@@ -263,8 +278,11 @@ export interface McpConfig {
 }
 
 export interface CommandConfig {
-  command: string
+  template: string
   description?: string
+  agent?: string
+  model?: string
+  subtask?: boolean
 }
 
 export interface SkillsConfig {
@@ -287,6 +305,104 @@ export interface ExperimentalConfig {
   primary_tools?: string[]
   continue_loop_on_deny?: boolean
   mcp_timeout?: number
+}
+
+export interface KeybindsConfig {
+  terminal_suspend?: string
+  terminal_title_toggle?: string
+}
+
+export interface TuiConfig {
+  scroll_speed?: number
+  diff_style?: "auto" | "stacked"
+}
+
+export interface VcpContextFoldConfig {
+  enabled?: boolean
+  startMarker?: string
+  endMarker?: string
+  outputStyle?: "details" | "plain"
+}
+
+export interface VcpInfoConfig {
+  enabled?: boolean
+  startMarker?: string
+  endMarker?: string
+}
+
+export interface VcpHtmlConfig {
+  enabled?: boolean
+}
+
+export interface VcpToolRequestConfig {
+  enabled?: boolean
+  startMarker?: string
+  endMarker?: string
+  keepBlockInText?: boolean
+  bridgeMode?: "event" | "execute"
+  maxPerMessage?: number
+  allowTools?: string[]
+  denyTools?: string[]
+}
+
+export interface VcpAgentTeamConfig {
+  enabled?: boolean
+  maxParallel?: number
+  waveStrategy?: "auto" | "conservative" | "aggressive"
+  requireFileSeparation?: boolean
+  handoffFormat?: "summary" | "checklist"
+}
+
+export interface VcpMemoryPassiveConfig {
+  enabled?: boolean
+  includeProfile?: boolean
+  includeFolderDoc?: boolean
+  includeSessionSnippets?: boolean
+  topKAtomic?: number
+  topKSession?: number
+  maxChars?: number
+}
+
+export interface VcpMemoryWriterConfig {
+  enabled?: boolean
+  minChars?: number
+  maxAtomic?: number
+  maxPerMessage?: number
+  forceFirstMessage?: boolean
+  updateProfile?: boolean
+  updateFolderDoc?: boolean
+}
+
+export interface VcpMemoryRetrievalConfig {
+  enabled?: boolean
+  semanticWeight?: number
+  timeWeight?: number
+  defaultTopK?: number
+}
+
+export interface VcpMemoryRefreshConfig {
+  enabled?: boolean
+  afterToolCall?: boolean
+  profileWeight?: number
+  folderWeight?: number
+}
+
+export interface VcpMemoryConfig {
+  enabled?: boolean
+  passive?: VcpMemoryPassiveConfig
+  writer?: VcpMemoryWriterConfig
+  retrieval?: VcpMemoryRetrievalConfig
+  refresh?: VcpMemoryRefreshConfig
+}
+
+export interface VcpConfig {
+  enabled?: boolean
+  contextFold?: VcpContextFoldConfig
+  vcpInfo?: VcpInfoConfig
+  html?: VcpHtmlConfig
+  toolRequest?: VcpToolRequestConfig
+  agentTeam?: VcpAgentTeamConfig
+  memory?: VcpMemoryConfig
 }
 
 export interface Config {
@@ -312,6 +428,9 @@ export interface Config {
   tools?: Record<string, boolean>
   layout?: "auto" | "stretch"
   experimental?: ExperimentalConfig
+  keybinds?: KeybindsConfig
+  tui?: TuiConfig
+  vcp?: VcpConfig
 }
 
 // ============================================
@@ -441,7 +560,7 @@ export interface DeviceAuthCancelledMessage {
 
 export interface NavigateMessage {
   type: "navigate"
-  view: "newTask" | "marketplace" | "history" | "profile" | "settings"
+  view: "newTask" | "marketplace" | "history" | "profile" | "settings" | "vcp"
 }
 
 export interface ProvidersLoadedMessage {
@@ -456,6 +575,11 @@ export interface AgentsLoadedMessage {
   type: "agentsLoaded"
   agents: AgentInfo[]
   defaultAgent: string
+}
+
+export interface SkillsLoadedMessage {
+  type: "skillsLoaded"
+  skills: SkillInfo[]
 }
 
 export interface AutocompleteSettingsLoadedMessage {
@@ -509,11 +633,94 @@ export interface BrowserSettingsLoadedMessage {
 export interface ConfigLoadedMessage {
   type: "configLoaded"
   config: Config
+  revision?: number
 }
 
 export interface ConfigUpdatedMessage {
   type: "configUpdated"
   config: Config
+  revision?: number
+}
+
+export interface ConfigConflictMessage {
+  type: "configConflict"
+  error: string
+  code: "config_conflict"
+  config: Config
+  revision: number
+  expectedRevision?: number
+}
+
+export interface PromptQueueUpdatedMessage {
+  type: "promptQueueUpdated"
+  sessionID: string
+  items: PromptQueueItem[]
+}
+
+export interface MemoryAtomicItem {
+  id: string
+  text: string
+  tags: string[]
+  scope: "user" | "folder"
+  role: "user" | "assistant"
+  folderID?: string
+  sessionID: string
+  messageID: string
+  createdAt: number
+  updatedAt: number
+}
+
+export interface MemoryFolderDoc {
+  folderID: string
+  summary: string
+  highlights: string[]
+  updatedAt: number
+}
+
+export interface MemoryProfile {
+  preferences: string[]
+  style: string[]
+  facts: string[]
+  updatedAt: number
+}
+
+export interface MemoryOverviewMessage {
+  type: "memoryOverview"
+  requestID: string
+  data: {
+    atomicTotal: number
+    profile: MemoryProfile
+    folders: MemoryFolderDoc[]
+    recentAtomic: MemoryAtomicItem[]
+  }
+}
+
+export interface MemorySearchResultMessage {
+  type: "memorySearchResult"
+  requestID: string
+  items: Array<{
+    item: MemoryAtomicItem
+    score: number
+  }>
+}
+
+export interface MemoryAtomicUpdatedMessage {
+  type: "memoryAtomicUpdated"
+  requestID: string
+  ok: boolean
+  item?: MemoryAtomicItem
+}
+
+export interface MemoryAtomicDeletedMessage {
+  type: "memoryAtomicDeleted"
+  requestID: string
+  ok: boolean
+}
+
+export interface MemoryContextPreviewMessage {
+  type: "memoryContextPreview"
+  requestID: string
+  preview?: string
 }
 
 export interface NotificationSettingsLoadedMessage {
@@ -532,6 +739,45 @@ export interface NotificationsLoadedMessage {
   type: "notificationsLoaded"
   notifications: KilocodeNotification[]
   dismissedIds: string[]
+}
+
+export interface VcpInfoMessage {
+  type: "vcpInfo"
+  sessionID: string
+  messageID: string
+  content: string
+}
+
+export interface VcpToolRequestMessage {
+  type: "vcpToolRequest"
+  sessionID: string
+  messageID: string
+  tool: string
+  arguments?: unknown
+  raw: string
+}
+
+export interface VcpToolRequestResultMessage {
+  type: "vcpToolRequestResult"
+  sessionID: string
+  messageID: string
+  tool: string
+  resolvedTool?: string
+  status: "completed" | "error" | "skipped"
+  output?: string
+  error?: string
+}
+
+export interface VcpMemoryRefreshMessage {
+  type: "vcpMemoryRefresh"
+  sessionID: string
+  messageID: string
+  tool: string
+  resolvedTool?: string
+  status: "completed" | "error" | "skipped"
+  trigger: "tool_request_after"
+  profileWeight: number
+  folderWeight: number
 }
 
 // Agent Manager worktree session metadata
@@ -652,6 +898,7 @@ export type ExtensionMessage =
   | NavigateMessage
   | ProvidersLoadedMessage
   | AgentsLoadedMessage
+  | SkillsLoadedMessage
   | AutocompleteSettingsLoadedMessage
   | ChatCompletionResultMessage
   | FileSearchResultMessage
@@ -661,8 +908,19 @@ export type ExtensionMessage =
   | BrowserSettingsLoadedMessage
   | ConfigLoadedMessage
   | ConfigUpdatedMessage
+  | ConfigConflictMessage
+  | PromptQueueUpdatedMessage
+  | MemoryOverviewMessage
+  | MemorySearchResultMessage
+  | MemoryAtomicUpdatedMessage
+  | MemoryAtomicDeletedMessage
+  | MemoryContextPreviewMessage
   | NotificationSettingsLoadedMessage
   | NotificationsLoadedMessage
+  | VcpInfoMessage
+  | VcpToolRequestMessage
+  | VcpToolRequestResultMessage
+  | VcpMemoryRefreshMessage
   | AgentManagerSessionMetaMessage
   | AgentManagerRepoInfoMessage
   | AgentManagerWorktreeSetupMessage
@@ -684,6 +942,21 @@ export interface FileAttachment {
   url: string
 }
 
+export type BusyInsertMode = "guide" | "queue" | "interrupt"
+
+export interface PromptQueueItem {
+  id: string
+  text: string
+  files?: FileAttachment[]
+  policy: BusyInsertMode
+  priority: number
+  createdAt: string
+  providerID?: string
+  modelID?: string
+  agent?: string
+  variant?: string
+}
+
 export interface SendMessageRequest {
   type: "sendMessage"
   text: string
@@ -693,6 +966,7 @@ export interface SendMessageRequest {
   agent?: string
   variant?: string
   files?: FileAttachment[]
+  busyMode?: BusyInsertMode
 }
 
 export interface AbortRequest {
@@ -776,6 +1050,10 @@ export interface RequestAgentsMessage {
   type: "requestAgents"
 }
 
+export interface RequestSkillsMessage {
+  type: "requestSkills"
+}
+
 export interface SetLanguageRequest {
   type: "setLanguage"
   locale: string
@@ -843,9 +1121,80 @@ export interface RequestConfigMessage {
   type: "requestConfig"
 }
 
+export interface RequestPromptQueueMessage {
+  type: "requestPromptQueue"
+  sessionID: string
+}
+
+export interface EnqueuePromptMessage {
+  type: "enqueuePrompt"
+  sessionID: string
+  item: Omit<PromptQueueItem, "id" | "createdAt">
+}
+
+export interface DequeuePromptMessage {
+  type: "dequeuePrompt"
+  sessionID: string
+  itemID?: string
+}
+
+export interface ReorderPromptQueueMessage {
+  type: "reorderPromptQueue"
+  sessionID: string
+  itemIDs: string[]
+}
+
 export interface UpdateConfigMessage {
   type: "updateConfig"
   config: Partial<Config>
+  expectedRevision?: number
+}
+
+export interface RequestMemoryOverviewMessage {
+  type: "requestMemoryOverview"
+  requestID: string
+  limit?: number
+  folderID?: string
+}
+
+export interface SearchMemoryMessage {
+  type: "searchMemory"
+  requestID: string
+  query: string
+  topK?: number
+  scope?: "user" | "folder" | "both"
+  folderID?: string
+  tagsAny?: string[]
+  timeFrom?: string | number
+  timeTo?: string | number
+}
+
+export interface UpdateMemoryAtomicMessage {
+  type: "updateMemoryAtomic"
+  requestID: string
+  id: string
+  text?: string
+  tags?: string[]
+  scope?: "user" | "folder"
+  folderID?: string
+}
+
+export interface DeleteMemoryAtomicMessage {
+  type: "deleteMemoryAtomic"
+  requestID: string
+  id: string
+}
+
+export interface PreviewMemoryContextMessage {
+  type: "previewMemoryContext"
+  requestID: string
+  query: string
+  directory?: string
+  topKAtomic?: number
+  maxChars?: number
+  removeAtomicIDs?: string[]
+  pinAtomicIDs?: string[]
+  compress?: boolean
 }
 
 export interface RequestNotificationSettingsMessage {
@@ -990,6 +1339,7 @@ export type WebviewMessage =
   | RequestProvidersMessage
   | CompactRequest
   | RequestAgentsMessage
+  | RequestSkillsMessage
   | SetLanguageRequest
   | QuestionReplyRequest
   | QuestionRejectRequest
@@ -1003,7 +1353,16 @@ export type WebviewMessage =
   | UpdateSettingRequest
   | RequestBrowserSettingsMessage
   | RequestConfigMessage
+  | RequestPromptQueueMessage
+  | EnqueuePromptMessage
+  | DequeuePromptMessage
+  | ReorderPromptQueueMessage
   | UpdateConfigMessage
+  | RequestMemoryOverviewMessage
+  | SearchMemoryMessage
+  | UpdateMemoryAtomicMessage
+  | DeleteMemoryAtomicMessage
+  | PreviewMemoryContextMessage
   | RequestNotificationSettingsMessage
   | ResetAllSettingsRequest
   | SyncSessionRequest

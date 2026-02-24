@@ -1,0 +1,5 @@
+- Search conversation memory from session/project messages and VCP long-term memory bank.
+- Returns concise snippets with source + references (`source`, `sessionID`, `messageID`, `memoryID`) so follow-up actions are grounded.
+- Supports optional `topK`, `scope`, `role`, `tagsAny`, `folderId`, `timeFrom`, and `timeTo`.
+- Prefer this tool when the user references prior decisions/preferences, cross-session continuity, or a specific time range.
+- If the current message already includes enough context, avoid unnecessary memory search calls.

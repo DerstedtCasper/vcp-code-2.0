@@ -10,7 +10,14 @@ import { afterAll } from "bun:test"
 const dir = path.join(os.tmpdir(), "opencode-test-data-" + process.pid)
 await fs.mkdir(dir, { recursive: true })
 afterAll(() => {
-  fsSync.rmSync(dir, { recursive: true, force: true })
+  try {
+    fsSync.rmSync(dir, { recursive: true, force: true })
+  } catch (error: any) {
+    // Some Windows test runs keep handles briefly; do not fail suite on temp-dir cleanup.
+    if (error?.code !== "EBUSY" && error?.code !== "EPERM") {
+      throw error
+    }
+  }
 })
 
 process.env["XDG_DATA_HOME"] = path.join(dir, "share")

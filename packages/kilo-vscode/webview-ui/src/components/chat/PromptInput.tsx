@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PromptInput component
  * Text input with send/abort buttons, ghost-text autocomplete, and @ file mention support
  */
@@ -36,6 +36,7 @@ export const PromptInput: Component = () => {
 
   const [text, setText] = createSignal("")
   const [ghostText, setGhostText] = createSignal("")
+  const [showBusyActions, setShowBusyActions] = createSignal(false)
 
   let textareaRef: HTMLTextAreaElement | undefined
   let highlightRef: HTMLDivElement | undefined
@@ -43,7 +44,7 @@ export const PromptInput: Component = () => {
   let debounceTimer: ReturnType<typeof setTimeout> | undefined
   let requestCounter = 0
   // Save/restore input text when switching sessions.
-  // Uses `on()` to track only sessionKey — avoids re-running on every keystroke.
+  // Uses `on()` to track only sessionKey 鈥?avoids re-running on every keystroke.
   createEffect(
     on(sessionKey, (key, prev) => {
       if (prev !== undefined && prev !== key) {
@@ -59,6 +60,7 @@ export const PromptInput: Component = () => {
         textareaRef.style.height = `${Math.min(textareaRef.scrollHeight, 200)}px`
       }
       window.dispatchEvent(new Event("focusPrompt"))
+      if (key !== "__new__") session.requestPromptQueue()
     }),
   )
 
@@ -214,20 +216,25 @@ export const PromptInput: Component = () => {
     }
   }
 
-  const handleSend = () => {
+  const buildDraftPayload = () => {
     const message = text().trim()
     const imgs = imageAttach.images()
-    if ((!message && imgs.length === 0) || isBusy() || isDisabled()) return
-
+    if (!message && imgs.length === 0) return
     const mentionFiles = mention.parseFileAttachments(message)
     const imgFiles = imgs.map((img) => ({ mime: img.mime, url: img.dataUrl }))
     const allFiles = [...mentionFiles, ...imgFiles]
-
     const sel = session.selected()
     const attachments = allFiles.length > 0 ? allFiles : undefined
+    return {
+      message,
+      selection: sel,
+      attachments,
+      agent: session.selectedAgent(),
+      variant: session.currentVariant(),
+    }
+  }
 
-    session.sendMessage(message, sel?.providerID, sel?.modelID, attachments)
-
+  const resetDraft = () => {
     requestCounter++
     setText("")
     setGhostText("")
@@ -235,8 +242,53 @@ export const PromptInput: Component = () => {
     if (debounceTimer) clearTimeout(debounceTimer)
     mention.closeMention()
     drafts.delete(sessionKey())
-
     if (textareaRef) textareaRef.style.height = "auto"
+  }
+
+  const handleSend = () => {
+    const draft = buildDraftPayload()
+    if (!draft || isDisabled()) return
+    if (isBusy()) {
+      setShowBusyActions(true)
+      return
+    }
+    session.sendMessage(draft.message, draft.selection?.providerID, draft.selection?.modelID, draft.attachments)
+    resetDraft()
+  }
+
+  const handleBusySend = (mode: "guide" | "queue" | "interrupt") => {
+    const draft = buildDraftPayload()
+    if (!draft || isDisabled()) return
+    if (mode === "queue") {
+      session.enqueuePrompt({
+        text: draft.message,
+        files: draft.attachments,
+        policy: "queue",
+        priority: 0,
+        providerID: draft.selection?.providerID,
+        modelID: draft.selection?.modelID,
+        agent: draft.agent,
+        variant: draft.variant,
+      })
+      resetDraft()
+      setShowBusyActions(false)
+      return
+    }
+    session.sendMessage(draft.message, draft.selection?.providerID, draft.selection?.modelID, draft.attachments, mode)
+    resetDraft()
+    setShowBusyActions(false)
+  }
+
+  const reorderQueueItem = (fromIndex: number, toIndex: number) => {
+    const queue = session.promptQueue()
+    if (fromIndex < 0 || toIndex < 0 || fromIndex >= queue.length || toIndex >= queue.length || fromIndex === toIndex) {
+      return
+    }
+    const ids = queue.map((item) => item.id)
+    const [moved] = ids.splice(fromIndex, 1)
+    if (!moved) return
+    ids.splice(toIndex, 0, moved)
+    session.reorderPromptQueue(ids)
   }
 
   return (
@@ -285,7 +337,7 @@ export const PromptInput: Component = () => {
                   onClick={() => imageAttach.remove(img.id)}
                   aria-label="Remove image"
                 >
-                  ×
+                  脳
                 </button>
               </div>
             )}
@@ -322,6 +374,56 @@ export const PromptInput: Component = () => {
           />
         </div>
       </div>
+      <Show when={showBusyActions()}>
+        <div style={{ display: "flex", gap: "8px", "align-items": "center", "margin-top": "8px", "flex-wrap": "wrap" }}>
+          <Button size="small" variant="secondary" onClick={() => handleBusySend("guide")}>
+            绔嬪嵆鎻掑叆
+          </Button>
+          <Button size="small" variant="secondary" onClick={() => handleBusySend("queue")}>
+            鍔犲叆闃熷垪
+          </Button>
+          <Button size="small" variant="ghost" onClick={() => handleBusySend("interrupt")}>
+            涓柇骞跺彂閫?          </Button>
+          <Button size="small" variant="ghost" onClick={() => setShowBusyActions(false)}>
+            鍙栨秷
+          </Button>
+        </div>
+      </Show>
+      <Show when={session.promptQueue().length > 0}>
+        <div style={{ "margin-top": "8px", display: "grid", gap: "6px" }}>
+          <For each={session.promptQueue()}>
+            {(item, index) => (
+              <div style={{ display: "flex", "justify-content": "space-between", gap: "8px", "align-items": "center" }}>
+                <span style={{ "font-size": "11px", opacity: 0.85 }}>{item.text.slice(0, 60)}</span>
+                <div style={{ display: "flex", gap: "4px", "align-items": "center" }}>
+                  <Button size="small" variant="ghost" onClick={() => reorderQueueItem(index(), 0)} disabled={index() === 0}>
+                    Top
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="ghost"
+                    onClick={() => reorderQueueItem(index(), index() - 1)}
+                    disabled={index() === 0}
+                  >
+                    Up
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="ghost"
+                    onClick={() => reorderQueueItem(index(), index() + 1)}
+                    disabled={index() >= session.promptQueue().length - 1}
+                  >
+                    Down
+                  </Button>
+                  <Button size="small" variant="ghost" onClick={() => session.dequeuePrompt(item.id)}>
+                    Remove
+                  </Button>
+                </div>
+              </div>
+            )}
+          </For>
+        </div>
+      </Show>
       <div class="prompt-input-hint">
         <div class="prompt-input-hint-selectors">
           <ModeSwitcher />
@@ -329,24 +431,20 @@ export const PromptInput: Component = () => {
           <ThinkingSelector />
         </div>
         <div class="prompt-input-hint-actions">
-          <Show
-            when={isBusy()}
-            fallback={
-              <Tooltip value={language.t("prompt.action.send")} placement="top">
-                <Button
-                  variant="primary"
-                  size="small"
-                  onClick={handleSend}
-                  disabled={!canSend()}
-                  aria-label={language.t("prompt.action.send")}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M1.5 1.5L14.5 8L1.5 14.5V9L10 8L1.5 7V1.5Z" />
-                  </svg>
-                </Button>
-              </Tooltip>
-            }
-          >
+          <Tooltip value={language.t("prompt.action.send")} placement="top">
+            <Button
+              variant="primary"
+              size="small"
+              onClick={handleSend}
+              disabled={isDisabled() || (text().trim().length === 0 && imageAttach.images().length === 0)}
+              aria-label={language.t("prompt.action.send")}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M1.5 1.5L14.5 8L1.5 14.5V9L10 8L1.5 7V1.5Z" />
+              </svg>
+            </Button>
+          </Tooltip>
+          <Show when={isBusy()}>
             <Tooltip value={language.t("prompt.action.stop")} placement="top">
               <Button
                 variant="ghost"
@@ -365,3 +463,4 @@ export const PromptInput: Component = () => {
     </div>
   )
 }
+

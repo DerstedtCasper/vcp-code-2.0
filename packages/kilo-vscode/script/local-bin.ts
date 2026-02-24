@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { $ } from "bun"
 import { join, relative, dirname, basename } from "node:path"
-import { chmodSync, statSync, rmSync, readdirSync } from "node:fs"
+import { chmodSync, statSync, rmSync, readdirSync, mkdirSync, copyFileSync } from "node:fs"
 
 const forceRebuild = process.argv.includes("--force")
 
@@ -32,6 +32,33 @@ function log(msg: string) {
 function platformTag(): string {
   const os = process.platform === "win32" ? "windows" : process.platform
   return `cli-${os}-${process.arch}`
+}
+
+function fileExists(path: string | undefined | null): path is string {
+  if (!path) return false
+  try {
+    statSync(path)
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function resolveBunExecutable(): Promise<string | null> {
+  const candidates = [
+    process.execPath,
+    await Bun.which("bun"),
+    await Bun.which("bun.exe"),
+    process.env.BUN,
+    process.env.BUN_EXE,
+  ]
+
+  for (const candidate of candidates) {
+    if (fileExists(candidate)) {
+      return candidate
+    }
+  }
+  return null
 }
 
 async function findKiloBinaryInOpencodeDist(): Promise<string | null> {
@@ -88,20 +115,27 @@ async function ensureBuiltBinary(): Promise<string> {
     `No prebuilt binary found under ${relative(kiloVscodeDir, join(opencodeDir, "dist"))} - attempting build via bun.`,
   )
 
-  const bunFile = Bun.file(await Bun.which("bun"))
-  if (!(await bunFile.exists())) {
+  const bunExecutable = await resolveBunExecutable()
+  if (!bunExecutable) {
     throw new Error(
       `Bun is required to build the CLI binary, but was not found on PATH. ` +
         `Install bun, or build the CLI separately in ${opencodeDir} and re-run.`,
     )
   }
+  log(`Using bun executable: ${bunExecutable}`)
 
-  // Ensure dependencies are installed before building.
-  log("Installing dependencies in opencode package...")
-  await $`bun install --frozen-lockfile`.cwd(opencodeDir)
-
-  // Build using the opencode package script.
-  await $`bun run build --single`.cwd(opencodeDir)
+  // Build current platform binary only. Dependency installation is handled by workspace setup.
+  log("Building CLI binary for current platform...")
+  try {
+    await $`${bunExecutable} run build --single --skip-install`.cwd(opencodeDir)
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error)
+    throw new Error(
+      `Failed to build CLI binary for current platform. ` +
+        `If dependencies are missing, run "bun install" at repository root and retry. ` +
+        `Original error: ${detail}`,
+    )
+  }
 
   const built = await findKiloBinaryInOpencodeDist()
   if (!built) {
@@ -125,12 +159,12 @@ async function main() {
 
   if ((await targetFile.exists()) && forceRebuild) {
     log(`Removing existing binary (--force).`)
-    rmSync(targetBinPath)
+    rmSync(targetBinPath, { force: true })
     // Also remove the prebuilt dist so ensureBuiltBinary() triggers a fresh build
     const distDir = join(opencodeDir, "dist")
     const distFile = Bun.file(distDir)
     if (await distFile.exists()) {
-      rmSync(distDir, { recursive: true })
+      rmSync(distDir, { recursive: true, force: true })
       log(`Removed ${relative(kiloVscodeDir, distDir)} to force rebuild.`)
     }
   }
@@ -141,9 +175,11 @@ async function main() {
   }
 
   const sourceBinPath = await ensureBuiltBinary()
-  await $`mkdir -p ${targetBinDir}`
-  await $`cp ${sourceBinPath} ${targetBinPath}`
-  chmodSync(targetBinPath, 0o755)
+  mkdirSync(targetBinDir, { recursive: true })
+  copyFileSync(sourceBinPath, targetBinPath)
+  if (process.platform !== "win32") {
+    chmodSync(targetBinPath, 0o755)
+  }
 
   log(`Copied CLI binary from ${relative(packagesDir, sourceBinPath)} -> ${relative(kiloVscodeDir, targetBinPath)}`)
 }

@@ -70,8 +70,10 @@ export namespace WorkflowsMigrator {
 
     if (!skipGlobalPaths) {
       // 1. VSCode extension global storage (primary location for global workflows)
-      const vscodeWorkflowsDir = path.join(KilocodePaths.vscodeGlobalStorage(), "workflows")
-      workflows.push(...(await loadWorkflowsFromDir(vscodeWorkflowsDir, "global")))
+      for (const storage of KilocodePaths.vscodeGlobalStorages()) {
+        const vscodeWorkflowsDir = path.join(storage, "workflows")
+        workflows.push(...(await loadWorkflowsFromDir(vscodeWorkflowsDir, "global")))
+      }
 
       // 2. Home directory ~/.kilocode/workflows (fallback/alternative location)
       workflows.push(...(await loadWorkflowsFromDir(GLOBAL_WORKFLOWS_DIR, "global")))

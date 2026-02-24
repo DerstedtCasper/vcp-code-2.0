@@ -14,6 +14,7 @@ import PROMPT_DEBUG from "./prompt/debug.txt"
 import PROMPT_EXPLORE from "./prompt/explore.txt"
 import PROMPT_ASK from "./prompt/ask.txt"
 import PROMPT_ORCHESTRATOR from "./prompt/orchestrator.txt"
+import PROMPT_AGENT_TEAM from "./prompt/agent-team.txt"
 import PROMPT_SUMMARY from "./prompt/summary.txt"
 import PROMPT_TITLE from "./prompt/title.txt"
 import { PermissionNext } from "@/permission/next"
@@ -140,6 +141,36 @@ export namespace Agent {
         name: "orchestrator",
         description: "Coordinate complex tasks by delegating to specialized agents in parallel.",
         prompt: PROMPT_ORCHESTRATOR,
+        options: {},
+        permission: PermissionNext.merge(
+          defaults,
+          PermissionNext.fromConfig({
+            "*": "deny",
+            read: "allow",
+            grep: "allow",
+            glob: "allow",
+            list: "allow",
+            bash: "allow",
+            question: "allow",
+            task: "allow",
+            todoread: "allow",
+            todowrite: "allow",
+            webfetch: "allow",
+            websearch: "allow",
+            codesearch: "allow",
+            external_directory: {
+              [Truncate.GLOB]: "allow",
+            },
+          }),
+          user,
+        ),
+        mode: "primary",
+        native: true,
+      },
+      agent_team: {
+        name: "agent_team",
+        description: "Coordinate multi-agent waves with explicit handoff and conflict-aware file ownership.",
+        prompt: PROMPT_AGENT_TEAM,
         options: {},
         permission: PermissionNext.merge(
           defaults,

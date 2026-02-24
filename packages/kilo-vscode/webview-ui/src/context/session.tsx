@@ -36,6 +36,8 @@ import type {
   AgentInfo,
   ExtensionMessage,
   FileAttachment,
+  PromptQueueItem,
+  BusyInsertMode,
 } from "../types/messages"
 import { removeSessionPermissions, upsertPermission } from "./permission-queue"
 import { computeStatus, calcTotalCost, calcContextUsage } from "./session-utils"
@@ -112,8 +114,19 @@ interface SessionContextValue {
   selectVariant: (value: string) => void
 
   // Actions
-  sendMessage: (text: string, providerID?: string, modelID?: string, files?: FileAttachment[]) => void
+  sendMessage: (
+    text: string,
+    providerID?: string,
+    modelID?: string,
+    files?: FileAttachment[],
+    busyMode?: BusyInsertMode,
+  ) => void
   abort: () => void
+  promptQueue: Accessor<PromptQueueItem[]>
+  requestPromptQueue: () => void
+  enqueuePrompt: (item: Omit<PromptQueueItem, "id" | "createdAt">) => void
+  dequeuePrompt: (itemID?: string) => void
+  reorderPromptQueue: (itemIDs: string[]) => void
   compact: () => void
   respondToPermission: (permissionId: string, response: "once" | "always" | "reject") => void
   replyToQuestion: (requestID: string, answers: string[][]) => void
@@ -163,6 +176,7 @@ export const SessionProvider: ParentComponent = (props) => {
 
   // Tracks question IDs that failed so the UI can reset sending state
   const [questionErrors, setQuestionErrors] = createSignal<Set<string>>(new Set())
+  const [promptQueueMap, setPromptQueueMap] = createStore<Record<string, PromptQueueItem[]>>({})
 
   // Pending model selection for before a session exists
   const [pendingModelSelection, setPendingModelSelection] = createSignal<ModelSelection | null>(null)
@@ -371,10 +385,32 @@ export const SessionProvider: ParentComponent = (props) => {
           handleSessionDeleted(message.sessionID)
           break
 
+        case "vcpInfo":
+          handleVcpInfo(message.messageID, message.content)
+          break
+
+        case "vcpToolRequest":
+          handleVcpToolRequest(message.messageID, message.tool, message.arguments)
+          break
+
+        case "vcpToolRequestResult":
+          handleVcpToolRequestResult(
+            message.messageID,
+            message.tool,
+            message.status,
+            message.output,
+            message.error,
+            message.resolvedTool,
+          )
+          break
+
         case "error":
           // Only clear loading if the error is for the current session
           // (or has no sessionID for backwards compatibility)
           if (!message.sessionID || message.sessionID === currentSessionID()) setLoading(false)
+          break
+        case "promptQueueUpdated":
+          setPromptQueueMap(message.sessionID, message.items)
           break
       }
     })
@@ -556,6 +592,70 @@ export const SessionProvider: ParentComponent = (props) => {
     setStore("todos", sessionID, items)
   }
 
+  function appendReasoningPart(messageID: string, text: string) {
+    const trimmed = text.trim()
+    if (!trimmed) return
+
+    const part: Part = {
+      id: `vcp-${crypto.randomUUID()}`,
+      type: "reasoning",
+      text: trimmed,
+      messageID,
+    }
+
+    setStore(
+      "parts",
+      produce((parts) => {
+        if (!parts[messageID]) {
+          parts[messageID] = []
+        }
+        parts[messageID].push(part)
+      }),
+    )
+  }
+
+  function handleVcpInfo(messageID: string, content: string) {
+    appendReasoningPart(messageID, `[VCPInfo] ${content}`)
+  }
+
+  function handleVcpToolRequest(messageID: string, tool: string, args: unknown) {
+    const argsText =
+      args === undefined
+        ? ""
+        : typeof args === "string"
+          ? args
+          : (() => {
+              try {
+                return JSON.stringify(args)
+              } catch {
+                return String(args)
+              }
+            })()
+    const suffix = argsText ? `\nargs: ${argsText}` : ""
+    appendReasoningPart(messageID, `[VCP TOOL_REQUEST] ${tool}${suffix}`)
+  }
+
+  function handleVcpToolRequestResult(
+    messageID: string,
+    tool: string,
+    status: "completed" | "error" | "skipped",
+    output?: string,
+    error?: string,
+    resolvedTool?: string,
+  ) {
+    const effectiveTool = resolvedTool ?? tool
+    if (status === "completed") {
+      const suffix = output ? `\noutput: ${output}` : ""
+      appendReasoningPart(messageID, `[VCP TOOL_RESULT] ${effectiveTool} completed${suffix}`)
+      return
+    }
+    if (status === "error") {
+      appendReasoningPart(messageID, `[VCP TOOL_RESULT] ${effectiveTool} error${error ? `\nerror: ${error}` : ""}`)
+      return
+    }
+    appendReasoningPart(messageID, `[VCP TOOL_RESULT] ${effectiveTool} skipped${error ? `\nreason: ${error}` : ""}`)
+  }
+
   function handleSessionsLoaded(loaded: SessionInfo[]) {
     batch(() => {
       for (const s of loaded) {
@@ -649,7 +749,13 @@ export const SessionProvider: ParentComponent = (props) => {
     }
   }
 
-  function sendMessage(text: string, providerID?: string, modelID?: string, files?: FileAttachment[]) {
+  function sendMessage(
+    text: string,
+    providerID?: string,
+    modelID?: string,
+    files?: FileAttachment[],
+    busyMode?: BusyInsertMode,
+  ) {
     if (!server.isConnected()) {
       console.warn("[Kilo New] Cannot send message: not connected")
       return
@@ -680,6 +786,7 @@ export const SessionProvider: ParentComponent = (props) => {
       agent,
       variant: currentVariant(),
       files,
+      busyMode,
     })
   }
 
@@ -715,6 +822,35 @@ export const SessionProvider: ParentComponent = (props) => {
       providerID: sel?.providerID,
       modelID: sel?.modelID,
     })
+  }
+
+  const promptQueue = () => {
+    const id = currentSessionID()
+    return id ? (promptQueueMap[id] ?? []) : []
+  }
+
+  function requestPromptQueue() {
+    const sessionID = currentSessionID()
+    if (!sessionID) return
+    vscode.postMessage({ type: "requestPromptQueue", sessionID })
+  }
+
+  function enqueuePrompt(item: Omit<PromptQueueItem, "id" | "createdAt">) {
+    const sessionID = currentSessionID()
+    if (!sessionID) return
+    vscode.postMessage({ type: "enqueuePrompt", sessionID, item })
+  }
+
+  function dequeuePrompt(itemID?: string) {
+    const sessionID = currentSessionID()
+    if (!sessionID) return
+    vscode.postMessage({ type: "dequeuePrompt", sessionID, itemID })
+  }
+
+  function reorderPromptQueue(itemIDs: string[]) {
+    const sessionID = currentSessionID()
+    if (!sessionID) return
+    vscode.postMessage({ type: "reorderPromptQueue", sessionID, itemIDs })
   }
 
   function respondToPermission(permissionId: string, response: "once" | "always" | "reject") {
@@ -800,6 +936,7 @@ export const SessionProvider: ParentComponent = (props) => {
     setCurrentSessionID(id)
     setLoading(true)
     vscode.postMessage({ type: "loadMessages", sessionID: id })
+    vscode.postMessage({ type: "requestPromptQueue", sessionID: id })
   }
 
   function deleteSession(id: string) {
@@ -914,6 +1051,11 @@ export const SessionProvider: ParentComponent = (props) => {
     },
     allMessages,
     allParts,
+    promptQueue,
+    requestPromptQueue,
+    enqueuePrompt,
+    dequeuePrompt,
+    reorderPromptQueue,
     variantList,
     currentVariant,
     selectVariant,

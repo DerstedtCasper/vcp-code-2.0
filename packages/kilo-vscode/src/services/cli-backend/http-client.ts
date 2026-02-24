@@ -5,16 +5,31 @@ import type {
   MessageInfo,
   MessagePart,
   AgentInfo,
+  SkillInfo,
   ProfileData,
   ProviderAuthAuthorization,
   ProviderListResponse,
   McpStatus,
   McpConfig,
   Config,
+  ConfigConflictPayload,
+  ConfigSnapshot,
   KilocodeNotification,
   EditorContext,
+  MemoryOverviewResponse,
+  MemoryAtomicItem,
 } from "./types"
 import { extractHttpErrorMessage, parseSSEDataLine } from "./http-utils"
+
+export class ConfigConflictError extends Error {
+  readonly payload: ConfigConflictPayload
+
+  constructor(payload: ConfigConflictPayload) {
+    super(payload.error || "Config revision conflict")
+    this.name = "ConfigConflictError"
+    this.payload = payload
+  }
+}
 
 /**
  * HTTP Client for communicating with the CLI backend server.
@@ -183,6 +198,18 @@ export class HttpClient {
     return this.request<AgentInfo[]>("GET", "/agent", undefined, { directory })
   }
 
+  /**
+   * List all loaded skills from the CLI backend.
+   */
+  async listSkills(directory: string): Promise<SkillInfo[]> {
+    const skills = await this.request<Array<SkillInfo & { content?: string }>>("GET", "/skill", undefined, { directory })
+    return skills.map((skill) => ({
+      name: skill.name,
+      description: skill.description,
+      location: skill.location,
+    }))
+  }
+
   // ============================================
   // Config Methods
   // ============================================
@@ -194,14 +221,100 @@ export class HttpClient {
     return this.request<Config>("GET", "/config", undefined, { directory })
   }
 
+  async getGlobalConfigRevision(): Promise<number> {
+    const snapshot = await this.request<{ revision: number }>("GET", "/experimental/vcp/config/revision")
+    return snapshot.revision
+  }
+
   /**
    * Update backend configuration (partial merge).
    * Uses the global config endpoint so changes persist to the user's global
    * config file (matching the desktop app behaviour). The instance-scoped
    * PATCH /config writes to a project-local file that is not loaded on restart.
    */
-  async updateConfig(config: Partial<Config>): Promise<Config> {
-    return this.request<Config>("PATCH", "/global/config", config)
+  async updateConfig(config: Partial<Config>, expectedRevision?: number): Promise<ConfigSnapshot> {
+    const url = `${this.baseUrl}/global/config`
+    const headers: Record<string, string> = {
+      Authorization: this.authHeader,
+      "Content-Type": "application/json",
+    }
+    const body =
+      typeof expectedRevision === "number"
+        ? { config, expectedRevision }
+        : { config }
+    const response = await fetch(url, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(body),
+    })
+    const rawText = await response.text()
+    if (!response.ok) {
+      if (response.status === 409) {
+        const payload = JSON.parse(rawText) as ConfigConflictPayload
+        throw new ConfigConflictError(payload)
+      }
+      const errorMessage = extractHttpErrorMessage(response.statusText, rawText)
+      throw new Error(`HTTP ${response.status}: ${errorMessage}`)
+    }
+    if (rawText.trim().length === 0) {
+      throw new Error(`HTTP ${response.status}: Empty response body`)
+    }
+    const parsed = JSON.parse(rawText) as ConfigSnapshot | Config
+    if ("config" in parsed && "revision" in parsed) {
+      return parsed
+    }
+    return {
+      config: parsed,
+      revision: await this.getGlobalConfigRevision(),
+    }
+  }
+
+  async getMemoryOverview(input?: { limit?: number; folderID?: string }): Promise<MemoryOverviewResponse> {
+    const query = new URLSearchParams()
+    if (typeof input?.limit === "number") query.set("limit", String(input.limit))
+    if (input?.folderID) query.set("folderID", input.folderID)
+    const suffix = query.toString() ? `?${query.toString()}` : ""
+    return this.request<MemoryOverviewResponse>("GET", `/experimental/vcp/memory/overview${suffix}`)
+  }
+
+  async searchMemory(input: {
+    query: string
+    topK?: number
+    scope?: "user" | "folder" | "both"
+    folderID?: string
+    tagsAny?: string[]
+    timeFrom?: string | number
+    timeTo?: string | number
+  }): Promise<Array<{ item: MemoryAtomicItem; score: number }>> {
+    return this.request<Array<{ item: MemoryAtomicItem; score: number }>>("POST", "/experimental/vcp/memory/search", input)
+  }
+
+  async updateMemoryAtomic(
+    id: string,
+    patch: {
+      text?: string
+      tags?: string[]
+      scope?: "user" | "folder"
+      folderID?: string
+    },
+  ): Promise<{ ok: boolean; item?: MemoryAtomicItem }> {
+    return this.request<{ ok: boolean; item?: MemoryAtomicItem }>("PATCH", `/experimental/vcp/memory/atomic/${id}`, patch)
+  }
+
+  async deleteMemoryAtomic(id: string): Promise<{ ok: boolean }> {
+    return this.request<{ ok: boolean }>("DELETE", `/experimental/vcp/memory/atomic/${id}`)
+  }
+
+  async previewMemoryContext(input: {
+    query: string
+    directory: string
+    topKAtomic?: number
+    maxChars?: number
+    removeAtomicIDs?: string[]
+    pinAtomicIDs?: string[]
+    compress?: boolean
+  }): Promise<{ preview?: string }> {
+    return this.request<{ preview?: string }>("POST", "/experimental/vcp/memory/preview", input)
   }
 
   // ============================================

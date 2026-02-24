@@ -1103,6 +1103,203 @@ export namespace Config {
     })
   export type Provider = z.infer<typeof Provider>
 
+  export const VCPCompatibility = z
+    .object({
+      enabled: z
+        .boolean()
+        .optional()
+        .describe("Enable VCP compatibility layer (context fold, VCPInfo parsing, HTML behavior)."),
+      contextFold: z
+        .object({
+          enabled: z.boolean().optional().describe("Enable parsing of VCP context fold blocks."),
+          startMarker: z.string().optional().describe("Start marker used to detect VCP context fold payload."),
+          endMarker: z.string().optional().describe("End marker used to detect VCP context fold payload."),
+          outputStyle: z
+            .enum(["details", "plain"])
+            .optional()
+            .describe("Render fold blocks as HTML details (default) or plain markdown sections."),
+        })
+        .optional(),
+      vcpInfo: z
+        .object({
+          enabled: z.boolean().optional().describe("Enable extraction of VCPInfo notification blocks."),
+          startMarker: z.string().optional().describe("Start marker used to detect VCPInfo payload."),
+          endMarker: z.string().optional().describe("End marker used to detect VCPInfo payload."),
+        })
+        .optional(),
+      html: z
+        .object({
+          enabled: z.boolean().optional().describe("When false, escapes raw HTML in assistant output."),
+        })
+        .optional(),
+      toolRequest: z
+        .object({
+          enabled: z.boolean().optional().describe("Enable parsing of VCP TOOL_REQUEST blocks."),
+          startMarker: z.string().optional().describe("Start marker used to detect TOOL_REQUEST payload."),
+          endMarker: z.string().optional().describe("End marker used to detect TOOL_REQUEST payload."),
+          keepBlockInText: z
+            .boolean()
+            .optional()
+            .describe("When true, keep TOOL_REQUEST blocks rendered in assistant output."),
+          bridgeMode: z
+            .enum(["event", "execute"])
+            .optional()
+            .describe("Bridge mode for TOOL_REQUEST. 'event' only emits events, 'execute' also runs mapped tools."),
+          maxPerMessage: z
+            .number()
+            .int()
+            .positive()
+            .optional()
+            .describe("Maximum TOOL_REQUEST blocks to bridge-execute per assistant message."),
+          allowTools: z
+            .array(z.string())
+            .optional()
+            .describe("Allowlist for bridge-executed tool IDs. Empty means no allowlist filter."),
+          denyTools: z
+            .array(z.string())
+            .optional()
+            .describe("Denylist for bridge-executed tool IDs. Takes precedence over allowTools."),
+        })
+        .optional(),
+      agentTeam: z
+        .object({
+          enabled: z.boolean().optional().describe("Enable agent-team collaboration strategy for orchestrator mode."),
+          maxParallel: z
+            .number()
+            .int()
+            .min(1)
+            .max(8)
+            .optional()
+            .describe("Maximum number of subtasks allowed in a single parallel wave."),
+          waveStrategy: z
+            .enum(["auto", "conservative", "aggressive"])
+            .optional()
+            .describe("Wave scheduling strategy. conservative prefers sequential waves."),
+          requireFileSeparation: z
+            .boolean()
+            .optional()
+            .describe("Require file-set separation before parallel execution."),
+          handoffFormat: z
+            .enum(["summary", "checklist"])
+            .optional()
+            .describe("Preferred handoff style for subtask reports."),
+        })
+        .optional(),
+      memory: z
+        .object({
+          enabled: z.boolean().optional().describe("Enable VCP long-term memory runtime."),
+          passive: z
+            .object({
+              enabled: z.boolean().optional().describe("Enable passive memory injection into system context."),
+              includeProfile: z.boolean().optional().describe("Inject user profile block into system context."),
+              includeFolderDoc: z.boolean().optional().describe("Inject folder-level memory document block."),
+              includeSessionSnippets: z.boolean().optional().describe("Inject top-K relevant snippets from current session."),
+              topKAtomic: z
+                .number()
+                .int()
+                .min(1)
+                .max(20)
+                .optional()
+                .describe("Top-K atomic memory items to inject."),
+              topKSession: z
+                .number()
+                .int()
+                .min(1)
+                .max(20)
+                .optional()
+                .describe("Top-K session snippets to inject."),
+              maxChars: z
+                .number()
+                .int()
+                .min(512)
+                .max(32768)
+                .optional()
+                .describe("Maximum output size for passive memory system block."),
+            })
+            .optional(),
+          writer: z
+            .object({
+              enabled: z.boolean().optional().describe("Enable async memory writer after each user message."),
+              minChars: z
+                .number()
+                .int()
+                .min(1)
+                .max(2000)
+                .optional()
+                .describe("Minimum user message length before memory write."),
+              maxAtomic: z
+                .number()
+                .int()
+                .min(10)
+                .max(5000)
+                .optional()
+                .describe("Maximum number of atomic memory items to retain."),
+              maxPerMessage: z
+                .number()
+                .int()
+                .min(1)
+                .max(5)
+                .optional()
+                .describe("Maximum atomic memories written per user message."),
+              forceFirstMessage: z
+                .boolean()
+                .optional()
+                .describe("Force at least one atomic memory on a session's first user message."),
+              updateProfile: z.boolean().optional().describe("Allow async writer to update user profile."),
+              updateFolderDoc: z.boolean().optional().describe("Allow async writer to update folder doc."),
+            })
+            .optional(),
+          retrieval: z
+            .object({
+              enabled: z.boolean().optional().describe("Enable retrieval parameter overrides for memory search."),
+              semanticWeight: z
+                .number()
+                .min(0)
+                .max(1)
+                .optional()
+                .describe("Semantic route weight for memory retrieval ranking."),
+              timeWeight: z
+                .number()
+                .min(0)
+                .max(1)
+                .optional()
+                .describe("Time route weight for memory retrieval ranking."),
+              defaultTopK: z
+                .number()
+                .int()
+                .min(1)
+                .max(50)
+                .optional()
+                .describe("Default top-K size for memory retrieval."),
+            })
+            .optional(),
+          refresh: z
+            .object({
+              enabled: z.boolean().optional().describe("Enable post-tool memory refresh policy."),
+              afterToolCall: z.boolean().optional().describe("Refresh memory after tool calls."),
+              profileWeight: z
+                .number()
+                .min(0)
+                .max(1)
+                .optional()
+                .describe("Relative refresh weight for user profile memory."),
+              folderWeight: z
+                .number()
+                .min(0)
+                .max(1)
+                .optional()
+                .describe("Relative refresh weight for folder document memory."),
+            })
+            .optional(),
+        })
+        .optional(),
+    })
+    .strict()
+    .meta({
+      ref: "VCPCompatibilityConfig",
+    })
+  export type VCPCompatibility = z.infer<typeof VCPCompatibility>
+
   export const Info = z
     .object({
       $schema: z.string().optional().describe("JSON schema reference for configuration validation"),
@@ -1175,6 +1372,7 @@ export namespace Config {
           build: Agent.optional(),
           debug: Agent.optional(), // kilocode_change
           orchestrator: Agent.optional(), // kilocode_change
+          agent_team: Agent.optional(),
           ask: Agent.optional(), // kilocode_change
           // subagent
           general: Agent.optional(),
@@ -1191,6 +1389,7 @@ export namespace Config {
         .record(z.string(), Provider)
         .optional()
         .describe("Custom provider configurations and model overrides"),
+      vcp: VCPCompatibility.optional().describe("VCP compatibility settings for protocol-specific output behavior"),
       mcp: z
         .record(
           z.string(),
@@ -1471,6 +1670,23 @@ export namespace Config {
     return global()
   }
 
+  async function globalRevision(filepath = globalConfigFile()) {
+    const stat = await fs.stat(filepath).catch((err) => {
+      if (err.code === "ENOENT") return undefined
+      throw new JsonError({ path: filepath }, { cause: err })
+    })
+    if (!stat) return 0
+    return Math.max(0, Math.floor(stat.mtimeMs))
+  }
+
+  export async function getGlobalWithRevision() {
+    const filepath = globalConfigFile()
+    return {
+      config: await getGlobal(),
+      revision: await globalRevision(filepath),
+    }
+  }
+
   export async function update(config: Info) {
     const filepath = path.join(Instance.directory, "config.json")
     const existing = await loadFile(filepath)
@@ -1581,6 +1797,32 @@ export namespace Config {
       })
 
     return next
+  }
+
+  export const ConflictError = NamedError.create(
+    "ConfigConflictError",
+    z.object({
+      expectedRevision: z.number().int().nonnegative().optional(),
+      currentRevision: z.number().int().nonnegative(),
+      config: Info,
+    }),
+  )
+
+  export async function updateGlobalWithRevision(input: { config: Info; expectedRevision?: number }) {
+    const filepath = globalConfigFile()
+    const current = await globalRevision(filepath)
+    if (typeof input.expectedRevision === "number" && input.expectedRevision !== current) {
+      throw new ConflictError({
+        expectedRevision: input.expectedRevision,
+        currentRevision: current,
+        config: await getGlobal(),
+      })
+    }
+    const config = await updateGlobal(input.config)
+    return {
+      config,
+      revision: await globalRevision(filepath),
+    }
   }
 
   export async function directories() {

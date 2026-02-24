@@ -327,6 +327,90 @@ describe("mapSSEEventToWebviewMessage", () => {
     expect(msg?.type).toBe("sessionUpdated")
   })
 
+  it("maps session.vcpinfo to vcpInfo", () => {
+    const event: SSEEvent = {
+      type: "session.vcpinfo",
+      properties: {
+        sessionID: "sess-2",
+        messageID: "msg-2",
+        content: "context updated",
+      },
+    }
+    const msg = mapSSEEventToWebviewMessage(event, "sess-2")
+    expect(msg?.type).toBe("vcpInfo")
+    if (msg?.type === "vcpInfo") {
+      expect(msg.sessionID).toBe("sess-2")
+      expect(msg.messageID).toBe("msg-2")
+      expect(msg.content).toBe("context updated")
+    }
+  })
+
+  it("maps session.vcp.toolrequest to vcpToolRequest", () => {
+    const event: SSEEvent = {
+      type: "session.vcp.toolrequest",
+      properties: {
+        sessionID: "sess-2",
+        messageID: "msg-3",
+        tool: "search_memory",
+        arguments: { query: "latest decisions" },
+        raw: "{\"tool\":\"search_memory\"}",
+      },
+    }
+    const msg = mapSSEEventToWebviewMessage(event, "sess-2")
+    expect(msg?.type).toBe("vcpToolRequest")
+    if (msg?.type === "vcpToolRequest") {
+      expect(msg.tool).toBe("search_memory")
+      expect(msg.arguments).toEqual({ query: "latest decisions" })
+      expect(msg.raw).toBe("{\"tool\":\"search_memory\"}")
+    }
+  })
+
+  it("maps session.vcp.toolrequest.result to vcpToolRequestResult", () => {
+    const event: SSEEvent = {
+      type: "session.vcp.toolrequest.result",
+      properties: {
+        sessionID: "sess-2",
+        messageID: "msg-4",
+        tool: "search_memory",
+        resolvedTool: "search_memory",
+        status: "completed",
+        output: "matched 3 memories",
+      },
+    }
+    const msg = mapSSEEventToWebviewMessage(event, "sess-2")
+    expect(msg?.type).toBe("vcpToolRequestResult")
+    if (msg?.type === "vcpToolRequestResult") {
+      expect(msg.tool).toBe("search_memory")
+      expect(msg.resolvedTool).toBe("search_memory")
+      expect(msg.status).toBe("completed")
+      expect(msg.output).toBe("matched 3 memories")
+    }
+  })
+
+  it("maps session.vcp.memory.refresh to vcpMemoryRefresh", () => {
+    const event: SSEEvent = {
+      type: "session.vcp.memory.refresh",
+      properties: {
+        sessionID: "sess-3",
+        messageID: "msg-5",
+        tool: "search_memory",
+        resolvedTool: "search_memory",
+        status: "completed",
+        trigger: "tool_request_after",
+        profileWeight: 0.7,
+        folderWeight: 0.3,
+      },
+    }
+    const msg = mapSSEEventToWebviewMessage(event, "sess-3")
+    expect(msg?.type).toBe("vcpMemoryRefresh")
+    if (msg?.type === "vcpMemoryRefresh") {
+      expect(msg.tool).toBe("search_memory")
+      expect(msg.trigger).toBe("tool_request_after")
+      expect(msg.profileWeight).toBe(0.7)
+      expect(msg.folderWeight).toBe(0.3)
+    }
+  })
+
   it("returns null for server.connected (no webview message)", () => {
     const event: SSEEvent = { type: "server.connected", properties: {} }
     expect(mapSSEEventToWebviewMessage(event, undefined)).toBeNull()

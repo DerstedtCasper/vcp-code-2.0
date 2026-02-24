@@ -21,6 +21,7 @@ import z from "zod"
 import { Plugin } from "../plugin"
 import { WebSearchTool } from "./websearch"
 import { CodeSearchTool } from "./codesearch"
+import { SearchMemoryTool } from "./search_memory"
 import { Flag } from "@/flag/flag"
 import { Log } from "@/util/log"
 import { LspTool } from "./lsp"
@@ -110,6 +111,7 @@ export namespace ToolRegistry {
       // TodoReadTool,
       WebSearchTool,
       CodeSearchTool,
+      SearchMemoryTool,
       SkillTool,
       ApplyPatchTool,
       ...(Flag.KILO_EXPERIMENTAL_LSP_TOOL ? [LspTool] : []),

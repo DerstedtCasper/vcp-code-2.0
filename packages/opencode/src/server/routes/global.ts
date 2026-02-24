@@ -17,6 +17,21 @@ export const GlobalDisposedEvent = BusEvent.define("global.disposed", z.object({
 
 export const GlobalRoutes = lazy(() =>
   new Hono()
+    .onError((error, c) => {
+      if (Config.ConflictError.isInstance(error)) {
+        return c.json(
+          {
+            error: "Config revision conflict",
+            code: "config_conflict",
+            config: error.data.config,
+            revision: error.data.currentRevision,
+            expectedRevision: error.data.expectedRevision,
+          },
+          409,
+        )
+      }
+      throw error
+    })
     .get(
       "/health",
       describeRoute({
@@ -137,17 +152,54 @@ export const GlobalRoutes = lazy(() =>
             description: "Successfully updated global config",
             content: {
               "application/json": {
-                schema: resolver(Config.Info),
+                schema: resolver(
+                  z.object({
+                    config: Config.Info,
+                    revision: z.number().int().nonnegative(),
+                  }),
+                ),
+              },
+            },
+          },
+          409: {
+            description: "Config revision conflict",
+            content: {
+              "application/json": {
+                schema: resolver(
+                  z.object({
+                    error: z.string(),
+                    code: z.literal("config_conflict"),
+                    config: Config.Info,
+                    revision: z.number().int().nonnegative(),
+                    expectedRevision: z.number().int().nonnegative().optional(),
+                  }),
+                ),
               },
             },
           },
           ...errors(400),
         },
       }),
-      validator("json", Config.Info),
+      validator(
+        "json",
+        z.union([
+          z.object({
+            config: Config.Info,
+            expectedRevision: z.number().int().nonnegative().optional(),
+          }),
+          Config.Info,
+        ]),
+      ),
       async (c) => {
-        const config = c.req.valid("json")
-        const next = await Config.updateGlobal(config)
+        const body = c.req.valid("json")
+        const next = await Config.updateGlobalWithRevision(
+          "config" in body
+            ? {
+                config: body.config,
+                expectedRevision: body.expectedRevision,
+              }
+            : { config: body },
+        )
         return c.json(next)
       },
     )

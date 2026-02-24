@@ -187,6 +187,49 @@ export namespace Session {
         error: MessageV2.Assistant.shape.error,
       }),
     ),
+    VCPInfo: BusEvent.define(
+      "session.vcpinfo",
+      z.object({
+        sessionID: z.string(),
+        messageID: z.string(),
+        content: z.string(),
+      }),
+    ),
+    VCPToolRequest: BusEvent.define(
+      "session.vcp.toolrequest",
+      z.object({
+        sessionID: z.string(),
+        messageID: z.string(),
+        tool: z.string(),
+        arguments: z.any().optional(),
+        raw: z.string(),
+      }),
+    ),
+    VCPToolRequestResult: BusEvent.define(
+      "session.vcp.toolrequest.result",
+      z.object({
+        sessionID: z.string(),
+        messageID: z.string(),
+        tool: z.string(),
+        resolvedTool: z.string().optional(),
+        status: z.enum(["completed", "error", "skipped"]),
+        output: z.string().optional(),
+        error: z.string().optional(),
+      }),
+    ),
+    VCPMemoryRefresh: BusEvent.define(
+      "session.vcp.memory.refresh",
+      z.object({
+        sessionID: z.string(),
+        messageID: z.string(),
+        tool: z.string(),
+        resolvedTool: z.string().optional(),
+        status: z.enum(["completed", "error", "skipped"]),
+        trigger: z.enum(["tool_request_after"]),
+        profileWeight: z.number(),
+        folderWeight: z.number(),
+      }),
+    ),
     // kilocode_change start
     TurnOpen: BusEvent.define(
       "session.turn.open",

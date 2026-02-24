@@ -109,6 +109,10 @@ const targets = singleFlag
     })
   : allTargets
 
+if (singleFlag && targets.length === 0) {
+  throw new Error(`No build targets matched current platform ${process.platform}/${process.arch}`)
+}
+
 const migrationDirs = (await fs.promises.readdir(path.join(dir, "migration"), { withFileTypes: true }))
   .filter((entry) => entry.isDirectory() && /^\d{4}\d{2}\d{2}\d{2}\d{2}\d{2}/.test(entry.name))
   .map((entry) => entry.name)
@@ -137,8 +141,12 @@ await $`rm -rf dist`
 
 const binaries: Record<string, string> = {}
 if (!skipInstall) {
-  await $`bun install --os="*" --cpu="*" @opentui/core@${pkg.dependencies["@opentui/core"]}`
-  await $`bun install --os="*" --cpu="*" @parcel/watcher@${pkg.dependencies["@parcel/watcher"]}`
+  if (singleFlag) {
+    console.log("Single-target build detected; skipping cross-platform dependency installation.")
+  } else {
+    await $`bun install --os="*" --cpu="*" @opentui/core@${pkg.dependencies["@opentui/core"]}`
+    await $`bun install --os="*" --cpu="*" @parcel/watcher@${pkg.dependencies["@parcel/watcher"]}`
+  }
 }
 for (const item of targets) {
   const name = [

@@ -10,7 +10,7 @@ import { registerCommitMessageService } from "./services/commit-message"
 import { registerCodeActions, registerTerminalActions, KiloCodeActionProvider } from "./services/code-actions"
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log("Kilo Code extension is now active")
+  console.log("VCP Code 2.0 extension is now active")
 
   const telemetry = TelemetryProxy.getInstance()
 
@@ -49,55 +49,76 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Register toolbar button command handlers
   context.subscriptions.push(
-    vscode.commands.registerCommand("kilo-code.new.plusButtonClicked", () => {
+    vscode.commands.registerCommand("vcp-code.new.plusButtonClicked", () => {
       provider.postMessage({ type: "action", action: "plusButtonClicked" })
     }),
-    vscode.commands.registerCommand("kilo-code.new.agentManagerOpen", () => {
+    vscode.commands.registerCommand("vcp-code.new.agentManagerOpen", () => {
       agentManagerProvider.openPanel()
     }),
-    vscode.commands.registerCommand("kilo-code.new.marketplaceButtonClicked", () => {
+    vscode.commands.registerCommand("vcp-code.new.marketplaceButtonClicked", () => {
       provider.postMessage({ type: "action", action: "marketplaceButtonClicked" })
     }),
-    vscode.commands.registerCommand("kilo-code.new.historyButtonClicked", () => {
+    vscode.commands.registerCommand("vcp-code.new.historyButtonClicked", () => {
       provider.postMessage({ type: "action", action: "historyButtonClicked" })
     }),
-    vscode.commands.registerCommand("kilo-code.new.profileButtonClicked", () => {
+    vscode.commands.registerCommand("vcp-code.new.profileButtonClicked", () => {
       provider.postMessage({ type: "action", action: "profileButtonClicked" })
     }),
-    vscode.commands.registerCommand("kilo-code.new.settingsButtonClicked", () => {
+    vscode.commands.registerCommand("vcp-code.new.vcpButtonClicked", () => {
+      provider.postMessage({ type: "action", action: "vcpButtonClicked" })
+    }),
+    vscode.commands.registerCommand("vcp-code.new.settingsButtonClicked", () => {
       provider.postMessage({ type: "action", action: "settingsButtonClicked" })
     }),
-    vscode.commands.registerCommand("kilo-code.new.openInTab", () => {
+    vscode.commands.registerCommand("vcp-code.new.promptsButtonClicked", () => {
+      provider.postMessage({ type: "action", action: "promptsButtonClicked" })
+    }),
+    vscode.commands.registerCommand("vcp-code.new.helpButtonClicked", () => {
+      void vscode.env.openExternal(vscode.Uri.parse("https://opencode.ai/docs"))
+    }),
+    vscode.commands.registerCommand("vcp-code.new.popoutButtonClicked", () => {
       return openKiloInNewTab(context, connectionService)
     }),
-    vscode.commands.registerCommand("kilo-code.new.agentManager.previousSession", () => {
+    vscode.commands.registerCommand("vcp-code.new.openInNewTab", () => {
+      return openKiloInNewTab(context, connectionService)
+    }),
+    vscode.commands.registerCommand("vcp-code.new.exportConfig", async () => {
+      await provider.exportGlobalConfig()
+    }),
+    vscode.commands.registerCommand("vcp-code.new.importConfig", async () => {
+      await provider.importGlobalConfig()
+    }),
+    vscode.commands.registerCommand("vcp-code.new.openInTab", () => {
+      return openKiloInNewTab(context, connectionService)
+    }),
+    vscode.commands.registerCommand("vcp-code.new.agentManager.previousSession", () => {
       agentManagerProvider.postMessage({ type: "action", action: "sessionPrevious" })
     }),
-    vscode.commands.registerCommand("kilo-code.new.agentManager.nextSession", () => {
+    vscode.commands.registerCommand("vcp-code.new.agentManager.nextSession", () => {
       agentManagerProvider.postMessage({ type: "action", action: "sessionNext" })
     }),
-    vscode.commands.registerCommand("kilo-code.new.agentManager.previousTab", () => {
+    vscode.commands.registerCommand("vcp-code.new.agentManager.previousTab", () => {
       agentManagerProvider.postMessage({ type: "action", action: "tabPrevious" })
     }),
-    vscode.commands.registerCommand("kilo-code.new.agentManager.nextTab", () => {
+    vscode.commands.registerCommand("vcp-code.new.agentManager.nextTab", () => {
       agentManagerProvider.postMessage({ type: "action", action: "tabNext" })
     }),
-    vscode.commands.registerCommand("kilo-code.new.agentManager.showTerminal", () => {
+    vscode.commands.registerCommand("vcp-code.new.agentManager.showTerminal", () => {
       agentManagerProvider.showTerminalForCurrentSession()
     }),
-    vscode.commands.registerCommand("kilo-code.new.agentManager.focusPanel", () => {
+    vscode.commands.registerCommand("vcp-code.new.agentManager.focusPanel", () => {
       agentManagerProvider.focusPanel()
     }),
-    vscode.commands.registerCommand("kilo-code.new.agentManager.newTab", () => {
+    vscode.commands.registerCommand("vcp-code.new.agentManager.newTab", () => {
       agentManagerProvider.postMessage({ type: "action", action: "newTab" })
     }),
-    vscode.commands.registerCommand("kilo-code.new.agentManager.closeTab", () => {
+    vscode.commands.registerCommand("vcp-code.new.agentManager.closeTab", () => {
       agentManagerProvider.postMessage({ type: "action", action: "closeTab" })
     }),
-    vscode.commands.registerCommand("kilo-code.new.agentManager.newWorktree", () => {
+    vscode.commands.registerCommand("vcp-code.new.agentManager.newWorktree", () => {
       agentManagerProvider.postMessage({ type: "action", action: "newWorktree" })
     }),
-    vscode.commands.registerCommand("kilo-code.new.agentManager.closeWorktree", () => {
+    vscode.commands.registerCommand("vcp-code.new.agentManager.closeWorktree", () => {
       agentManagerProvider.postMessage({ type: "action", action: "closeWorktree" })
     }),
   )
@@ -146,7 +167,7 @@ async function openKiloInNewTab(context: vscode.ExtensionContext, connectionServ
 
   const targetCol = hasVisibleEditors ? Math.max(lastCol + 1, 1) : vscode.ViewColumn.Two
 
-  const panel = vscode.window.createWebviewPanel("kilo-code.new.TabPanel", EXTENSION_DISPLAY_NAME, targetCol, {
+  const panel = vscode.window.createWebviewPanel("vcp-code.new.TabPanel", EXTENSION_DISPLAY_NAME, targetCol, {
     enableScripts: true,
     retainContextWhenHidden: true,
     localResourceRoots: [context.extensionUri],
@@ -167,7 +188,7 @@ async function openKiloInNewTab(context: vscode.ExtensionContext, connectionServ
 
   panel.onDidDispose(
     () => {
-      console.log("[Kilo New] Tab panel disposed")
+      console.log("[VCP Code 2.0] Tab panel disposed")
       tabProvider.dispose()
     },
     null,

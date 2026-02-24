@@ -22,7 +22,7 @@ export function registerCommitMessageService(
   context: vscode.ExtensionContext,
   connectionService: KiloConnectionService,
 ): vscode.Disposable[] {
-  const command = vscode.commands.registerCommand("kilo-code.new.generateCommitMessage", async () => {
+  const command = vscode.commands.registerCommand("vcp-code.new.generateCommitMessage", async () => {
     const extension = vscode.extensions.getExtension<GitExtensionExports>("vscode.git")
     if (!extension) {
       vscode.window.showErrorMessage("Git extension not found")

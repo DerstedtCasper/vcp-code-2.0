@@ -53,8 +53,7 @@ export class WorktreeStateManager {
   private tabOrder: Record<string, string[]> = {}
   private collapsed = false
   private readonly log: (msg: string) => void
-  private saving: Promise<void> | undefined
-  private pendingSave = false
+  private saveChain: Promise<void> = Promise.resolve()
 
   constructor(root: string, log: (msg: string) => void) {
     this.file = path.join(root, KILOCODE_DIR, STATE_FILE)
@@ -275,29 +274,14 @@ export class WorktreeStateManager {
 
   /** Wait for any in-flight save to complete without triggering a new one. */
   async flush(): Promise<void> {
-    if (this.saving) await this.saving
+    await this.saveChain
   }
 
   async save(): Promise<void> {
-    // Serialize concurrent saves — if a save is in-flight, queue one follow-up
-    if (this.saving) {
-      this.pendingSave = true
-      await this.saving
-      return
-    }
-
-    this.saving = this.writeToDisk()
-    try {
-      await this.saving
-    } finally {
-      this.saving = undefined
-    }
-
-    // If another save was requested while we were writing, flush it now
-    if (this.pendingSave) {
-      this.pendingSave = false
-      await this.save()
-    }
+    // Always chain saves so callers observe a monotonic, fully-drained queue.
+    // Also recover the chain from previous write failures.
+    this.saveChain = this.saveChain.catch(() => undefined).then(() => this.writeToDisk())
+    await this.saveChain
   }
 
   private async writeToDisk(): Promise<void> {
