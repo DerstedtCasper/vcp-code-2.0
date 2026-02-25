@@ -1,11 +1,11 @@
-﻿---
+---
 title: Tool Use Details
-description: Learn how VCP Code's tools automate your development workflow
+description: Learn how Kilo Code's tools automate your development workflow
 ---
 
 # Tool Use Overview
 
-VCP Code implements a sophisticated tool system that allows AI models to interact with your development environment in a controlled and secure manner. This document explains how tools work, when they're called, and how they're managed.
+Kilo Code implements a sophisticated tool system that allows AI models to interact with your development environment in a controlled and secure manner. This document explains how tools work, when they're called, and how they're managed.
 
 ## Core Concepts
 
@@ -36,7 +36,7 @@ Certain tools are accessible regardless of the current mode:
 
 ### Read Tools
 
-These tools help VCP Code understand your code and project:
+These tools help Kilo Code understand your code and project:
 
 - [read_file](/docs/automate/tools/read-file) - Examines the contents of files
 - [search_files](/docs/automate/tools/search-files) - Finds patterns across multiple files
@@ -45,7 +45,7 @@ These tools help VCP Code understand your code and project:
 
 ### Edit Tools
 
-These tools help VCP Code make changes to your code:
+These tools help Kilo Code make changes to your code:
 
 - [apply_diff](/docs/automate/tools/apply-diff) - Makes precise, surgical changes to your code
 - [delete_file](/docs/automate/tools/delete-file) - Removes files from your workspace
@@ -53,19 +53,19 @@ These tools help VCP Code make changes to your code:
 
 ### Browser Tools
 
-These tools help VCP Code interact with web applications:
+These tools help Kilo Code interact with web applications:
 
 - [browser_action](/docs/automate/tools/browser-action) - Automates browser interactions
 
 ### Command Tools
 
-These tools help VCP Code execute commands:
+These tools help Kilo Code execute commands:
 
 - [execute_command](/docs/automate/tools/execute-command) - Runs system commands and programs
 
 ### MCP Tools
 
-These tools help VCP Code connect with external services:
+These tools help Kilo Code connect with external services:
 
 - [use_mcp_tool](/docs/automate/tools/use-mcp-tool) - Uses specialized external tools
 - [access_mcp_resource](/docs/automate/tools/access-mcp-resource) - Accesses external data sources
@@ -261,4 +261,3 @@ Tools are made available based on the current mode:
    - Error notifications
    - Recovery suggestions
    - Manual intervention options
-

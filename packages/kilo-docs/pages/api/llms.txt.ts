@@ -1,4 +1,4 @@
-﻿import type { NextApiRequest, NextApiResponse } from "next"
+import type { NextApiRequest, NextApiResponse } from "next"
 import fs from "fs"
 import path from "path"
 import { Nav } from "../../lib/nav"
@@ -99,14 +99,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const sections: string[] = []
 
     // Add header
-    sections.push("# VCP Code Documentation")
+    sections.push("# Kilo Code Documentation")
     sections.push("")
     sections.push(
-      "This file contains the complete documentation for VCP Code, the leading open source agentic engineering platform.",
+      "This file contains the complete documentation for Kilo Code, the leading open source agentic engineering platform.",
     )
     sections.push("")
     const protocol = req.headers["x-forwarded-proto"] || "https"
-    const host = req.headers.host || "localhost:3000"
+    const host = req.headers.host || "kilo.ai"
     const baseUrl = `${protocol}://${host}`
     const titleMap = buildTitleMap(markdownFiles, pagesDir)
 
@@ -162,4 +162,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(500).json({ error: "Internal server error" })
   }
 }
-

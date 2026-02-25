@@ -1,13 +1,13 @@
-﻿---
+---
 title: "Deploy"
-description: "Deploy your applications with VCP Code"
+description: "Deploy your applications with Kilo Code"
 ---
 
 # Deploy
 
-VCP Deploy lets you ship **Next.js** and **static sites** directly from VCP Code, with:
+Kilo Deploy lets you ship **Next.js** and **static sites** directly from Kilo Code, with:
 
-- **One-click deployment** from the VCP Code dashboard
+- **One-click deployment** from the Kilo Code dashboard
 - **No manual configuration** — deployment settings are generated for you
 - **Deployment history** with logs and build details
 - **Automatic rebuilds** on every GitHub push
@@ -31,7 +31,7 @@ VCP Deploy lets you ship **Next.js** and **static sites** directly from VCP Code
 Enable the **GitHub Integration** before deploying:
 
 1. Go to **Integrations → GitHub**
-2. Click **Configure** and follow the prompts to connect GitHub to VCP Code
+2. Click **Configure** and follow the prompts to connect GitHub to Kilo Code
 
 ---
 
@@ -39,7 +39,7 @@ Enable the **GitHub Integration** before deploying:
 
 ### 1. Open the Deploy Tab
 
-- Navigate to your [Organization dashboard](https://github.com/DerstedtCasper/vcp-code-2.0/organizations) or [Profile](https://github.com/DerstedtCasper/vcp-code-2.0/profile)
+- Navigate to your [Organization dashboard](https://app.kilo.ai/organizations) or [Profile](https://app.kilo.ai/profile)
 - Select the **Deploy** tab
 
 ### 2. Select Your Project
@@ -52,7 +52,7 @@ Enable the **GitHub Integration** before deploying:
 
 ### 3. Click **Deploy**
 
-VCP Code will:
+Kilo Code will:
 
 - Build your project
 - Upload artifacts
@@ -83,13 +83,13 @@ From the deployment details, you can:
 
 ## Database Support
 
-VCP Deploy does **not** include built-in database hosting, but you can connect to any external database service.
+Kilo Deploy does **not** include built-in database hosting, but you can connect to any external database service.
 
 ---
 
 ## Environment Variables
 
-VCP Deploy supports Environment Variables and Secrets. Add the variable **key** and **value** during the **Create New Deployment** step, and toggle to mark as secrets.
+Kilo Deploy supports Environment Variables and Secrets. Add the variable **key** and **value** during the **Create New Deployment** step, and toggle to mark as secrets.
 
 ## Common Use Cases
 
@@ -98,5 +98,3 @@ Deploy is ideal for:
 1. **Quick prototypes** — instantly push an idea live
 2. **Staging environments** — share a preview environment
 3. **Rapid iteration** — push commits and get automatic rebuilds
-
-

@@ -18,7 +18,7 @@ export const GettingStartedNav: NavSection[] = [
       },
       {
         href: "/getting-started/using-kilo-for-free",
-        children: "Using VCP Code for Free",
+        children: "Using Kilo for Free",
       },
       {
         href: "/getting-started/byok",

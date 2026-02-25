@@ -1,11 +1,11 @@
-﻿---
+---
 title: "Skills"
-description: "Extend VCP Code capabilities with skills"
+description: "Extend Kilo Code capabilities with skills"
 ---
 
 # Skills
 
-VCP Code implements [Agent Skills](https://agentskills.io/), a lightweight, open format for extending AI agent capabilities with specialized knowledge and workflows.
+Kilo Code implements [Agent Skills](https://agentskills.io/), a lightweight, open format for extending AI agent capabilities with specialized knowledge and workflows.
 
 ## What Are Agent Skills?
 
@@ -20,7 +20,7 @@ This approach keeps agents fast while giving them access to more context on dema
 - **Extensible**: Skills can range in complexity from simple text instructions to bundled scripts, templates, and reference materials
 - **Shareable**: Skills are portable and can be easily shared between projects and developers
 
-## How Skills Work in VCP Code
+## How Skills Work in Kilo Code
 
 Skills can be:
 
@@ -29,7 +29,7 @@ Skills can be:
 
 The workflow is:
 
-1. **Discovery**: Skills are scanned from designated directories when VCP Code initializes. Only the metadata (name, description, and file path) is read at this stage—not the full instructions.
+1. **Discovery**: Skills are scanned from designated directories when Kilo Code initializes. Only the metadata (name, description, and file path) is read at this stage—not the full instructions.
 2. **Prompt inclusion**: When a mode is active, the metadata for relevant skills is included in the system prompt. The agent sees a list of available skills with their descriptions.
 3. **On-demand loading**: When the agent determines that a task matches a skill's description, it reads the full `SKILL.md` file into context and follows the instructions.
 
@@ -49,13 +49,13 @@ Skills are loaded from multiple locations, allowing both personal skills and pro
 
 ### Global Skills (User-Level)
 
-Global skills are located in the `.VCPcode` directory within your Home directory.
+Global skills are located in the `.kilocode` directory within your Home directory.
 
-- Mac and Linux: `~/.VCPcode/skills/`
-- Windows: `\Users\<yourUser>\.VCPcode\`
+- Mac and Linux: `~/.kilocode/skills/`
+- Windows: `\Users\<yourUser>\.kilocode\`
 
 ```
-~/.VCPcode/
+~/.kilocode/
 ├── skills/                    # Generic skills (all modes)
 │   ├── my-skill/
 │   │   └── SKILL.md
@@ -71,11 +71,11 @@ Global skills are located in the `.VCPcode` directory within your Home directory
 
 ### Project Skills (Workspace-Level)
 
-Located in `.VCPcode/skills/` within your project:
+Located in `.kilocode/skills/` within your project:
 
 ```
 your-project/
-└── .VCPcode/
+└── .kilocode/
     ├── skills/               # Generic skills for this project
     │   └── project-conventions/
     │       └── SKILL.md
@@ -90,17 +90,17 @@ To create a skill that only appears in a specific mode:
 
 ```bash
 # For Code mode only
-mkdir -p ~/.VCPcode/skills-code/typescript-patterns
+mkdir -p ~/.kilocode/skills-code/typescript-patterns
 
 # For Architect mode only
-mkdir -p ~/.VCPcode/skills-architect/microservices
+mkdir -p ~/.kilocode/skills-architect/microservices
 ```
 
 The directory naming pattern is `skills-{mode-slug}` where `{mode-slug}` matches the mode's identifier (e.g., `code`, `architect`, `ask`, `debug`).
 
 ## Priority and Overrides
 
-When multiple skills share the same name, VCP Code uses these priority rules:
+When multiple skills share the same name, Kilo Code uses these priority rules:
 
 1. **Project skills override global skills** - A project skill with the same name takes precedence
 2. **Mode-specific skills override generic skills** - A skill in `skills-code/` overrides the same skill in `skills/` when in Code mode
@@ -113,12 +113,12 @@ This allows you to:
 
 ## When Skills Are Loaded
 
-Skills are discovered when VCP Code initializes:
+Skills are discovered when Kilo Code initializes:
 
 - When VSCode starts
 - When you reload the VSCode window (`Cmd+Shift+P` → "Developer: Reload Window")
 
-Skills directories are monitored for changes to `SKILL.md` files. However, the most reliable way to pick up new skills is to reload VS or the VCP Code extension.
+Skills directories are monitored for changes to `SKILL.md` files. However, the most reliable way to pick up new skills is to reload VS or the Kilo Code extension.
 
 **Adding or modifying skills requires reloading VSCode for changes to take effect.**
 
@@ -183,7 +183,7 @@ metadata:
 
 ### Name Matching Rule
 
-In VCP Code, the `name` field **must match** the parent directory name:
+In Kilo Code, the `name` field **must match** the parent directory name:
 
 ```
 ✅ Correct:
@@ -216,7 +216,7 @@ These additional files can be referenced from your skill's instructions, allowin
 1. Create the skill directory:
 
    ```bash
-   mkdir -p ~/.VCPcode/skills/api-design
+   mkdir -p ~/.kilocode/skills/api-design
    ```
 
 2. Create `SKILL.md`:
@@ -262,14 +262,14 @@ These additional files can be referenced from your skill's instructions, allowin
 
 You can discover and install community-created skills through:
 
-- **VCP Marketplace** - Browse skills directly in the VCP Code extension via the Marketplace tab, or explore the [VCP Marketplace repository](https://github.com/DerstedtCasper/vcp-code-2.0) on GitHub
+- **Kilo Marketplace** - Browse skills directly in the Kilo Code extension via the Marketplace tab, or explore the [Kilo Marketplace repository](https://github.com/Kilo-Org/kilo-marketplace) on GitHub
 - [Agent Skills Specification](https://agentskills.io/home) - The open specification that skills follow, enabling interoperability across different AI agents
 
 ## Troubleshooting
 
 ### Skill Not Loading?
 
-1. **Check the Output panel**: Open `View` → `Output` → Select "VCP Code" from dropdown. Look for skill-related errors.
+1. **Check the Output panel**: Open `View` → `Output` → Select "Kilo Code" from dropdown. Look for skill-related errors.
 
 2. **Verify frontmatter**: Ensure `name` exactly matches the directory name and `description` is present.
 
@@ -305,13 +305,13 @@ There's currently no dedicated UI indicator showing "Skill X was activated." The
 
 ## Contributing to the Marketplace
 
-Have you created a skill that others might find useful? Share it with the community by contributing to the [VCP Marketplace](https://github.com/DerstedtCasper/vcp-code-2.0)!
+Have you created a skill that others might find useful? Share it with the community by contributing to the [Kilo Marketplace](https://github.com/Kilo-Org/kilo-marketplace)!
 
 ### How to Submit Your Skill
 
 1. **Prepare your skill**: Ensure your skill directory contains a valid `SKILL.md` file with proper frontmatter
 2. **Test thoroughly**: Verify your skill works correctly across different scenarios and modes
-3. **Fork the marketplace repository**: Visit [github.com/VCP-Org/VCP-marketplace](https://github.com/DerstedtCasper/vcp-code-2.0) and create a fork
+3. **Fork the marketplace repository**: Visit [github.com/Kilo-Org/kilo-marketplace](https://github.com/Kilo-Org/kilo-marketplace) and create a fork
 4. **Add your skill**: Place your skill directory in the appropriate location following the repository's structure
 5. **Submit a pull request**: Create a PR with a clear description of what your skill does and when it's useful
 
@@ -321,14 +321,12 @@ Have you created a skill that others might find useful? Share it with the commun
 - Include a clear `name` and `description` in the frontmatter
 - Document any dependencies or requirements (scripts, external tools, etc.)
 - If your skill includes bundled resources (scripts, templates), ensure they are well-documented
-- Follow the [contribution guidelines](https://github.com/DerstedtCasper/vcp-code-2.0/blob/main/CONTRIBUTING.md) in the marketplace repository
+- Follow the [contribution guidelines](https://github.com/Kilo-Org/kilo-marketplace/blob/main/CONTRIBUTING.md) in the marketplace repository
 
-For more details on contributing to VCP Code, see the [Contributing Guide](/docs/contributing).
+For more details on contributing to Kilo Code, see the [Contributing Guide](/docs/contributing).
 
 ## Related
 
 - [Custom Modes](/docs/customize/custom-modes) - Create custom modes that can use specific skills
 - [Custom Instructions](/docs/customize/custom-instructions) - Global instructions vs. skill-based instructions
 - [Custom Rules](/docs/customize/custom-rules) - Project-level rules complementing skills
-
-

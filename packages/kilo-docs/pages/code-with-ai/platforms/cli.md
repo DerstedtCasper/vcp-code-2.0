@@ -1,19 +1,19 @@
-﻿---
-title: "VCP CLI"
-description: "Using VCP Code from the command line"
+---
+title: "Kilo CLI"
+description: "Using Kilo Code from the command line"
 ---
 
 {% callout type="warning" title="Version Notice" %}
-This documentation applies only to VCP version 1.0 and later. Users running versions below 1.0 should upgrade before proceeding.
+This documentation applies only to Kilo version 1.0 and later. Users running versions below 1.0 should upgrade before proceeding.
 {% /callout %}
 
-# VCP CLI
+# Kilo CLI
 
 Orchestrate agents from your terminal. Plan, debug, and code fast with keyboard-first navigation on the command line.
 
-The VCP Code CLI uses the same underlying technology that powers the IDE extensions, so you can expect the same workflow to handle agentic coding tasks from start to finish.
+The Kilo Code CLI uses the same underlying technology that powers the IDE extensions, so you can expect the same workflow to handle agentic coding tasks from start to finish.
 
-**Source code & issues (VCP CLI 1.0):** [VCP-Org/VCPcode](https://github.com/DerstedtCasper/vcp-code-2.0) · [Report an issue](https://github.com/DerstedtCasper/vcp-code-2.0/issues)
+**Source code & issues (Kilo CLI 1.0):** [Kilo-Org/kilocode](https://github.com/Kilo-Org/kilocode) · [Report an issue](https://github.com/Kilo-Org/kilocode/issues)
 
 ## Getting Started
 
@@ -21,37 +21,37 @@ The VCP Code CLI uses the same underlying technology that powers the IDE extensi
 
 {% partial file="install-cli.md" /%}
 
-Change directory to where you want to work and run VCP:
+Change directory to where you want to work and run kilo:
 
 ```bash
 # Start the TUI
-VCP
+kilo
 
 # Check the version
-VCP --version
+kilo --version
 
 # Get help
-VCP --help
+kilo --help
 ```
 
 ### First-Time Setup with `/connect`
 
-After installation, run `VCP` and use the `/connect` command to add your first provider credentials. This is the interactive way to configure API keys for model providers.
+After installation, run `kilo` and use the `/connect` command to add your first provider credentials. This is the interactive way to configure API keys for model providers.
 
 ## Update
 
-Upgrade the VCP CLI:
+Upgrade the Kilo CLI:
 
-`VCP upgrade`
+`kilo upgrade`
 
 Or use npm:
 
-`npm update -g @VCPcode/cli`
+`npm update -g @kilocode/cli`
 
-## What you can do with VCP Code CLI
+## What you can do with Kilo Code CLI
 
 - **Plan and execute code changes without leaving your terminal.** Use your command line to make edits to your project without opening your IDE.
-- **Switch between hundreds of LLMs without constraints.** Other CLI tools only work with one model or curate opinionated lists. With VCP, you can switch models without booting up another tool.
+- **Switch between hundreds of LLMs without constraints.** Other CLI tools only work with one model or curate opinionated lists. With Kilo, you can switch models without booting up another tool.
 - **Choose the right mode for the task in your workflow.** Select between Architect, Ask, Debug, Orchestrator, or custom agent modes.
 - **Automate tasks.** Get AI assistance writing shell scripts for tasks like renaming all of the files in a folder or transforming sizes for a set of images.
 - **Extend capabilities with skills.** Add domain expertise and repeatable workflows through [Agent Skills](#skills).
@@ -62,25 +62,25 @@ Or use npm:
 
 | Command                   | Description                                |
 | ------------------------- | ------------------------------------------ |
-| `VCP [project]`          | Start the TUI (Terminal User Interface)    |
-| `VCP run [message..]`    | Run with a message (non-interactive mode)  |
-| `VCP attach <url>`       | Attach to a running VCP server            |
-| `VCP serve`              | Start a headless server                    |
-| `VCP web`                | Start server and open web interface        |
-| `VCP auth`               | Manage credentials (login, logout, list)   |
-| `VCP agent`              | Manage agents (create, list)               |
-| `VCP mcp`                | Manage MCP servers (list, add, auth)       |
-| `VCP models [provider]`  | List available models                      |
-| `VCP stats`              | Show token usage and cost statistics       |
-| `VCP session`            | Manage sessions (list)                     |
-| `VCP export [sessionID]` | Export session data as JSON                |
-| `VCP import <file>`      | Import session data from JSON file or URL  |
-| `VCP upgrade [target]`   | Upgrade VCP to latest or specific version |
-| `VCP uninstall`          | Uninstall VCP and remove related files    |
-| `VCP pr <number>`        | Fetch and checkout a GitHub PR branch      |
-| `VCP github`             | Manage GitHub agent (install, run)         |
-| `VCP debug`              | Debugging and troubleshooting tools        |
-| `VCP completion`         | Generate shell completion script           |
+| `kilo [project]`          | Start the TUI (Terminal User Interface)    |
+| `kilo run [message..]`    | Run with a message (non-interactive mode)  |
+| `kilo attach <url>`       | Attach to a running kilo server            |
+| `kilo serve`              | Start a headless server                    |
+| `kilo web`                | Start server and open web interface        |
+| `kilo auth`               | Manage credentials (login, logout, list)   |
+| `kilo agent`              | Manage agents (create, list)               |
+| `kilo mcp`                | Manage MCP servers (list, add, auth)       |
+| `kilo models [provider]`  | List available models                      |
+| `kilo stats`              | Show token usage and cost statistics       |
+| `kilo session`            | Manage sessions (list)                     |
+| `kilo export [sessionID]` | Export session data as JSON                |
+| `kilo import <file>`      | Import session data from JSON file or URL  |
+| `kilo upgrade [target]`   | Upgrade kilo to latest or specific version |
+| `kilo uninstall`          | Uninstall kilo and remove related files    |
+| `kilo pr <number>`        | Fetch and checkout a GitHub PR branch      |
+| `kilo github`             | Manage GitHub agent (install, run)         |
+| `kilo debug`              | Debugging and troubleshooting tools        |
+| `kilo completion`         | Generate shell completion script           |
 
 ### Global Options
 
@@ -136,12 +136,12 @@ Or use npm:
 | `/editor` | -             | Open external editor |
 | `/exit`   | `/quit`, `/q` | Exit the app         |
 
-#### VCP Gateway Commands (when connected)
+#### Kilo Gateway Commands (when connected)
 
 | Command    | Aliases                  | Description                       |
 | ---------- | ------------------------ | --------------------------------- |
-| `/profile` | `/me`, `/whoami`         | View your VCP Gateway profile    |
-| `/teams`   | `/team`, `/org`, `/orgs` | Switch between VCP Gateway teams |
+| `/profile` | `/me`, `/whoami`         | View your Kilo Gateway profile    |
+| `/teams`   | `/team`, `/org`, `/orgs` | Switch between Kilo Gateway teams |
 
 #### Built-in Commands
 
@@ -167,8 +167,8 @@ Review your code locally before pushing — catch issues early without waiting f
 Configuration is managed through:
 
 - `/connect` command for provider setup (interactive)
-- Config files in **`~/.config/VCP/`**: the CLI (VCP CLI 1.0 from [VCP-Org/VCPcode](https://github.com/DerstedtCasper/vcp-code-2.0)) merges `config.json`, `opencode.json`, and `opencode.jsonc`. Use **`opencode.json`** (or `opencode.jsonc`) for provider, model, permission, and **MCP** settings. Restart the CLI after editing. See [Using MCP in the CLI](/docs/automate/mcp/using-in-cli) for MCP config format.
-- `VCP auth` for credential management
+- Config files in **`~/.config/kilo/`**: the CLI (Kilo CLI 1.0 from [Kilo-Org/kilocode](https://github.com/Kilo-Org/kilocode)) merges `config.json`, `opencode.json`, and `opencode.jsonc`. Use **`opencode.json`** (or `opencode.jsonc`) for provider, model, permission, and **MCP** settings. Restart the CLI after editing. See [Using MCP in the CLI](/docs/automate/mcp/using-in-cli) for MCP config format.
+- `kilo auth` for credential management
 
 ## Slash Commands
 
@@ -180,7 +180,7 @@ The CLI's interactive mode supports slash commands for common operations. The ma
 
 ## Permissions
 
-VCP Code uses the permission config to decide whether a given action should run automatically, prompt you, or be blocked.
+Kilo Code uses the permission config to decide whether a given action should run automatically, prompt you, or be blocked.
 
 ### Actions
 
@@ -196,7 +196,7 @@ You can set permissions globally (with `*`), and override specific tools.
 
 ```json
 {
-  "$schema": "https://VCP.ai/config.json",
+  "$schema": "https://kilo.ai/config.json",
   "permission": {
     "*": "ask",
     "bash": "allow",
@@ -209,7 +209,7 @@ You can also set all permissions at once:
 
 ```json
 {
-  "$schema": "https://VCP.ai/config.json",
+  "$schema": "https://kilo.ai/config.json",
   "permission": "allow"
 }
 ```
@@ -220,7 +220,7 @@ For most permissions, you can use an object to apply different actions based on 
 
 ```json
 {
-  "$schema": "https://github.com/DerstedtCasper/vcp-code-2.0/config.json",
+  "$schema": "https://app.kilo.ai/config.json",
   "permission": {
     "bash": {
       "*": "ask",
@@ -257,11 +257,11 @@ You can use `~` or `$HOME` at the start of a pattern to reference your home dire
 
 ### External Directories
 
-Use `external_directory` to allow tool calls that touch paths outside the working directory where VCP was started. This applies to any tool that takes a path as input (for example `read`, `edit`, `list`, `glob`, `grep`, and many bash commands).
+Use `external_directory` to allow tool calls that touch paths outside the working directory where Kilo was started. This applies to any tool that takes a path as input (for example `read`, `edit`, `list`, `glob`, `grep`, and many bash commands).
 
 ```json
 {
-  "$schema": "https://VCP.ai/config.json",
+  "$schema": "https://kilo.ai/config.json",
   "permission": {
     "external_directory": {
       "~/projects/personal/**": "allow"
@@ -274,7 +274,7 @@ Any directory allowed here inherits the same defaults as the current workspace. 
 
 ```json
 {
-  "$schema": "https://VCP.ai/config.json",
+  "$schema": "https://kilo.ai/config.json",
   "permission": {
     "external_directory": {
       "~/projects/personal/**": "allow"
@@ -290,13 +290,13 @@ Any directory allowed here inherits the same defaults as the current workspace. 
 
 ## Configuration
 
-The VCP CLI is a fork of [OpenCode](https://opencode.ai) and supports the same configuration options. The CLI you install with `npm install -g @VCPcode/cli` (VCP CLI 1.0) is built from [VCP-Org/VCPcode](https://github.com/DerstedtCasper/vcp-code-2.0). For comprehensive configuration documentation, see the [OpenCode Config documentation](https://opencode.ai/docs/config).
+The Kilo CLI is a fork of [OpenCode](https://opencode.ai) and supports the same configuration options. The CLI you install with `npm install -g @kilocode/cli` (Kilo CLI 1.0) is built from [Kilo-Org/kilocode](https://github.com/Kilo-Org/kilocode). For comprehensive configuration documentation, see the [OpenCode Config documentation](https://opencode.ai/docs/config).
 
-### Config File Location (VCP CLI 1.0)
+### Config File Location (Kilo CLI 1.0)
 
 | Scope       | Path                                                                                              |
 | ----------- | ------------------------------------------------------------------------------------------------- |
-| **Global**  | `~/.config/VCP/opencode.json` or `opencode.jsonc` (Windows: config dir may vary; same filenames) |
+| **Global**  | `~/.config/kilo/opencode.json` or `opencode.jsonc` (Windows: config dir may vary; same filenames) |
 | **Project** | `./opencode.json` or `./.opencode/` in project root                                               |
 
 Project-level configuration takes precedence over global settings.
@@ -305,7 +305,7 @@ Project-level configuration takes precedence over global settings.
 
 ```json
 {
-  "$schema": "https://github.com/DerstedtCasper/vcp-code-2.0/config.json",
+  "$schema": "https://app.kilo.ai/config.json",
   "model": "anthropic/claude-sonnet-4-20250514",
   "provider": {
     "anthropic": {
@@ -347,9 +347,9 @@ For full details on all configuration options including compaction, file watcher
 
 ## Interactive Mode
 
-Interactive mode is the default mode when running VCP Code without the `--auto` flag, designed to work interactively with a user through the console.
+Interactive mode is the default mode when running Kilo Code without the `--auto` flag, designed to work interactively with a user through the console.
 
-In interactive mode VCP Code will request approval for operations which have not been auto-approved, allowing the user to review and approve operations before they are executed, and optionally add them to the auto-approval list.
+In interactive mode Kilo Code will request approval for operations which have not been auto-approved, allowing the user to review and approve operations before they are executed, and optionally add them to the auto-approval list.
 
 ### Interactive Command Approval
 
@@ -374,11 +374,11 @@ This allows you to progressively build your auto-approval rules without manually
 
 ## Autonomous Mode (Non-Interactive)
 
-Autonomous mode allows VCP Code to run in automated environments like CI/CD pipelines without requiring user interaction.
+Autonomous mode allows Kilo Code to run in automated environments like CI/CD pipelines without requiring user interaction.
 
 ```bash
 # Run in autonomous mode with a message
-VCP run --auto "Implement feature X"
+kilo run --auto "Implement feature X"
 ```
 
 ### Autonomous Mode Behavior
@@ -412,9 +412,9 @@ This instructs the AI to proceed without user input.
 
 ```yaml
 # GitHub Actions example
-- name: Run VCP Code
+- name: Run Kilo Code
   run: |
-    VCP run "Implement the new feature" --auto
+    kilo run "Implement the new feature" --auto
 ```
 
 ## Session Continuation
@@ -423,8 +423,8 @@ Resume your last conversation from the current workspace using the `--continue` 
 
 ```bash
 # Resume the most recent session from this workspace
-VCP --continue
-VCP -c
+kilo --continue
+kilo -c
 ```
 
 This feature:
@@ -439,13 +439,13 @@ This feature:
 
 ```bash
 # Start a session
-VCP
+kilo
 # > "Create a REST API"
 # ... work on the task ...
 # Exit with /exit
 
 # Later, resume the same session
-VCP --continue
+kilo --continue
 # Conversation history is restored, ready to continue
 ```
 
@@ -459,9 +459,9 @@ VCP --continue
 
 The CLI supports overriding config values with environment variables. The supported environment variables are:
 
-- `VCP_PROVIDER`: Override the active provider ID
-- For `VCPcode` provider: `VCPCODE_<FIELD_NAME>` (e.g., `VCPCODE_MODEL` → `VCPcodeModel`)
-- For other providers: `VCP_<FIELD_NAME>` (e.g., `VCP_API_KEY` → `apiKey`)
+- `KILO_PROVIDER`: Override the active provider ID
+- For `kilocode` provider: `KILOCODE_<FIELD_NAME>` (e.g., `KILOCODE_MODEL` → `kilocodeModel`)
+- For other providers: `KILO_<FIELD_NAME>` (e.g., `KILO_API_KEY` → `apiKey`)
 
 ## Switching into an Organization from the CLI
 
@@ -470,5 +470,3 @@ Use the `/teams` command to see a list of all organizations you can switch into.
 Use `/teams` and select a team to switch teams.
 
 The process is the same when switching into a Team or Enterprise organization.
-
-

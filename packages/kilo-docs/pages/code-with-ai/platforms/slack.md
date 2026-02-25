@@ -1,15 +1,15 @@
-﻿---
+---
 title: "Slack"
-description: "Using VCP Code in Slack"
+description: "Using Kilo Code in Slack"
 ---
 
-# VCP for Slack
+# Kilo for Slack
 
-VCP for Slack brings the power of VCP Code directly into your Slack workspace. Ask questions about your repositories, request code implementations, or get help with issues—all without leaving Slack.
+Kilo for Slack brings the power of Kilo Code directly into your Slack workspace. Ask questions about your repositories, request code implementations, or get help with issues—all without leaving Slack.
 
 ---
 
-## What You Can Do With VCP for Slack
+## What You Can Do With Kilo for Slack
 
 - **Ask questions about your repositories** — Get explanations about code, architecture, or implementation details
 - **Request code implementations** — Tell the bot to implement fixes or features suggested in Slack threads
@@ -20,22 +20,22 @@ VCP for Slack brings the power of VCP Code directly into your Slack workspace. A
 
 ## Prerequisites
 
-Before using VCP for Slack:
+Before using Kilo for Slack:
 
-- You must have a **VCP Code account** with available credits
-- Your **GitHub Integration must be configured** via the [Integrations tab](https://github.com/DerstedtCasper/vcp-code-2.0/integrations) so VCP can access your repositories
+- You must have a **Kilo Code account** with available credits
+- Your **GitHub Integration must be configured** via the [Integrations tab](https://app.kilo.ai/integrations) so Kilo can access your repositories
 
-To install VCP for Slack, simply go to the integrations menu in the sidebar on https://github.com/DerstedtCasper/vcp-code-2.0 and set up the Slack integration.
+To install Kilo for Slack, simply go to the integrations menu in the sidebar on https://app.kilo.ai and set up the Slack integration.
 
 ---
 
-## How to Interact with VCP
+## How to Interact with Kilo
 
 ### Direct Messages
 
-You can message VCP directly through Slack DMs for private conversations:
+You can message Kilo directly through Slack DMs for private conversations:
 
-1. Find **VCP** in your Slack workspace's app list
+1. Find **Kilo** in your Slack workspace's app list
 2. Start a direct message conversation
 3. Ask your question or describe what you need
 
@@ -50,7 +50,7 @@ This is ideal for:
 Mention the bot in any channel where it's been added:
 
 ```
-@VCP can you explain how the authentication flow works in our backend?
+@Kilo can you explain how the authentication flow works in our backend?
 ```
 
 This is great for:
@@ -68,11 +68,11 @@ This is great for:
 Get instant answers about your codebase without switching contexts:
 
 ```
-@VCP what does the UserService class do in our main backend repo?
+@Kilo what does the UserService class do in our main backend repo?
 ```
 
 ```
-@VCP how is error handling implemented in the payment processing module?
+@Kilo how is error handling implemented in the payment processing module?
 ```
 
 ### Implement Fixes from Slack Discussions
@@ -80,7 +80,7 @@ Get instant answers about your codebase without switching contexts:
 When your team identifies an issue or improvement in a Slack thread, ask the bot to implement it:
 
 ```
-@VCP based on this thread, can you implement the fix for the null pointer exception in the order processing service?
+@Kilo based on this thread, can you implement the fix for the null pointer exception in the order processing service?
 ```
 
 The bot can:
@@ -95,7 +95,7 @@ The bot can:
 Share error messages or stack traces and get help:
 
 ```
-@VCP I'm seeing this error in production:
+@Kilo I'm seeing this error in production:
 [paste error message]
 Can you help me understand what's causing it?
 ```
@@ -104,17 +104,17 @@ Can you help me understand what's causing it?
 
 ## How It Works
 
-1. **Message VCP** — Either through DMs or by mentioning it in a channel
-2. **VCP processes your request** — VCP uses your connected GitHub repositories to understand context
-3. **AI generates a response** — VCP Code's AI analyzes your request and provides helpful responses
-4. **Code changes (if requested)** — For implementation requests, VCP can create pull requests
+1. **Message Kilo** — Either through DMs or by mentioning it in a channel
+2. **Kilo processes your request** — Kilo uses your connected GitHub repositories to understand context
+3. **AI generates a response** — Kilo Code's AI analyzes your request and provides helpful responses
+4. **Code changes (if requested)** — For implementation requests, Kilo can create pull requests
 
 ---
 
 ## Cost
 
-- **VCP Code credits are used** when VCP performs work (model usage, operations, etc.)
-- Credit usage is similar to using VCP Code through other interfaces
+- **Kilo Code credits are used** when Kilo performs work (model usage, operations, etc.)
+- Credit usage is similar to using Kilo Code through other interfaces
 
 ---
 
@@ -129,7 +129,7 @@ Can you help me understand what's causing it?
 
 ## Limitations
 
-- VCP can only access repositories you've connected through the [Integrations](https://github.com/DerstedtCasper/vcp-code-2.0/integrations) page
+- Kilo can only access repositories you've connected through the [Integrations](https://app.kilo.ai/integrations) page
 - Complex multi-step implementations may require follow-up messages
 - Response times may vary based on the complexity of your request
 
@@ -137,32 +137,30 @@ Can you help me understand what's causing it?
 
 ## Changing the Model
 
-You can customize which AI model VCP uses for generating responses. The model affects the quality, speed, and capabilities of VCP's responses.
+You can customize which AI model Kilo uses for generating responses. The model affects the quality, speed, and capabilities of Kilo's responses.
 
-1. Go to your [VCP Workspace](https://github.com/DerstedtCasper/vcp-code-2.0/)
+1. Go to your [Kilo Workspace](https://app.kilo.ai/)
 2. Navigate to **Integrations** > **Slack**
-3. Select your preferred model for VCP for Slack
+3. Select your preferred model for Kilo for Slack
 
-VCP will start using the new model immediately for subsequent requests.
+Kilo will start using the new model immediately for subsequent requests.
 
 ### Available Models
 
-VCP for Slack supports over 400+ models across different providers.
+Kilo for Slack supports over 400+ models across different providers.
 
 ---
 
 ## Troubleshooting
 
-**"VCP isn't responding."**
-Ensure VCP for Slack is installed in your workspace and has been added to the channel you're using.
+**"Kilo isn't responding."**
+Ensure Kilo for Slack is installed in your workspace and has been added to the channel you're using.
 
-**"VCP can't access my repository."**
-Verify your GitHub integration is configured correctly in the [Integrations tab](https://github.com/DerstedtCasper/vcp-code-2.0/integrations).
+**"Kilo can't access my repository."**
+Verify your GitHub integration is configured correctly in the [Integrations tab](https://app.kilo.ai/integrations).
 
 **"I'm getting incomplete responses."**
 Try breaking your request into smaller, more specific questions.
 
-**"VCP doesn't understand my codebase."**
+**"Kilo doesn't understand my codebase."**
 Make sure the repository you're asking about is connected and accessible through your GitHub integration.
-
-

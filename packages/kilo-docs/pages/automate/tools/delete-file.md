@@ -1,4 +1,4 @@
-﻿# delete_file
+# delete_file
 
 Delete a file or directory from the workspace. This tool provides a safe alternative to rm commands and works across all platforms.
 
@@ -15,7 +15,7 @@ This tool safely deletes files and directories with user confirmation. For direc
 - Only deletes files/directories within the workspace
 - Requires user confirmation before deletion
 - Prevents deletion of write-protected files
-- Validates all files against `.VCPcodeignore` rules
+- Validates all files against `.kilocodeignore` rules
 - For directories: scans recursively and shows statistics (file count, directory count, total size) before deletion
 - Blocks directory deletion if any contained file is protected or ignored
 
@@ -50,7 +50,6 @@ The tool provides clear error messages for:
 
 - File or directory does not exist
 - File is write-protected
-- File is blocked by `.VCPcodeignore` rules
+- File is blocked by `.kilocodeignore` rules
 - Directory contains protected or ignored files
 - Path is outside the workspace
-

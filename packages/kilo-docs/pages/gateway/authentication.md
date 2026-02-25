@@ -1,11 +1,11 @@
-﻿---
+---
 title: "Authentication"
-description: "Learn how to authenticate with the VCP Gateway using API keys, session tokens, and Bring Your Own Key (BYOK)."
+description: "Learn how to authenticate with the Kilo AI Gateway using API keys, session tokens, and Bring Your Own Key (BYOK)."
 ---
 
 # Authentication
 
-The VCP Gateway supports multiple authentication methods depending on your use case.
+The Kilo AI Gateway supports multiple authentication methods depending on your use case.
 
 ## API key authentication
 
@@ -15,7 +15,7 @@ The primary authentication method is a Bearer token passed in the `Authorization
 Authorization: Bearer <your_api_key>
 ```
 
-API keys are JWT tokens tied to your VCP account. See [how to get your API key](/docs/getting-started/setup-authentication#VCP-gateway-api-key) for step-by-step instructions.
+API keys are JWT tokens tied to your Kilo account. See [how to get your API key](/docs/getting-started/setup-authentication#kilo-gateway-api-key) for step-by-step instructions.
 
 ### Using your API key
 
@@ -25,9 +25,9 @@ API keys are JWT tokens tied to your VCP account. See [how to get your API key](
 ```typescript
 import { createOpenAI } from "@ai-sdk/openai"
 
-const VCP = createOpenAI({
-  baseURL: "https://api.VCP.ai/api/gateway",
-  apiKey: process.env.VCP_API_KEY,
+const kilo = createOpenAI({
+  baseURL: "https://api.kilo.ai/api/gateway",
+  apiKey: process.env.KILO_API_KEY,
 })
 ```
 
@@ -38,8 +38,8 @@ const VCP = createOpenAI({
 from openai import OpenAI
 
 client = OpenAI(
-    api_key=os.getenv("VCP_API_KEY"),
-    base_url="https://api.VCP.ai/api/gateway",
+    api_key=os.getenv("KILO_API_KEY"),
+    base_url="https://api.kilo.ai/api/gateway",
 )
 ```
 
@@ -47,8 +47,8 @@ client = OpenAI(
 {% tab label="cURL" %}
 
 ```bash
-curl -X POST "https://api.VCP.ai/api/gateway/chat/completions" \
-  -H "Authorization: Bearer $VCP_API_KEY" \
+curl -X POST "https://api.kilo.ai/api/gateway/chat/completions" \
+  -H "Authorization: Bearer $KILO_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"model": "anthropic/claude-sonnet-4.5", "messages": [{"role": "user", "content": "Hello"}]}'
 ```
@@ -61,7 +61,7 @@ curl -X POST "https://api.VCP.ai/api/gateway/chat/completions" \
 When making requests on behalf of an organization, include the organization ID in the request header:
 
 ```
-X-VCPCode-OrganizationId: your_org_id
+X-KiloCode-OrganizationId: your_org_id
 ```
 
 Organization tokens are scoped with a 15-minute expiry and enforce the organization's policies, including model allow lists, provider restrictions, and per-user spending limits.
@@ -74,7 +74,7 @@ Free models include models tagged with `:free` in their model ID, such as `minim
 
 ## Bring Your Own Key (BYOK)
 
-BYOK lets you use your own provider API keys with the VCP Gateway. When a BYOK key is configured, the gateway routes requests through Vercel AI Gateway using your key. You are billed directly by the provider -- VCP does not add any markup.
+BYOK lets you use your own provider API keys with the Kilo AI Gateway. When a BYOK key is configured, the gateway routes requests through Vercel AI Gateway using your key. You are billed directly by the provider -- Kilo does not add any markup.
 
 ### Supported BYOK providers
 
@@ -91,18 +91,18 @@ BYOK lets you use your own provider API keys with the VCP Gateway. When a BYOK k
 
 ### How BYOK works
 
-1. Add your provider API key in the VCP dashboard or through your VCP Code extension settings
+1. Add your provider API key in the Kilo dashboard or through your Kilo Code extension settings
 2. Keys are encrypted at rest using AES encryption
 3. When you make a request for a model from that provider, the gateway automatically uses your key
-4. Usage is tracked but not billed to your VCP balance (cost is set to $0)
-5. If your BYOK key fails, the request will not automatically fall back to VCP's keys
+4. Usage is tracked but not billed to your Kilo balance (cost is set to $0)
+5. If your BYOK key fails, the request will not automatically fall back to Kilo's keys
 
 ### BYOK routing
 
 When a BYOK key is detected, the request is routed through Vercel AI Gateway with your credentials:
 
 ```
-Client → VCP Gateway → Vercel AI Gateway (with your key) → Provider
+Client → Kilo Gateway → Vercel AI Gateway (with your key) → Provider
 ```
 
 This provides the benefit of Vercel's reliability infrastructure while using your own billing relationship with the provider.
@@ -115,9 +115,7 @@ The gateway accepts the following headers:
 | --------------------------- | ----------------------- | -------------------------------------------- |
 | `Authorization`             | Yes (unless free model) | `Bearer <api_key>`                           |
 | `Content-Type`              | Yes                     | `application/json`                           |
-| `X-VCPCode-OrganizationId` | No                      | Organization context for org-scoped requests |
-| `X-VCPCode-TaskId`         | No                      | Task identifier for prompt cache keying      |
-| `X-VCPCode-Version`        | No                      | Client version string                        |
-| `x-VCPcode-mode`           | No                      | Mode hint for `VCP/auto` model routing      |
-
-
+| `X-KiloCode-OrganizationId` | No                      | Organization context for org-scoped requests |
+| `X-KiloCode-TaskId`         | No                      | Task identifier for prompt cache keying      |
+| `X-KiloCode-Version`        | No                      | Client version string                        |
+| `x-kilocode-mode`           | No                      | Mode hint for `kilo/auto` model routing      |

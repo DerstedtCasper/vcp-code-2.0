@@ -1,11 +1,11 @@
-﻿---
+---
 title: "Dashboard"
-description: "Manage your team from the VCP Code dashboard"
+description: "Manage your team from the Kilo Code dashboard"
 ---
 
 # Dashboard
 
-The VCP seats dashboard is the first screen that comes up when you visit [the VCP Code web app](https://github.com/DerstedtCasper/vcp-code-2.0). It provides complete visibility into your team's AI usage, costs, and management.
+The Kilo seats dashboard is the first screen that comes up when you visit [the Kilo Code web app](https://app.kilo.ai). It provides complete visibility into your team's AI usage, costs, and management.
 
 {% image src="/docs/img/teams/dashboard.png" alt="Invite your team members" width="700" /%}
 
@@ -90,7 +90,7 @@ Interactive graphs displaying:
 
 ## Billing Tab
 
-Complete financial management for your VCP Teams subscription.
+Complete financial management for your Kilo Teams subscription.
 
 - **Available credits** remaining
 - **Downloadable invoices** for expense reporting
@@ -107,11 +107,11 @@ Complete financial management for your VCP Teams subscription.
 
 ## Subscriptions Tab
 
-Manage your VCP Teams plan and seat allocation.
+Manage your Kilo Teams plan and seat allocation.
 
 ### Current Plan Details
 
-- **Plan type** (VCP Teams)
+- **Plan type** (Kilo Teams)
 - **Monthly cost** per seat ($15/user/month)
 - **Billing cycle** dates and next charge
 - **Plan benefits** and included features
@@ -165,5 +165,3 @@ Manage your VCP Teams plan and seat allocation.
 - [Learn about team management](/docs/collaborate/teams/team-management)
 - [Understand billing and credits](/docs/collaborate/teams/billing)
 - [Explore usage analytics](/docs/collaborate/teams/analytics)
-
-

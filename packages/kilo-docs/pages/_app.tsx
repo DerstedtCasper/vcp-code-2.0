@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import Head from "next/head"
 import { useRouter } from "next/router"
 import posthog from "posthog-js"
@@ -25,7 +25,7 @@ import "../public/globals.css"
 import type { AppProps } from "next/app"
 import type { MarkdocNextJsPageProps } from "@markdoc/next.js"
 
-const TITLE = "VCP Code Documentation"
+const TITLE = "Kilo Code Documentation"
 const DESCRIPTION = "Build, ship, and iterate faster with the most popular open source coding agent."
 
 function collectHeadings(node, sections = []) {
@@ -137,15 +137,13 @@ export default function MyApp({ Component, pageProps }: AppProps<MyAppProps>) {
         <meta name="referrer" content="strict-origin" />
         <meta name="title" content={title} />
         <meta name="description" content={description} />
-        <link
-          rel="shortcut icon"
-          href="https://raw.githubusercontent.com/DerstedtCasper/vcp-code-2.0/main/packages/kilo-docs/public/img/logo.svg"
-        />
-        <link
-          rel="icon"
-          href="https://raw.githubusercontent.com/DerstedtCasper/vcp-code-2.0/main/packages/kilo-docs/public/img/logo.svg"
-          type="image/svg+xml"
-        />
+        <link rel="shortcut icon" href="https://kilo.ai/favicon.ico" />
+        <link rel="icon" href="https://kilo.ai/favicon.ico" sizes="48x48" type="image/x-icon" />
+        <link rel="icon" href="https://kilo.ai/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="https://kilo.ai/apple-touch-icon.png" sizes="180x180" type="image/png" />
+        <link rel="manifest" href="https://kilo.ai/site.webmanifest" />
+        <link rel="icon" href="https://kilo.ai/android-chrome-192x192.png" type="image/png" sizes="192x192" />
+        <link rel="icon" href="https://kilo.ai/android-chrome-512x512.png" type="image/png" sizes="512x512" />
         <meta name="theme-color" content="#617A91" />
         {/* Preconnect to Algolia for better performance */}
         <link rel="preconnect" href="https://PMZUYBQDAK-dsn.algolia.net" crossOrigin="anonymous" />
@@ -277,4 +275,3 @@ export default function MyApp({ Component, pageProps }: AppProps<MyAppProps>) {
     </>
   )
 }
-

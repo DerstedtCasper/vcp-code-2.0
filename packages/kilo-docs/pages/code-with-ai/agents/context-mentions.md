@@ -1,11 +1,11 @@
-﻿---
+---
 title: "Context & Mentions"
-description: "How to provide context to VCP Code using mentions"
+description: "How to provide context to Kilo Code using mentions"
 ---
 
 # Context Mentions
 
-Context mentions are a powerful way to provide VCP Code with specific information about your project, allowing it to perform tasks more accurately and efficiently. You can use mentions to refer to files, folders, problems, and Git commits. Context mentions start with the `@` symbol.
+Context mentions are a powerful way to provide Kilo Code with specific information about your project, allowing it to perform tasks more accurately and efficiently. You can use mentions to refer to files, folders, problems, and Git commits. Context mentions start with the `@` symbol.
 
 {% image src="/docs/img/context-mentions/context-mentions.png" alt="Context Mentions Overview - showing the @ symbol dropdown menu in the chat interface" width="600" caption="Context mentions overview showing the @ symbol dropdown menu in the chat interface." /%}
 
@@ -61,7 +61,7 @@ Context mentions are a powerful way to provide VCP Code with specific informatio
 
 ### Terminal Mention
 
-{% image src="/docs/img/context-mentions/context-mentions-4.png" alt="Terminal mention example showing terminal output being included in VCP Code's context" width="600" caption="Terminal mentions capture recent command output for debugging and analysis." /%}
+{% image src="/docs/img/context-mentions/context-mentions-4.png" alt="Terminal mention example showing terminal output being included in Kilo Code's context" width="600" caption="Terminal mentions capture recent command output for debugging and analysis." /%}
 
 | Capability     | Details                                            |
 | -------------- | -------------------------------------------------- |
@@ -73,7 +73,7 @@ Context mentions are a powerful way to provide VCP Code with specific informatio
 
 ### Git Mentions
 
-{% image src="/docs/img/context-mentions/context-mentions-5.png" alt="Git commit mention example showing commit details being analyzed by VCP Code" width="600" caption="Git mentions provide commit details and diffs for context-aware version analysis." /%}
+{% image src="/docs/img/context-mentions/context-mentions-5.png" alt="Git commit mention example showing commit details being analyzed by Kilo Code" width="600" caption="Git mentions provide commit details and diffs for context-aware version analysis." /%}
 
 | Type                | Format         | Provides                                            | Limitations                    |
 | ------------------- | -------------- | --------------------------------------------------- | ------------------------------ |
@@ -116,4 +116,3 @@ The dropdown automatically suggests:
 | **Click mentions**         | Click mentions in chat history to open files or view content                     |
 | **Eliminate copy-pasting** | Use mentions instead of manually copying code or errors                          |
 | **Combine mentions**       | "Fix @problems in @/src/component.ts using the pattern from commit @a1b2c3d"     |
-

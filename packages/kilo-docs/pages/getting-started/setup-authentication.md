@@ -1,38 +1,38 @@
-﻿---
+---
 title: "Setup & Authentication"
-description: "Configure VCP Code and connect to your AI providers"
+description: "Configure Kilo Code and connect to your AI providers"
 ---
 
 # Setup & Authentication
 
-When you install VCP Code, you'll be prompted to sign in or create a free account. This automatically configures everything you need to get started.
+When you install Kilo Code, you'll be prompted to sign in or create a free account. This automatically configures everything you need to get started.
 
-## Quick Start with VCP Account
+## Quick Start with Kilo Account
 
-1. Click **"Try VCP Code for Free"** in the extension
+1. Click **"Try Kilo Code for Free"** in the extension
 2. Sign in with your Google account
 3. Allow VS Code to open the authorization URL
 
-{% image src="/docs/img/signupflow.gif" alt="Sign up and registration flow with VCP Code" /%}
+{% image src="/docs/img/signupflow.gif" alt="Sign up and registration flow with Kilo Code" /%}
 
 That's it! You're ready to [start your first task](/docs/getting-started/quickstart).
 
 {% callout type="tip" title="Bonus Credits" %}
-[Add credits to your account](https://github.com/DerstedtCasper/vcp-code-2.0/profile) and get $20 bonus credits, or sign up for [VCP Pass](https://VCP.ai/features/VCP-pass).
+[Add credits to your account](https://app.kilo.ai/profile) and get $20 bonus credits, or sign up for [Kilo Pass](https://kilo.ai/features/kilo-pass).
 {% /callout %}
 
-## VCP Gateway API Key
+## Kilo Gateway API Key
 
-If you're using the [VCP Gateway](/docs/gateway/) outside of the VCP Code extension (for example, with the Vercel AI SDK or OpenAI SDK), you'll need an API key:
+If you're using the [Kilo AI Gateway](/docs/gateway/) outside of the Kilo Code extension (for example, with the Vercel AI SDK or OpenAI SDK), you'll need an API key:
 
-1. Go to [app.VCP.ai](https://github.com/DerstedtCasper/vcp-code-2.0)
+1. Go to [app.kilo.ai](https://app.kilo.ai)
 2. Go to **Your Profile** on your **personal account** (not in an organization)
 3. Scroll to the bottom of the page
 4. Copy your API key
 
 ## Using Another API Provider
 
-If you prefer to use your own API key or existing subscription, VCP Code supports **over 30 providers**. Here are some popular options to get started:
+If you prefer to use your own API key or existing subscription, Kilo Code supports **over 30 providers**. Here are some popular options to get started:
 
 | Provider                                                       | Best For                            | API Key Required |
 | -------------------------------------------------------------- | ----------------------------------- | ---------------- |
@@ -42,12 +42,12 @@ If you prefer to use your own API key or existing subscription, VCP Code support
 | [OpenAI](/docs/ai-providers/openai)                            | Access to GPT models                | Yes              |
 
 {% callout type="info" title="Many More Providers Available" %}
-These are just a few examples! VCP Code supports many more providers including Google Gemini, DeepSeek, Mistral, Ollama (for local models), AWS Bedrock, Google Vertex, and more. See the complete list at [AI Providers](/docs/ai-providers/).
+These are just a few examples! Kilo Code supports many more providers including Google Gemini, DeepSeek, Mistral, Ollama (for local models), AWS Bedrock, Google Vertex, and more. See the complete list at [AI Providers](/docs/ai-providers/).
 {% /callout %}
 
 ### ChatGPT Plus/Pro Subscription
 
-Already have a ChatGPT subscription? You can use it with VCP Code through the [OpenAI ChatGPT provider](/docs/ai-providers/openai-chatgpt-plus-pro)—no API key needed.
+Already have a ChatGPT subscription? You can use it with Kilo Code through the [OpenAI ChatGPT provider](/docs/ai-providers/openai-chatgpt-plus-pro)—no API key needed.
 
 ### OpenRouter
 
@@ -75,14 +75,12 @@ Already have a ChatGPT subscription? You can use it with VCP Code through the [O
 
 ### Configuring Your Provider
 
-1. Click the {% VCP-code-icon /%} icon in the VS Code sidebar
+1. Click the {% kilo-code-icon /%} icon in the VS Code sidebar
 2. Select your API provider from the dropdown
 3. Paste your API key
 4. Choose your model:
 5. Click **"Let's go!"**
 
 {% callout type="info" title="Need Help?" %}
-Reach out to our [support team](mailto:https://github.com/DerstedtCasper/vcp-code-2.0/issues) or join our [Discord community](https://github.com/DerstedtCasper/vcp-code-2.0/discussions).
+Reach out to our [support team](mailto:hi@kilo.ai) or join our [Discord community](https://kilo.ai/discord).
 {% /callout %}
-
-

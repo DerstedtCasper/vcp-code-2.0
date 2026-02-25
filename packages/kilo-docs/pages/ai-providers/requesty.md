@@ -1,10 +1,10 @@
-﻿---
+---
 sidebar_label: Requesty
 ---
 
-# Using Requesty With VCP Code
+# Using Requesty With Kilo Code
 
-VCP Code supports accessing models through the [Requesty](https://www.requesty.ai/) AI platform. Requesty provides an easy and optimized API for interacting with 150+ large language models (LLMs).
+Kilo Code supports accessing models through the [Requesty](https://www.requesty.ai/) AI platform. Requesty provides an easy and optimized API for interacting with 150+ large language models (LLMs).
 
 **Website:** [https://www.requesty.ai/](https://www.requesty.ai/)
 
@@ -13,9 +13,9 @@ VCP Code supports accessing models through the [Requesty](https://www.requesty.a
 1.  **Sign Up/Sign In:** Go to the [Requesty website](https://www.requesty.ai/) and create an account or sign in.
 2.  **Get API Key:** You can get an API key from the [API Management](https://app.requesty.ai/manage-api) section of your Requesty dashboard.
 
-## Configuration in VCP Code
+## Configuration in Kilo Code
 
-1.  **Open VCP Code Settings:** Click the gear icon ({% codicon name="gear" /%}) in the VCP Code panel.
+1.  **Open Kilo Code Settings:** Click the gear icon ({% codicon name="gear" /%}) in the Kilo Code panel.
 2.  **Select Provider:** Choose "Requesty" from the "API Provider" dropdown.
 3.  **Enter API Key:** Paste your Requesty API key into the "Requesty API Key" field.
 4.  **Select Model:** Choose your desired model from the "Model" dropdown.
@@ -34,4 +34,3 @@ VCP Code supports accessing models through the [Requesty](https://www.requesty.a
 
 - [Requesty Youtube channel](https://www.youtube.com/@requestyAI):
 - [Requesty Discord](https://requesty.ai/discord)
-

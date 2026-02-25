@@ -1,8 +1,8 @@
-﻿---
+---
 sidebar_label: xAI (Grok)
 ---
 
-# Using xAI (Grok) With VCP Code
+# Using xAI (Grok) With Kilo Code
 
 xAI is the company behind Grok, a large language model known for its conversational abilities and large context window. Grok models are designed to provide helpful, informative, and contextually relevant responses.
 
@@ -12,12 +12,12 @@ xAI is the company behind Grok, a large language model known for its conversatio
 
 1.  **Sign Up/Sign In:** Go to the [xAI Console](https://console.x.ai/). Create an account or sign in.
 2.  **Navigate to API Keys:** Go to the API keys section in your dashboard.
-3.  **Create a Key:** Click to create a new API key. Give your key a descriptive name (e.g., "VCP Code").
+3.  **Create a Key:** Click to create a new API key. Give your key a descriptive name (e.g., "Kilo Code").
 4.  **Copy the Key:** **Important:** Copy the API key _immediately_. You will not be able to see it again. Store it securely.
 
-## Configuration in VCP Code
+## Configuration in Kilo Code
 
-1.  **Open VCP Code Settings:** Click the gear icon ({% codicon name="gear" /%}) in the VCP Code panel.
+1.  **Open Kilo Code Settings:** Click the gear icon ({% codicon name="gear" /%}) in the Kilo Code panel.
 2.  **Select Provider:** Choose "xAI" from the "API Provider" dropdown.
 3.  **Enter API Key:** Paste your xAI API key into the "xAI API Key" field.
 4.  **Select Model:** Choose your desired Grok model from the "Model" dropdown.
@@ -47,4 +47,3 @@ Choose `low` for simple queries that should complete quickly, and `high` for har
 - **Vision Capabilities:** Select vision-enabled models (`grok-2-vision-latest`, `grok-2-vision`, etc.) when you need to process or analyze images.
 - **Pricing:** Pricing varies by model, with input costs ranging from $0.3 to $5.0 per million tokens and output costs from $0.5 to $25.0 per million tokens. Refer to the xAI documentation for the most current pricing information.
 - **Performance Tradeoffs:** "Fast" variants typically offer quicker response times but may have higher costs, while "mini" variants are more economical but may have reduced capabilities.
-

@@ -1,11 +1,11 @@
-﻿---
+---
 title: "Getting Started with Teams"
-description: "Set up your VCP Code team account"
+description: "Set up your Kilo Code team account"
 ---
 
-# Get Started with VCP Seats in 10 Minutes
+# Get Started with Kilo Seats in 10 Minutes
 
-seats for VCP in the Teams or Enterprise subscription brings transparent AI coding to your entire engineering organization. No markup on AI costs, no vendor lock-in, complete usage visibility.
+seats for Kilo in the Teams or Enterprise subscription brings transparent AI coding to your entire engineering organization. No markup on AI costs, no vendor lock-in, complete usage visibility.
 
 ## Before You Begin
 
@@ -18,7 +18,7 @@ seats for VCP in the Teams or Enterprise subscription brings transparent AI codi
 
 ### Step 1: Create Your Organization
 
-1. Visit [app.VCP.ai](https://github.com/DerstedtCasper/vcp-code-2.0)
+1. Visit [app.kilo.ai](https://app.kilo.ai)
 2. Sign up using your company Google Workspaces or GitHub account
    - Note: We recommend starting with your GitHub account rather than a personal Google account, but we can change it later.
 3. Click **Organizations** in the left sidebar and then **Create New Organization**
@@ -50,7 +50,7 @@ seats for VCP in the Teams or Enterprise subscription brings transparent AI codi
 Team members receive invitation emails with these steps:
 
 1. Accept the team invitation
-2. Install VCP Code from [VS Code Marketplace](vscode:extension/vcpcode.vcp-code)
+2. Install Kilo Code from [VS Code Marketplace](vscode:extension/kilocode.kilo-code)
 3. Sign in with their invited email
 4. Start coding with AI assistance
 
@@ -79,5 +79,3 @@ You can find the dedicated Teams support methods directly on your Organization's
 - [Learn about team roles and permissions](/docs/collaborate/teams/team-management)
 - [Explore the dashboard features](/docs/collaborate/adoption-dashboard/overview)
 - [Set up team management policies](/docs/collaborate/teams/team-management)
-
-

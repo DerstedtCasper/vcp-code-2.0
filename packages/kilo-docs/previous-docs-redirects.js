@@ -371,7 +371,7 @@ module.exports = [
   },
 
   // ============================================
-  // COLLABORATE - VCP Code for Teams
+  // COLLABORATE - Kilo for Teams
   // ============================================
   {
     source: "/docs/plans/about",
@@ -517,7 +517,7 @@ module.exports = [
   },
 
   // ============================================
-  // AUTOMATE - Extending VCP Code
+  // AUTOMATE - Extending Kilo
   // ============================================
   {
     source: "/docs/advanced-usage/local-models",

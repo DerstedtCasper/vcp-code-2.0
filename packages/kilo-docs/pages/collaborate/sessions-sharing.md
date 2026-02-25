@@ -1,11 +1,11 @@
-﻿---
+---
 title: "Sessions & Sharing"
-description: "Share and collaborate on VCP Code sessions"
+description: "Share and collaborate on Kilo Code sessions"
 ---
 
 # Sessions & Sharing
 
-A session is your platform-agnostic interaction with VCP. It remembers your repository, your task, and the conversation so you can pause and resume work without losing context. Sessions are private to your account by default; you can optionally share a link with others who can read or fork your session.
+A session is your platform-agnostic interaction with Kilo. It remembers your repository, your task, and the conversation so you can pause and resume work without losing context. Sessions are private to your account by default; you can optionally share a link with others who can read or fork your session.
 
 ## What a session keeps for you
 
@@ -14,13 +14,13 @@ A session is your platform-agnostic interaction with VCP. It remembers your repo
 - Task metadata (what the agent is doing for you)
 - Optional Git context (for example, the repo URL and a lightweight snapshot of state) so the agent can pick up where it left off
 
-This information lets VCP show your recent sessions and continue right from the same context the next time you open it.
+This information lets Kilo show your recent sessions and continue right from the same context the next time you open it.
 
 ## Quick start: Create a session
 
 1. Choose the repository. Pick the GitHub repository you want the agent to work with.
 2. Describe the task. (e.g., “Add dark mode toggle and unit tests”).
-3. Interact with VCP via any of our interfaces- the CLI, the Cloud Agent, or the Extensions in your favorite IDE.
+3. Interact with Kilo via any of our interfaces- the CLI, the Cloud Agent, or the Extensions in your favorite IDE.
 
 ## Continue where you left off
 
@@ -42,14 +42,14 @@ Note: Sharing creates a read‑only copy for the public link so your private ses
 If someone shares a session with you, you can fork it to create your own copy:
 
 - From the share page, choose “Open in Editor” (recommended), or run one of these commands:
-  - CLI: VCPcode --fork SHARE_ID
+  - CLI: kilocode --fork SHARE_ID
   - In‑app command: /session fork SHARE_ID
 
 Forking creates a new session in your account, with its own ID, and copies over the relevant context so you can continue independently.
 
 ## Where your session data lives
 
-To keep sessions fast and resumable, VCP stores small JSON blobs associated with your session. These include your conversation history and task metadata. If you share a session, VCP keeps a public copy used by the share link while your private session remains under your account.
+To keep sessions fast and resumable, Kilo stores small JSON blobs associated with your session. These include your conversation history and task metadata. If you share a session, Kilo keeps a public copy used by the share link while your private session remains under your account.
 
 Good practice:
 
@@ -61,5 +61,3 @@ Good practice:
 1. Keep your task description focused; you can refine it with follow‑up prompts.
 2. Use setup commands to prepare the environment the agent runs in (e.g., install dependencies).
 3. For collaboration, share and ask teammates to fork; you’ll each have independent progress and costs.
-
-

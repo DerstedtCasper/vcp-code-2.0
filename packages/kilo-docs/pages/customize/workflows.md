@@ -1,20 +1,20 @@
-﻿---
+---
 title: "Workflows"
-description: "Create automated workflows with VCP Code"
+description: "Create automated workflows with Kilo Code"
 ---
 
 # Workflows
 
-Workflows automate repetitive tasks by defining step-by-step instructions for VCP Code to execute. Invoke any workflow by typing `/[workflow-name.md]` in the chat.
+Workflows automate repetitive tasks by defining step-by-step instructions for Kilo Code to execute. Invoke any workflow by typing `/[workflow-name.md]` in the chat.
 
-{% image src="/docs/img/slash-commands/workflows.png" alt="Workflows tab in VCP Code" width="600" caption="Workflows tab in VCP Code" /%}
+{% image src="/docs/img/slash-commands/workflows.png" alt="Workflows tab in Kilo Code" width="600" caption="Workflows tab in Kilo Code" /%}
 
 ## Creating Workflows
 
-Workflows are markdown files stored in `.VCPcode/workflows/`:
+Workflows are markdown files stored in `.kilocode/workflows/`:
 
-- **Global workflows**: `~/.VCPcode/workflows/` (available in all projects)
-- **Project workflows**: `[project]/.VCPcode/workflows/` (project-specific)
+- **Global workflows**: `~/.kilocode/workflows/` (available in all projects)
+- **Project workflows**: `[project]/.kilocode/workflows/` (project-specific)
 
 ### Basic Setup
 
@@ -66,7 +66,7 @@ Workflows can leverage:
 
 Let's walk through creating a workflow for submitting a pull request. This workflow handles the entire process from code review to deployment notification.
 
-Create a file called `submit-pr.md` in your `.VCPcode/workflows` directory:
+Create a file called `submit-pr.md` in your `.kilocode/workflows` directory:
 
 ```markdown
 # Submit PR Workflow
@@ -85,7 +85,7 @@ Parameters needed (ask if not provided):
 - Reviewers to assign
 ```
 
-Now you can trigger this workflow by typing `/submit-pr.md` in the chat. VCP Code will:
+Now you can trigger this workflow by typing `/submit-pr.md` in the chat. Kilo Code will:
 
 - Scan your code for common issues before committing
 - Run your test suite to catch problems early
@@ -94,5 +94,3 @@ Now you can trigger this workflow by typing `/submit-pr.md` in the chat. VCP Cod
 - Set up follow-up tasks for deployment
 
 This saves you from manually running the same 7-step process every time you want to submit code for review.
-
-

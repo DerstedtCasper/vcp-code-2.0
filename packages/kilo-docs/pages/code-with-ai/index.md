@@ -1,37 +1,37 @@
-﻿---
+---
 title: "Code with AI"
-description: "Learn how to code with AI using VCP Code across different platforms and interfaces"
+description: "Learn how to code with AI using Kilo Code across different platforms and interfaces"
 ---
 
 # {% $markdoc.frontmatter.title %}
 
 {% callout type="generic" %}
-VCP Code is your AI pair programmer that works in your IDE, terminal, or browser. Generate code, refactor, debug, and ship faster with AI that understands your codebase and context.
+Kilo Code is your AI pair programmer that works in your IDE, terminal, or browser. Generate code, refactor, debug, and ship faster with AI that understands your codebase and context.
 {% /callout %}
 
 ## Getting Started
 
-New to VCP Code? Start here to understand the core concepts:
+New to Kilo Code? Start here to understand the core concepts:
 
-- [**Install VCP Code**](/docs/getting-started/installing) — Get started in VS Code, JetBrains, CLI, or mobile
+- [**Install Kilo Code**](/docs/getting-started/installing) — Get started in VS Code, JetBrains, CLI, or mobile
 - [**Connect an AI Provider**](/docs/ai-providers) — Set up your preferred model
 - [**Quick Start Guide**](/docs/getting-started/quickstart) — Run your first task in minutes
 
 ## Platforms
 
-Use VCP Code wherever you work:
+Use Kilo Code wherever you work:
 
 - [**VS Code**](/docs/code-with-ai/platforms/vscode) — The most popular IDE integration
 - [**JetBrains**](/docs/code-with-ai/platforms/jetbrains) — IntelliJ, PyCharm, WebStorm, and more
 - [**CLI**](/docs/code-with-ai/platforms/cli) — Terminal-based AI coding for scripts and automation
-- [**Cloud Agent**](/docs/code-with-ai/platforms/cloud-agent) — Run VCP in the cloud
+- [**Cloud Agent**](/docs/code-with-ai/platforms/cloud-agent) — Run Kilo in the cloud
 - [**Mobile Apps**](/docs/code-with-ai/platforms/mobile) — iOS and Android support
-- [**Slack**](/docs/code-with-ai/platforms/slack) — Chat with VCP in your workspace
+- [**Slack**](/docs/code-with-ai/platforms/slack) — Chat with Kilo in your workspace
 - [**App Builder**](/docs/code-with-ai/app-builder) — Create full-stack applications with AI
 
 ## Working with Agents
 
-VCP uses specialized agents to help with different tasks:
+Kilo uses specialized agents to help with different tasks:
 
 - [**Chat Interface**](/docs/code-with-ai/agents/chat-interface) — Conversation-based coding
 - [**Using Modes**](/docs/code-with-ai/agents/using-modes) — Switch between Code, Architect, Debug, and Ask modes
@@ -55,9 +55,7 @@ Core capabilities to boost your productivity:
 
 ## Next Steps
 
-- Explore [**Customize**](/docs/customize) to tailor VCP to your workflow
+- Explore [**Customize**](/docs/customize) to tailor Kilo to your workflow
 - Learn about [**Collaborating**](/docs/collaborate) with your team
 - Set up [**Automate**](/docs/automate) for CI/CD integration
 - Configure [**Deploy & Secure**](/docs/deploy-secure) deployments
-
-

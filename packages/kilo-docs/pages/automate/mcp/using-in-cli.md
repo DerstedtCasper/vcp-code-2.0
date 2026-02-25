@@ -1,24 +1,24 @@
-﻿---
+---
 title: "Using MCP in CLI"
 description: "How to use MCP servers in the CLI"
 ---
 
 # Using MCP in the CLI
 
-The VCP Code CLI supports MCP servers, but uses a **different configuration path** than the VS Code extension.
+The Kilo Code CLI supports MCP servers, but uses a **different configuration path** than the VS Code extension.
 
 ## Configuration Location
 
 | Environment | MCP Settings Path                                   |
 | ----------- | --------------------------------------------------- |
-| **CLI**     | `~/.VCPcode/cli/global/settings/mcp_settings.json` |
+| **CLI**     | `~/.kilocode/cli/global/settings/mcp_settings.json` |
 | **VS Code** | VS Code's global storage directory                  |
 
 MCP servers configured in VS Code are **not** automatically available in the CLI. You must configure them separately.
 
 ## Configuration Format
 
-Edit `~/.VCPcode/cli/global/settings/mcp_settings.json`:
+Edit `~/.kilocode/cli/global/settings/mcp_settings.json`:
 
 ```json
 {
@@ -70,7 +70,7 @@ Edit `~/.VCPcode/cli/global/settings/mcp_settings.json`:
 
 ## Project-Level Configuration
 
-You can define MCP servers per-project by creating `.VCPcode/mcp.json` in your project root. Project-level servers take precedence over global settings.
+You can define MCP servers per-project by creating `.kilocode/mcp.json` in your project root. Project-level servers take precedence over global settings.
 
 ## Configuration Options
 
@@ -88,7 +88,7 @@ You can define MCP servers per-project by creating `.VCPcode/mcp.json` in your p
 
 ## Auto-Approval
 
-MCP auto-approval is controlled via CLI config (`VCPcode config`):
+MCP auto-approval is controlled via CLI config (`kilocode config`):
 
 ```json
 {
@@ -103,9 +103,7 @@ MCP auto-approval is controlled via CLI config (`VCPcode config`):
 Or via environment variable:
 
 ```bash
-export VCP_AUTO_APPROVAL_MCP_ENABLED=true
+export KILO_AUTO_APPROVAL_MCP_ENABLED=true
 ```
 
 Per-tool auto-approval uses the `alwaysAllow` array in the server configuration.
-
-

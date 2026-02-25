@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Model Selection"
 description: "Guide to choosing the right AI model for your tasks"
 ---
@@ -7,11 +7,11 @@ description: "Guide to choosing the right AI model for your tasks"
 
 Here's the honest truth about AI model recommendations: by the time I write them down, they're probably already outdated. New models drop every few weeks, existing ones get updated, prices shift, and yesterday's champion becomes today's budget option.
 
-Instead of maintaining a static list that's perpetually behind, we built something better — a real-time leaderboard showing which models VCP Code users are actually having success with right now.
+Instead of maintaining a static list that's perpetually behind, we built something better — a real-time leaderboard showing which models Kilo Code users are actually having success with right now.
 
 ## Check the Live Models List
 
-**[👉 See what's working today at VCP.ai/models](https://VCP.ai/models)**
+**[👉 See what's working today at kilo.ai/models](https://kilo.ai/models)**
 
 This isn't benchmarks from some lab. It's real usage data from developers like you, updated continuously. You'll see which models people are choosing for different tasks, what's delivering results, and how the landscape is shifting in real-time.
 
@@ -48,6 +48,4 @@ Check [our provider docs](/docs/ai-providers) for specific context limits on eac
 
 ## Stay Current
 
-The AI model space moves fast. Bookmark [VCP.ai/models](https://VCP.ai/models) and check back when you're evaluating options. What's best today might not be best next month — and that's actually exciting.
-
-
+The AI model space moves fast. Bookmark [kilo.ai/models](https://kilo.ai/models) and check back when you're evaluating options. What's best today might not be best next month — and that's actually exciting.

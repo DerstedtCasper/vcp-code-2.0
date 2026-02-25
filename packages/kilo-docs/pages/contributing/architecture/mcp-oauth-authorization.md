@@ -1,4 +1,4 @@
-﻿---
+---
 title: "MCP OAuth Authorization"
 description: "OAuth 2.1-based authorization flow for MCP servers"
 ---
@@ -7,9 +7,9 @@ description: "OAuth 2.1-based authorization flow for MCP servers"
 
 ### Overview
 
-Many MCP servers require authentication to access protected resources. Currently, VCP Code only supports static credential configuration (API keys, tokens) which must be manually entered and stored. This creates friction for users and security concerns for enterprises.
+Many MCP servers require authentication to access protected resources. Currently, Kilo Code only supports static credential configuration (API keys, tokens) which must be manually entered and stored. This creates friction for users and security concerns for enterprises.
 
-The MCP specification defines an OAuth 2.1-based authorization flow that enables secure, user-friendly authentication without requiring users to manually manage credentials. This document specifies how VCP Code will implement the MCP Authorization specification to support OAuth-enabled MCP servers.
+The MCP specification defines an OAuth 2.1-based authorization flow that enables secure, user-friendly authentication without requiring users to manually manage credentials. This document specifies how Kilo Code will implement the MCP Authorization specification to support OAuth-enabled MCP servers.
 
 ### Goals
 
@@ -31,7 +31,7 @@ The MCP Authorization spec (Protocol Revision 2025-11-25) defines an OAuth 2.1-b
 ### Roles
 
 - **MCP Server** - Acts as OAuth 2.1 Resource Server, accepts access tokens
-- **MCP Client** (VCP Code) - Acts as OAuth 2.1 Client, obtains tokens on behalf of users
+- **MCP Client** (Kilo Code) - Acts as OAuth 2.1 Client, obtains tokens on behalf of users
 - **Authorization Server** - Issues access tokens (may be hosted with MCP server or separate)
 
 ### Discovery Flow
@@ -70,7 +70,7 @@ The spec supports three approaches (in priority order):
 │                                                                                  │
 │  ┌──────────────┐    1. MCP Request     ┌──────────────────┐                    │
 │  │              │ ───────────────────►  │                  │                    │
-│  │  VCP Code   │                       │   MCP Server     │                    │
+│  │  Kilo Code   │                       │   MCP Server     │                    │
 │  │  Extension   │  ◄─────────────────── │  (Resource       │                    │
 │  │              │    2. 401 + metadata  │   Server)        │                    │
 │  └──────┬───────┘                       └──────────────────┘                    │
@@ -216,9 +216,9 @@ interface McpOAuthTokenStorage {
 
 #### 4. Client ID Metadata Document Hosting
 
-For Client ID Metadata Documents, VCP Code needs to host a metadata document. We will use static hosting on VCPcode.ai:
+For Client ID Metadata Documents, Kilo Code needs to host a metadata document. We will use static hosting on kilocode.ai:
 
-- Host at `https://VCPcode.ai/.well-known/oauth-client/vscode-extension.json`
+- Host at `https://kilocode.ai/.well-known/oauth-client/vscode-extension.json`
 - Simple, reliable, no runtime dependencies
 - Authorization servers can cache the document effectively
 - No attack surface from dynamic generation logic
@@ -227,11 +227,11 @@ Metadata document:
 
 ```json
 {
-  "client_id": "https://VCPcode.ai/.well-known/oauth-client/vscode-extension.json",
-  "client_name": "VCP Code",
-  "client_uri": "https://VCPcode.ai",
-  "logo_uri": "https://VCPcode.ai/logo.png",
-  "redirect_uris": ["http://127.0.0.1:0/callback", "vscode://VCPcode.VCP-code/oauth/callback"],
+  "client_id": "https://kilocode.ai/.well-known/oauth-client/vscode-extension.json",
+  "client_name": "Kilo Code",
+  "client_uri": "https://kilocode.ai",
+  "logo_uri": "https://kilocode.ai/logo.png",
+  "redirect_uris": ["http://127.0.0.1:0/callback", "vscode://kilocode.kilo-code/oauth/callback"],
   "grant_types": ["authorization_code"],
   "response_types": ["code"],
   "token_endpoint_auth_method": "none"
@@ -344,7 +344,7 @@ Two approaches for receiving the OAuth callback:
    - Server receives callback, extracts code, closes
 
 2. **VS Code URI Handler** (Fallback)
-   - Register `vscode://VCPcode.VCP-code/oauth/callback` URI handler
+   - Register `vscode://kilocode.kilo-code/oauth/callback` URI handler
    - Works when local server isn't possible
    - Requires VS Code to be running
 
@@ -519,7 +519,7 @@ authUrl.searchParams.set("resource", mcpServerUrl)
 
 ### Phase 3: Client ID Metadata Document
 
-- [ ] Host VCP Code client metadata at VCPcode.ai
+- [ ] Host Kilo Code client metadata at kilocode.ai
 - [ ] Implement client_id URL generation
 - [ ] Add fallback to pre-registration for unsupported servers
 
@@ -570,5 +570,3 @@ authUrl.searchParams.set("resource", mcpServerUrl)
 - [ ] Support Dynamic Client Registration (RFC 7591)
 - [ ] Support pre-registered client credentials
 - [ ] Implement token refresh flows
-
-

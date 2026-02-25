@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Onboarding Improvements"
 description: "Onboarding and engagement improvements architecture"
 ---
@@ -29,8 +29,8 @@ Redesign welcome screen with visual appeal and actionable starter prompts.
 
 ```
 +----------------------------------+
-|        [VCPCode Logo]           |
-|     "Welcome to VCPCode"        |
+|        [KiloCode Logo]           |
+|     "Welcome to KiloCode"        |
 |                                  |
 |  +--------+  +--------+          |
 |  | Card 1 |  | Card 2 |          |
@@ -59,7 +59,7 @@ Each card will have:
 
 ## In-App Tutorial Flow
 
-Users aren't guided through VCP Code's modes or key features. The existing tab-based tutorial is easily dismissed, causing users to miss critical functionality.
+Users aren't guided through Kilo Code's modes or key features. The existing tab-based tutorial is easily dismissed, causing users to miss critical functionality.
 
 Replace the tab-based tutorial with an in-app experience using specific highlighting flows to guide users through core functionality.
 
@@ -68,7 +68,7 @@ Replace the tab-based tutorial with an in-app experience using specific highligh
 ```
 Step 1: Welcome
 ├── Highlight: Entire interface
-├── Content: "Welcome to VCPCode! Let's take a quick tour."
+├── Content: "Welcome to KiloCode! Let's take a quick tour."
 └── Actions: [Skip Tour] [Next]
 
 Step 2: Mode Selection
@@ -92,15 +92,15 @@ Step 5: Starter Prompts
 └── Actions: [Back] [Finish]
 ```
 
-## VCP Provider Settings UI Improvements
+## Kilo Provider Settings UI Improvements
 
-The "Set API Key" button is at the bottom of settings, making VCP Code setup hard to discover and complete.
+The "Set API Key" button is at the bottom of settings, making Kilo Code setup hard to discover and complete.
 
 **Improvements:**
 
 - Move "Set API Key" button next to API key input field
 - Rearrange layout for better flow
-- Make VCP Code provider setup prominent
+- Make Kilo Code provider setup prominent
 - Reduce setup friction
 
 ## Analytics Integration
@@ -145,6 +145,4 @@ Re-engage inactive users by highlighting new features and improvements. Acts as 
 - Progressive disclosure of advanced features over time
 - Personalized onboarding flows based on user role (frontend dev, backend dev, DevOps)
 - AI-powered prompt suggestions based on actual project code patterns
-- Integration with VCP Code teams for company/repo-personalized onboarding
-
-
+- Integration with Kilo Code teams for company/repo-personalized onboarding

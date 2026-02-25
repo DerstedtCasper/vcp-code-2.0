@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import docsearch from "@docsearch/js"
@@ -30,37 +30,29 @@ const mainNavItems: NavItem[] = [
   { label: "Collaborate", href: "/collaborate" },
   { label: "Automate", href: "/automate" },
   { label: "Deploy & Secure", href: "/deploy-secure" },
-  { label: "VCP Gateway", href: "/gateway" },
+  { label: "Kilo Gateway", href: "/gateway" },
   { label: "Contributing", href: "/contributing" },
 ]
 
 const contributingItems: DropdownItem[] = [
-  { label: "Contributing Guide", href: "/contributing", description: "How to contribute to VCP Code" },
+  { label: "Contributing Guide", href: "/contributing", description: "How to contribute to Kilo Code" },
   {
     label: "Code of Conduct",
-    href: "https://github.com/DerstedtCasper/vcp-code-2.0?tab=coc-ov-file",
+    href: "https://github.com/Kilo-Org/kilocode?tab=coc-ov-file",
     description: "Our community guidelines",
   },
-  {
-    label: "GitHub Repository",
-    href: "https://github.com/DerstedtCasper/vcp-code-2.0",
-    description: "View source and issues",
-  },
-  { label: "Discord Community", href: "https://github.com/DerstedtCasper/vcp-code-2.0/discussions", description: "Join our community" },
+  { label: "GitHub Repository", href: "https://github.com/Kilo-Org/", description: "View source and issues" },
+  { label: "Discord Community", href: "https://kilo.ai/discord", description: "Join our community" },
 ]
 
 const helpItems: DropdownItem[] = [
   { label: "Documentation", href: "/", description: "Browse all documentation" },
   { label: "FAQ", href: "/getting-started/faq", description: "Frequently asked questions" },
   { label: "Community Projects", href: "/community", description: "Explore community resources" },
-  {
-    label: "Support",
-    href: "https://github.com/DerstedtCasper/vcp-code-2.0/discussions",
-    description: "Get help from the maintainers",
-  },
+  { label: "Support", href: "https://kilo.ai/support", description: "Get help from the team" },
   {
     label: "Changelog",
-    href: "https://github.com/DerstedtCasper/vcp-code-2.0/releases",
+    href: "https://github.com/Kilo-Org/kilocode/releases",
     description: "Latest updates and releases",
   },
 ]
@@ -276,7 +268,7 @@ export function TopNav({ onMobileMenuToggle, isMobileMenuOpen = false, showMobil
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 100 100"
             className="logo-icon"
-            aria-label="VCP Code Logo"
+            aria-label="Kilo Code Logo"
           >
             <path
               fill="currentColor"
@@ -284,7 +276,7 @@ export function TopNav({ onMobileMenuToggle, isMobileMenuOpen = false, showMobil
             />
           </svg>
           <div>
-            <span className="logo-text font-brand">VCP Code</span>
+            <span className="logo-text font-brand">Kilo Code</span>
             <span className="docs-label">DOCS</span>
           </div>
         </Link>
@@ -305,10 +297,10 @@ export function TopNav({ onMobileMenuToggle, isMobileMenuOpen = false, showMobil
             <SearchIcon />
           </button>
           <ThemeToggle />
-          <Link href="https://github.com/DerstedtCasper/vcp-code-2.0" className="github-link desktop-nav">
+          <Link href="https://kilo.ai/github" className="github-link desktop-nav">
             GitHub
           </Link>
-          <Link href="https://github.com/DerstedtCasper/vcp-code-2.0" className="signin-btn desktop-nav">
+          <Link href="https://app.kilo.ai" className="signin-btn desktop-nav">
             Sign in
           </Link>
         </div>
@@ -343,9 +335,9 @@ export function TopNav({ onMobileMenuToggle, isMobileMenuOpen = false, showMobil
       {/* Announcement banner */}
       <div className="announcement-banner">
         <p>
-          We're <Link href="https://github.com/DerstedtCasper/vcp-code-2.0/tree/main/packages/opencode">replatforming our extensions on the new VCP CLI</Link>.
+          We're <Link href="https://blog.kilo.ai/p/kilo-cli">replatforming our extensions on the new Kilo CLI</Link>.
           Contribute to the new CLI and pre-release extensions at{" "}
-          <Link href="https://github.com/DerstedtCasper/vcp-code-2.0">DerstedtCasper/vcp-code-2.0</Link>.
+          <Link href="https://github.com/Kilo-Org/kilocode">Kilo-Org/kilocode</Link>.
         </p>
       </div>
 
@@ -568,4 +560,3 @@ export function TopNav({ onMobileMenuToggle, isMobileMenuOpen = false, showMobil
     </header>
   )
 }
-

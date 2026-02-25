@@ -1,15 +1,15 @@
-﻿---
+---
 title: "Cloud Agent"
-description: "Using VCP Code in the browser"
+description: "Using Kilo Code in the browser"
 ---
 
 # {% $markdoc.frontmatter.title %}
 
-Cloud Agents let you run VCP Code in the cloud from any device, without relying on your local machine. They provide a remote development environment that can read and modify your GitHub and GitLab repositories, run commands, and auto-commit changes as work progresses.
+Cloud Agents let you run Kilo Code in the cloud from any device, without relying on your local machine. They provide a remote development environment that can read and modify your GitHub and GitLab repositories, run commands, and auto-commit changes as work progresses.
 
 ## What Cloud Agents Enable
 
-- Run VCP Code remotely from a browser
+- Run Kilo Code remotely from a browser
 - Auto-create branches and push work continuously
 - Use env vars + startup commands to shape the workspace
 - Work from anywhere while keeping your repo in sync
@@ -19,20 +19,20 @@ Cloud Agents let you run VCP Code in the cloud from any device, without relying 
 Before using Cloud Agents:
 
 - **GitHub or GitLab Integration must be configured**
-  Connect your account via the [Integrations tab](https://github.com/DerstedtCasper/vcp-code-2.0/integrations) so that Cloud Agents can access your repositories.
+  Connect your account via the [Integrations tab](https://app.kilo.ai/integrations) so that Cloud Agents can access your repositories.
 
 ## Cost
 
 - **Compute is free during limited beta**
-  - Please provide any feedback in our Cloud Agents beta Discord channel: [VCP Discord](https://github.com/DerstedtCasper/vcp-code-2.0/discussions)
-- **VCP Code credits are still used** when the agent performs work (model usage, operations, etc.).
+  - Please provide any feedback in our Cloud Agents beta Discord channel: [Kilo Discord](https://kilo.ai/discord)
+- **Kilo Code credits are still used** when the agent performs work (model usage, operations, etc.).
 
 ## How to Use
 
-1. **Connect your GitHub or GitLab account** in the [Integrations](https://github.com/DerstedtCasper/vcp-code-2.0/integrations) tab of your personal or organization dashboard.
+1. **Connect your GitHub or GitLab account** in the [Integrations](https://app.kilo.ai/integrations) tab of your personal or organization dashboard.
 2. **Select a repository** to use as your workspace.
 3. **Add environment variables** (secrets supported) and set optional startup commands.
-4. **Start chatting with VCP Code.**
+4. **Start chatting with Kilo Code.**
 
 Your work is always pushed to GitHub, ensuring nothing is lost.
 
@@ -85,31 +85,31 @@ You can customize each Cloud Agent session by also defining env vars and startup
   - Bootstrapping tooling
   - Running setup scripts
 
-### Setup Commands vs `.VCPcode/setup-script`
+### Setup Commands vs `.kilocode/setup-script`
 
 - Cloud Agent executes **Setup Commands** configured in the Cloud UI/profile.
-- Cloud Agent does **not** automatically discover or run `.VCPcode/setup-script`.
-- If you want to use `.VCPcode/setup-script` in Cloud Agent, call it explicitly from Setup Commands, for example: `bash .VCPcode/setup-script`.
+- Cloud Agent does **not** automatically discover or run `.kilocode/setup-script`.
+- If you want to use `.kilocode/setup-script` in Cloud Agent, call it explicitly from Setup Commands, for example: `bash .kilocode/setup-script`.
 - If both are present, execution order is:
   1. Setup Commands (in the order you define them)
-  2. Anything those commands invoke (such as `.VCPcode/setup-script`)
+  2. Anything those commands invoke (such as `.kilocode/setup-script`)
 
 ## Skills
 
-Cloud Agents support project-level [skills](/docs/code-with-ai/platforms/cli#skills) stored in your repository. When your repo is cloned, any skills in `.VCPcode/skills/` are automatically available.
+Cloud Agents support project-level [skills](/docs/code-with-ai/platforms/cli#skills) stored in your repository. When your repo is cloned, any skills in `.kilocode/skills/` are automatically available.
 
 {% callout type="note" %}
-Global skills (`~/.VCPcode/skills/`) are not available in Cloud Agents since there is no persistent user home directory.
+Global skills (`~/.kilocode/skills/`) are not available in Cloud Agents since there is no persistent user home directory.
 {% /callout %}
 
 ## Perfect For
 
 Cloud Agents are great for:
 
-- **Remote debugging** using VCP Code debug mode
+- **Remote debugging** using Kilo Code debug mode
 - **Exploration of unfamiliar codebases** without touching your local machine
 - **Architect-mode brainstorming** while on the go
-- **Automated refactors or tech debt cleanup** driven by VCP Code
+- **Automated refactors or tech debt cleanup** driven by Kilo Code
 - **Offloading CI-like tasks**, experiments, or batch updates
 
 ## Webhook Triggers
@@ -122,7 +122,7 @@ Webhook triggers are currently in beta and subject to change.
 
 ### Accessing Webhooks
 
-Webhook triggers are accessible from the main sidebar with an entry named **Webhook** and link to [https://github.com/DerstedtCasper/vcp-code-2.0/cloud/webhooks](https://github.com/DerstedtCasper/vcp-code-2.0/cloud/webhooks) for personal accounts. Organization-level webhook configurations are available through your organization's sidebar.
+Webhook triggers are accessible from the main sidebar with an entry named **Webhook** and link to [https://app.kilo.ai/cloud/webhooks](https://app.kilo.ai/cloud/webhooks) for personal accounts. Organization-level webhook configurations are available through your organization's sidebar.
 
 ### Configuration
 
@@ -168,11 +168,9 @@ Care should be taken when deciding to use webhooks as they are susceptible to pr
 - Each message can run for **up to 15 minutes**.
   Break large tasks into smaller steps; use a `plan.md` or `todo.md` file to keep scope clear.
 - **Context is persistent across messages.**
-  VCP Code remembers previous turns within the same session.
+  Kilo Code remembers previous turns within the same session.
 - **Auto/YOLO mode is always on.**
   The agent will modify code without prompting for confirmation.
 - **Sessions are restorable locally** and local sessions can be resumed in Cloud Agent.
 - **Sessions prior to December 9th 2025** may not be accessible in the web UI.
 - **MCP support is coming**, but **Docker-based MCP servers will _not_ be supported**.
-
-

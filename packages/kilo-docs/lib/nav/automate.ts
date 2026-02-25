@@ -1,4 +1,4 @@
-﻿import { NavSection } from "../types"
+import { NavSection } from "../types"
 
 export const AutomateNav: NavSection[] = [
   {
@@ -20,7 +20,7 @@ export const AutomateNav: NavSection[] = [
     ],
   },
   {
-    title: "Extending VCP Code",
+    title: "Extending Kilo",
     links: [
       { href: "/automate/extending/local-models", children: "Local Models" },
       {
@@ -38,7 +38,7 @@ export const AutomateNav: NavSection[] = [
           { href: "/automate/mcp/overview", children: "MCP Overview" },
           {
             href: "/automate/mcp/using-in-kilo-code",
-            children: "Using MCP in VCP Code",
+            children: "Using MCP in Kilo Code",
           },
           { href: "/automate/mcp/using-in-cli", children: "Using MCP in CLI" },
           { href: "/automate/mcp/what-is-mcp", children: "What is MCP" },
@@ -59,4 +59,3 @@ export const AutomateNav: NavSection[] = [
     ],
   },
 ]
-

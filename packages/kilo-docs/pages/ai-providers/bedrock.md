@@ -1,10 +1,10 @@
-﻿---
+---
 sidebar_label: AWS Bedrock
 ---
 
-# Using AWS Bedrock With VCP Code
+# Using AWS Bedrock With Kilo Code
 
-VCP Code supports accessing models through Amazon Bedrock, a fully managed service that makes a selection of high-performing foundation models (FMs) from leading AI companies available via a single API. This provider connects directly to AWS Bedrock and authenticates with the provided credentials.
+Kilo Code supports accessing models through Amazon Bedrock, a fully managed service that makes a selection of high-performing foundation models (FMs) from leading AI companies available via a single API. This provider connects directly to AWS Bedrock and authenticates with the provided credentials.
 
 **Website:** [https://aws.amazon.com/bedrock/](https://aws.amazon.com/bedrock/)
 
@@ -32,9 +32,9 @@ You have three options for configuring AWS credentials:
 3.  **AWS Profile:**
     - Configure an AWS profile using the AWS CLI or by manually editing your AWS credentials file. See the [AWS CLI documentation](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html) for details.
 
-## Configuration in VCP Code
+## Configuration in Kilo Code
 
-1.  **Open VCP Code Settings:** Click the gear icon ({% codicon name="gear" /%}) in the VCP Code panel.
+1.  **Open Kilo Code Settings:** Click the gear icon ({% codicon name="gear" /%}) in the Kilo Code panel.
 2.  **Select Provider:** Choose "Bedrock" from the "API Provider" dropdown.
 3.  **Select Authentication Method:**
     - **Bedrock API Key:**
@@ -53,4 +53,3 @@ You have three options for configuring AWS credentials:
 - **Permissions:** Ensure your IAM user or role has the necessary permissions to invoke Bedrock models. The `bedrock:InvokeModel` permission is required.
 - **Pricing:** Refer to the [Amazon Bedrock pricing](https://aws.amazon.com/bedrock/pricing/) page for details on model costs.
 - **Cross-Region Inference:** Using cross-region inference may result in higher latency.
-

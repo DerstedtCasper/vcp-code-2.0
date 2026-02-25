@@ -1,4 +1,4 @@
-﻿# codebase_search
+# codebase_search
 
 {% callout type="info" title="Setup Required" %}
 The `codebase_search` tool is part of the [Codebase Indexing](/docs/customize/context/codebase-indexing) feature. It requires additional setup including an embedding provider and vector database.
@@ -25,7 +25,7 @@ This tool searches through your indexed codebase using semantic similarity rathe
 
 ## When is it used?
 
-- When VCP Code needs to find code related to specific functionality across your project
+- When Kilo Code needs to find code related to specific functionality across your project
 - When looking for implementation patterns or similar code structures
 - When searching for error handling, authentication, or other conceptual code patterns
 - When exploring unfamiliar codebases to understand how features are implemented
@@ -205,10 +205,10 @@ Each search result includes:
 
 ## Examples When Used
 
-- When implementing a new feature, VCP Code searches for "authentication middleware" to understand existing patterns before writing new code.
-- When debugging an issue, VCP Code searches for "error handling in API calls" to find related error patterns across the codebase.
-- When refactoring code, VCP Code searches for "database transaction patterns" to ensure consistency across all database operations.
-- When onboarding to a new codebase, VCP Code searches for "configuration loading" to understand how the application bootstraps.
+- When implementing a new feature, Kilo Code searches for "authentication middleware" to understand existing patterns before writing new code.
+- When debugging an issue, Kilo Code searches for "error handling in API calls" to find related error patterns across the codebase.
+- When refactoring code, Kilo Code searches for "database transaction patterns" to ensure consistency across all database operations.
+- When onboarding to a new codebase, Kilo Code searches for "configuration loading" to understand how the application bootstraps.
 
 ---
 
@@ -256,4 +256,3 @@ Finding configuration and environment setup code:
 <query>environment variables and application configuration</query>
 </codebase_search>
 ```
-

@@ -1,4 +1,4 @@
-﻿# Auto Cleanup
+# Auto Cleanup
 
 Auto Cleanup automatically manages your task history by removing old tasks to free up disk space and improve performance. Tasks are intelligently classified and retained based on their type and age, ensuring important work is preserved while temporary or experimental tasks are cleaned up.
 
@@ -8,7 +8,7 @@ Task deletion is permanent and cannot be undone. Deleted tasks are completely re
 
 ## Overview
 
-As you work with VCP Code, each task creates files containing conversation history, checkpoints, and other data. Over time, this accumulates and can consume significant disk space. Auto-Cleanup solves this by:
+As you work with Kilo Code, each task creates files containing conversation history, checkpoints, and other data. Over time, this accumulates and can consume significant disk space. Auto-Cleanup solves this by:
 
 - **Automatically removing old tasks** based on configurable retention periods
 - **Preserving important tasks** by classifying them into different types
@@ -41,7 +41,7 @@ Every task is automatically classified into one of these categories:
 
 #### Understanding Task Completion
 
-A task is considered "completed" when VCP Code uses the [`attempt_completion`](/docs/automate/tools/attempt-completion) tool to formally mark it as finished. Tasks without this completion marker are classified as incomplete, even if you consider them done. This distinction helps clean up abandoned or experimental tasks more aggressively.
+A task is considered "completed" when Kilo Code uses the [`attempt_completion`](/docs/automate/tools/attempt-completion) tool to formally mark it as finished. Tasks without this completion marker are classified as incomplete, even if you consider them done. This distinction helps clean up abandoned or experimental tasks more aggressively.
 
 ### Cleanup Process
 
@@ -56,9 +56,9 @@ When Auto-Cleanup runs, it:
 
 ## Configuration
 
-Access Auto-Cleanup settings through the VCP Code settings panel:
+Access Auto-Cleanup settings through the Kilo Code settings panel:
 
-1. Click the gear icon ({% codicon name="gear" /%}) in VCP Code
+1. Click the gear icon ({% codicon name="gear" /%}) in Kilo Code
 2. Navigate to the **Auto-Cleanup** section (under Checkpoints)
 
 ### Enable Auto-Cleanup
@@ -227,9 +227,9 @@ When a task is deleted, the following are permanently removed:
 
 Task data is stored in your VS Code global storage location:
 
-- **macOS**: `~/Library/Application Support/Code/User/globalStorage/VCPcode.VCP-code/`
-- **Windows**: `%APPDATA%\Code\User\globalStorage\VCPcode.VCP-code\`
-- **Linux**: `~/.config/Code/User/globalStorage/VCPcode.VCP-code/`
+- **macOS**: `~/Library/Application Support/Code/User/globalStorage/kilocode.kilo-code/`
+- **Windows**: `%APPDATA%\Code\User\globalStorage\kilocode.kilo-code\`
+- **Linux**: `~/.config/Code/User/globalStorage/kilocode.kilo-code/`
 
 ## Privacy & Data Handling
 
@@ -273,5 +273,3 @@ Check if they are:
 1. Favorited with "Never delete favorited tasks" enabled
 2. Recently modified (even viewing a task may update its timestamp)
 3. Protected by a longer retention period based on their type
-
-

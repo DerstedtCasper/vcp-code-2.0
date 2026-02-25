@@ -1,31 +1,31 @@
-﻿---
+---
 title: "Migration"
-description: "Migrate your team to VCP Code Enterprise"
+description: "Migrate your team to Kilo Code Enterprise"
 ---
 
 # Migration
 
-Switch to **VCP Teams** or **VCP Enterprise** from other AI coding tools and experience transparent pricing, no vendor lock-in, and superior team management capabilities.
+Switch to **Kilo Teams** or **Kilo Enterprise** from other AI coding tools and experience transparent pricing, no vendor lock-in, and superior team management capabilities.
 
-## Why Teams Switch to VCP
+## Why Teams Switch to Kilo
 
 ### Transparency vs. Opacity
 
 **Other AI coding vendors** hide their true costs behind opaque subscription models, leaving you wondering what you're actually paying for.
 
-**VCP Teams** and **VCP Enterprise** show you exactly what each AI request costs - no markup, no hidden fees, complete transparency.
+**Kilo Teams** and **Kilo Enterprise** show you exactly what each AI request costs - no markup, no hidden fees, complete transparency.
 
 ### No Rate Limiting
 
 **Other tools** slow you down with rate limits and model switching when you need AI most.
 
-**VCP Teams** and **VCP Enterprise** never limit your usage - pay for what you use, use what you need.
+**Kilo Teams** and **Kilo Enterprise** never limit your usage - pay for what you use, use what you need.
 
 ### True Team Management
 
 **Other solutions** offer basic user management with limited visibility.
 
-**VCP Teams** provides comprehensive team analytics, role-based permissions, and detailed usage insights, while **VCP Enterprise** adds advanced governance, audit logging, and enterprise-level security controls.
+**Kilo Teams** provides comprehensive team analytics, role-based permissions, and detailed usage insights, while **Kilo Enterprise** adds advanced governance, audit logging, and enterprise-level security controls.
 
 ## Migrating from Cursor
 
@@ -37,7 +37,7 @@ Switch to **VCP Teams** or **VCP Enterprise** from other AI coding tools and exp
 - **Vendor lock-in** with proprietary systems
 - **Hidden model switching** that degrades quality
 
-### What You Gain with VCP Teams or VCP Enterprise
+### What You Gain with Kilo Teams or Kilo Enterprise
 
 - **Transparent AI costs** - See exactly what providers charge
 - **No rate limiting** - Use AI when you need it most
@@ -52,33 +52,33 @@ Switch to **VCP Teams** or **VCP Enterprise** from other AI coding tools and exp
 
 1. **Audit current Cursor usage** across your team
 2. **Identify active users** and their usage patterns
-3. **Calculate current costs** (if visible) vs. VCP pricing
+3. **Calculate current costs** (if visible) vs. Kilo pricing
 4. **Plan migration timeline** to minimize disruption
 
-**Step 2: VCP Setup**
+**Step 2: Kilo Setup**
 
-1. **Create organization** at [app.VCP.ai](https://github.com/DerstedtCasper/vcp-code-2.0)
-2. **Subscribe to Teams ($15/user/month)** or **Enterprise ([Contact Sales](https://github.com/DerstedtCasper/vcp-code-2.0/discussions))**
+1. **Create organization** at [app.kilo.ai](https://app.kilo.ai)
+2. **Subscribe to Teams ($15/user/month)** or **Enterprise ([Contact Sales](https://kilo.ai/contact-sales))**
 3. **Configure team settings** and usage policies
 4. **Purchase initial AI credits** based on usage estimates
 
 **Step 3: Team Migration**
 
-1. **Invite team members** to VCP
-2. **Install VCP Code extension** alongside Cursor initially
+1. **Invite team members** to Kilo
+2. **Install Kilo Code extension** alongside Cursor initially
 3. **Migrate projects gradually** starting with non-critical work
-4. **Train team** on VCP Code features and workflows
+4. **Train team** on Kilo Code features and workflows
 
 **Step 4: Full Transition**
 
-1. **Monitor usage patterns** in VCP dashboard
+1. **Monitor usage patterns** in Kilo dashboard
 2. **Optimize settings** based on team feedback
 3. **Cancel Cursor subscriptions** once fully migrated
 4. **Uninstall Cursor** from team machines
 
 ### Cursor Feature Mapping
 
-| Cursor Feature         | VCP Equivalent                                                |
+| Cursor Feature         | Kilo Equivalent                                                |
 | ---------------------- | -------------------------------------------------------------- |
 | AI Chat                | Chat interface with multiple modes                             |
 | Code Generation        | Code mode with advanced tools                                  |
@@ -97,7 +97,7 @@ Switch to **VCP Teams** or **VCP Enterprise** from other AI coding tools and exp
 - **Microsoft ecosystem lock-in** - Tied to Microsoft services
 - **Limited customization** - Few options for team-specific needs
 
-### VCP Advantages
+### Kilo Advantages
 
 - **Multiple AI providers** - Choose from 18+ model providers
 - **Advanced team management** - Roles, permissions, and analytics
@@ -111,13 +111,13 @@ Switch to **VCP Teams** or **VCP Enterprise** from other AI coding tools and exp
 **Phase 1: Parallel Usage (Week 1-2)**
 
 1. **Keep GitHub Copilot** active during transition
-2. **Install VCP Code** extension for team members
-3. **Start with simple tasks** in VCP Code
+2. **Install Kilo Code** extension for team members
+3. **Start with simple tasks** in Kilo Code
 4. **Compare results** and team satisfaction
 
 **Phase 2: Gradual Transition (Week 3-4)**
 
-1. **Use VCP Code** for new projects
+1. **Use Kilo Code** for new projects
 2. **Migrate existing projects** one at a time
 3. **Train team** on advanced features
 4. **Optimize usage patterns** based on analytics
@@ -126,12 +126,12 @@ Switch to **VCP Teams** or **VCP Enterprise** from other AI coding tools and exp
 
 1. **Disable GitHub Copilot** for most team members
 2. **Cancel GitHub Copilot** subscriptions
-3. **Optimize VCP Plan** settings
+3. **Optimize Kilo Plan** settings
 4. **Document new workflows** and best practices
 
 ### GitHub Copilot Feature Comparison
 
-| GitHub Copilot   | VCP                             | Advantage                     |
+| GitHub Copilot   | Kilo                             | Advantage                     |
 | ---------------- | -------------------------------- | ----------------------------- |
 | Code suggestions | AI-powered code generation       | ✅ More model choices         |
 | Chat interface   | Multi-mode chat system           | ✅ Specialized modes          |
@@ -167,16 +167,16 @@ Switch to **VCP Teams** or **VCP Enterprise** from other AI coding tools and exp
 
 - [ ] Audit current AI coding tool usage
 - [ ] Identify team members and their roles
-- [ ] Calculate current costs vs. VCP pricing
+- [ ] Calculate current costs vs. Kilo pricing
 - [ ] Plan migration timeline and milestones
 - [ ] Prepare team communication and training
 
 **Migration Execution**
 
-- [ ] Set up VCP Organization
+- [ ] Set up Kilo Organization
 - [ ] Configure team settings and policies
 - [ ] Invite team members and assign roles
-- [ ] Install VCP Code extension across team
+- [ ] Install Kilo Code extension across team
 - [ ] Start with pilot projects or non-critical work
 
 **Post-Migration Optimization**
@@ -189,16 +189,16 @@ Switch to **VCP Teams** or **VCP Enterprise** from other AI coding tools and exp
 
 ## Technical Migration: Rules and Configurations
 
-VCP Code uses a compatible rules system that supports Cursor and Windsurf patterns. Migrating your custom rules and configurations is straightforward and typically takes 5-10 minutes per project.
+Kilo Code uses a compatible rules system that supports Cursor and Windsurf patterns. Migrating your custom rules and configurations is straightforward and typically takes 5-10 minutes per project.
 
 **Quick Overview:**
 
-- **Project rules**: `.cursor/rules/*.mdc` → `.VCPcode/rules/*.md` (remove YAML frontmatter, keep Markdown content)
-- **Legacy rules**: `.cursorrules` → `.VCPcode/rules/legacy-rules.md`
-- **AGENTS.md**: Works identically in VCP Code (no conversion needed)
-- **Global rules**: Recreate in `~/.VCPcode/rules/*.md` directory
+- **Project rules**: `.cursor/rules/*.mdc` → `.kilocode/rules/*.md` (remove YAML frontmatter, keep Markdown content)
+- **Legacy rules**: `.cursorrules` → `.kilocode/rules/legacy-rules.md`
+- **AGENTS.md**: Works identically in Kilo Code (no conversion needed)
+- **Global rules**: Recreate in `~/.kilocode/rules/*.md` directory
 
-VCP Code also supports mode-specific rules (`.VCPcode/rules-{mode}/`), which Cursor and Windsurf don't have. This allows different rules for different workflows (e.g., Code mode vs Debug mode).
+Kilo Code also supports mode-specific rules (`.kilocode/rules-{mode}/`), which Cursor and Windsurf don't have. This allows different rules for different workflows (e.g., Code mode vs Debug mode).
 
 **👉 For detailed step-by-step instructions, format conversion examples, troubleshooting, and advanced migration scenarios, see our [Technical Migration Guide](/docs/getting-started/migrating).**
 
@@ -213,7 +213,7 @@ VCP Code also supports mode-specific rules (`.VCPcode/rules-{mode}/`), which Cur
 - Rate limiting forces inefficient workflows
 - Model switching without notification
 
-**VCP Transparent Pricing**
+**Kilo Transparent Pricing**
 
 - Pay exactly what AI providers charge
 - See cost of every request in real-time
@@ -229,7 +229,7 @@ VCP Code also supports mode-specific rules (`.VCPcode/rules-{mode}/`), which Cur
 3. **Opportunity costs** from limited model access
 4. **Management overhead** from poor team visibility
 
-**VCP Benefits**
+**Kilo Benefits**
 
 1. **Transparent AI costs** (typically 30-50% lower)
 2. **Productivity gains** from no rate limiting
@@ -242,7 +242,7 @@ VCP Code also supports mode-specific rules (`.VCPcode/rules-{mode}/`), which Cur
 
 **Week 1: Basics**
 
-- VCP Code extension installation and setup
+- Kilo Code extension installation and setup
 - Basic chat interface and mode usage
 - Understanding transparent pricing model
 - Team dashboard overview
@@ -351,7 +351,7 @@ VCP Code also supports mode-specific rules (`.VCPcode/rules-{mode}/`), which Cur
 
 ### Getting Migration Help
 
-- **Email:** https://github.com/DerstedtCasper/vcp-code-2.0/issues
+- **Email:** migrations@kilo.ai
 - **Discord:** Join our migration support channel
 - **Consultation:** Schedule free migration planning call
 - **Documentation:**
@@ -388,6 +388,4 @@ VCP Code also supports mode-specific rules (`.VCPcode/rules-{mode}/`), which Cur
 - [Understand billing and pricing](/docs/collaborate/teams/billing)
 - [Migrate your rules and configurations](/docs/getting-started/migrating) (technical guide)
 
-Ready to make the switch? Contact our migration team at https://github.com/DerstedtCasper/vcp-code-2.0/issues to plan your transition to transparent AI coding.
-
-
+Ready to make the switch? Contact our migration team at migrations@kilo.ai to plan your transition to transparent AI coding.

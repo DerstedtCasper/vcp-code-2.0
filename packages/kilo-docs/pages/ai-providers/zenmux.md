@@ -1,10 +1,10 @@
-﻿---
+---
 title: ZenMux
 ---
 
 import Codicon from "@site/src/components/Codicon";
 
-# Using ZenMux With VCP Code
+# Using ZenMux With Kilo Code
 
 [ZenMux](https://zenmux.ai) provides a unified API gateway to access multiple AI models from different providers through a single endpoint. It supports OpenAI, Anthropic, Google, and other major AI providers, automatically handling routing, fallbacks, and cost optimization.
 
@@ -12,11 +12,11 @@ import Codicon from "@site/src/components/Codicon";
 
 1. **Sign up for ZenMux:** Visit [zenmux.ai](https://zenmux.ai) to create an account.
 2. **Get your API key:** After signing up, navigate to your dashboard to generate an API key.
-3. **Configure in VCP Code:** Add your API key to VCP Code settings.
+3. **Configure in Kilo Code:** Add your API key to Kilo Code settings.
 
-## Configuration in VCP Code
+## Configuration in Kilo Code
 
-1. **Open VCP Code Settings:** Click the gear icon (<Codicon name="gear" />) in the VCP Code panel.
+1. **Open Kilo Code Settings:** Click the gear icon (<Codicon name="gear" />) in the Kilo Code panel.
 2. **Select Provider:** Choose "ZenMux" from the "API Provider" dropdown.
 3. **Enter API Key:** Paste your ZenMux API key into the "ZenMux API Key" field.
 4. **Select Model:** Choose your desired model from the "Model" dropdown.
@@ -194,5 +194,4 @@ For additional support:
 
 - Visit the [ZenMux documentation](https://zenmux.ai/docs)
 - Contact ZenMux support through their dashboard
-- Check the [VCP Code GitHub repository](https://github.com/DerstedtCasper/vcp-code-2.0) for integration-specific issues
-
+- Check the [Kilo Code GitHub repository](https://github.com/Kilo-Org/kilocode) for integration-specific issues
