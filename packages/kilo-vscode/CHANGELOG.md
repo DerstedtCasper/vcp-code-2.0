@@ -8,7 +8,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - Initial release
 
-## [7.0.29] - 2026-02-24
+## [7.0.33] - 2026-02-24
 
 - 完成 VCP Code 2.0 全量重构规划落地（Phase A-H）
 - 新增 Context 记忆控制中心五分区与 Memory CRUD/Preview（Pin/Exclude/Compress）
@@ -19,3 +19,4 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - VCP 控制中心增加 `vcp_dynamic_fold` 与 WindowSensor/ScreenPilot 观测可视化
 - 完成品牌与 i18n 收口（VCP 页面硬编码清理、zh/en parity 校验）
 - 完成 parity e2e 基线与全链路回归 smoke 验证
+

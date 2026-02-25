@@ -1,6 +1,6 @@
 {
   "name": "@opencode-ai/ui",
-  "version": "7.0.29",
+  "version": "7.0.33",
   "type": "module",
   "license": "MIT",
   "exports": {
@@ -120,4 +120,5 @@
     "virtua": "catalog:"
   }
 }
+
 
