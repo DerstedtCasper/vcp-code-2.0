@@ -4,7 +4,7 @@
   "version": "7.0.29",
   "type": "module",
   "license": "MIT",
-  "description": "VCP Code specific i18n translations and overrides",
+  "description": "Kilo-specific i18n translations and overrides",
   "exports": {
     "./*": "./src/*.ts"
   },
