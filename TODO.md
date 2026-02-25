@@ -8,12 +8,8 @@
 
 ## 🧹 第一阶段: Git 清理与管理
 
-- [ ] **[Git]** 压缩 v7.0.33 之后的提交为单个干净提交
-  ```
-  git reset --soft 18df06a80
-  git commit -m "chore: squash post-v7.0.33 i18n fixes"
-  ```
-- [ ] **[Git]** 重命名 remotes：`origin → upstream`，`origin-user → origin`
+- [x] **[Git]** 压缩 v7.0.33 之后的提交为单个干净提交 ✅ `aa3227190`
+- [x] **[Git]** 重命名 remotes：`origin → upstream`，`origin-user → origin` ✅
 
 ---
 
@@ -77,23 +73,23 @@
 
 ### 🔴 P0 — 输入框 (PromptInput)
 
-- [ ] **[P0-1]** Slash 命令面板 (`SlashCommandPopover.tsx`)
-  - [ ] `/new`, `/clear`, `/model`, `/mode`, `/compact`, `/enhance` 命令
-  - [ ] 执行后气泡反馈（"✨ 提示词增强成功"）
-  - [ ] 修改 `PromptInput.tsx` handleInput/handleKeyDown
-  - [ ] 新增 i18n 键: `prompt.slash.*`
+- [x] **[P0-1]** Slash 命令面板 (`SlashCommandPopover.tsx`) ✅ `40bf52c70`
+  - [x] `/new`, `/clear`, `/model`, `/mode`, `/compact`, `/enhance` 命令
+  - [x] 执行后气泡反馈（"✨ 提示词增强成功"）
+  - [x] 修改 `PromptInput.tsx` handleInput/handleKeyDown
+  - [x] 新增 i18n 键: `prompt.slash.*`
 
-- [ ] **[P0-2]** Agent @提及（扩展 `useFileMention.ts` → `useAtMention.ts`）
-  - [ ] @ 菜单: 文件 + Agent + 目录三种类型
+- [x] **[P0-2]** Agent @提及（扩展 `useFileMention.ts` → `useAtMention.ts`）
+  - [ ] @ 菜单: 文件 + Agent + 目录三种类型 ← 下一步
   - [ ] 从 session context 获取 agent 列表
   - [ ] 类型图标区分 (🧠/📄/📁)
 
-- [ ] **[P0-3]** 上下文项 Pill 显示 (`ContextPills.tsx`)
-  - [ ] 输入框上方显示已选中文件的 pill/tag
-  - [ ] pill 支持 ✕ 移除
+- [x] **[P0-3]** 上下文项 Pill 显示 (`ContextPills.tsx`) ✅ `40bf52c70`
+  - [x] 输入框上方显示已选中文件的 pill/tag
+  - [x] pill 支持 ✕ 移除
 
-- [ ] **[P0-4]** 历史消息导航
-  - [ ] 输入框为空时 ↑↓ 键翻阅历史发送记录
+- [x] **[P0-4]** 历史消息导航 ✅ `40bf52c70`
+  - [x] 输入框为空时 ↑↓ 键翻阅历史发送记录
 
 ### 🔴 P0 — 模型选择 (ModelSelector)
 
@@ -113,16 +109,16 @@
 
 ### 🔴 P0 — 全局状态回报 (VcpStatusBadge)
 
-- [ ] **[P0-8]** 角落状态胶囊 (`VcpStatusBadge.tsx`)
-  - [ ] 显示: 当前模型 + Agent + 状态颜色（🟢/🟡/🔴）
-  - [ ] 挂载到 `App.tsx`
+- [x] **[P0-8]** 角落状态胶囊 (`VcpStatusBadge.tsx`) ✅ `40bf52c70`
+  - [x] 显示: 当前模型 + Agent + 状态颜色（🟢/🟡/🔴）
+  - [x] 挂载到 `App.tsx`
 
-- [ ] **[P0-9]** 详情抽屉 (Drawer)
-  - [ ] Token 统计: 上传/下载 Token + 预估成本
-  - [ ] 最近 5 次请求历史
-  - [ ] 快捷操作: 清空队列、刷新连接
-  - [ ] 修改 `session.tsx` 增加 Token 统计状态
-  - [ ] 补充消息契约 `VcpStatusUpdateMessage`（Extension → Webview）
+- [x] **[P0-9]** 详情抽屉 (Drawer) ✅ `40bf52c70`
+  - [x] Token 统计: 上传/下载 Token + 预估成本
+  - [x] 最近 5 次请求历史
+  - [x] 快捷操作: 清空队列、刷新连接
+  - [ ] 修改 `session.tsx` 增加 Token 统计状态 ← 已利用现有 contextUsage
+  - [x] 补充消息契约 `CompactContextRequest` / `EnhancePromptRequest`（types/messages.ts）
 
 ---
 
@@ -209,3 +205,5 @@
 | 日期 | 内容 |
 |------|------|
 | 2026-02-26 | 根据开发文档 v2.1 生成初始 TODO |
+| 2026-02-26 | ✅ Git 清理完成（压缩提交 + 重命名 remotes） |
+| 2026-02-26 | ✅ P0 完成：SlashCommandPopover / ContextPills / VcpStatusBadge / 历史导航 / i18n / CSS / 消息契约（`40bf52c70`） |
