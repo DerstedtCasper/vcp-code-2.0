@@ -1008,4 +1008,79 @@ export const dict = {
   "settings.agentBehaviour.loadedSkills": "Loaded Skills",
   "settings.agentBehaviour.skillsLoading": "Loading skills from CLI backend...",
   "settings.agentBehaviour.skillsEmpty": "No skills discovered. Add skill paths/URLs or install built-in skills.",
+
+  // ===== VCP Settings =====
+  "settings.vcp.group.basic": "Basic VCP Settings", // TODO: translate
+  "settings.vcp.group.memory": "Memory Bridge", // TODO: translate
+  "settings.vcp.group.toolbox": "VCPToolBox", // TODO: translate
+  "settings.vcp.enabled.title": "Enable VCP Mode", // TODO: translate
+  "settings.vcp.enabled.description": "Enable VCP protocol extensions in the runtime.", // TODO: translate
+  "settings.vcp.contextFold.title": "Context Fold", // TODO: translate
+  "settings.vcp.contextFold.description": "Wrap foldable context blocks with configurable markers.", // TODO: translate
+  "settings.vcp.contextFold.style.title": "Render Style", // TODO: translate
+  "settings.vcp.contextFold.style.description": "Choose how folded context blocks are rendered.", // TODO: translate
+  "settings.vcp.contextFold.startMarker.title": "Start Marker", // TODO: translate
+  "settings.vcp.contextFold.startMarker.description": "Marker inserted before a folded context block.", // TODO: translate
+  "settings.vcp.contextFold.endMarker.title": "End Marker", // TODO: translate
+  "settings.vcp.contextFold.endMarker.description": "Marker inserted after a folded context block.", // TODO: translate
+  "settings.vcp.vcpInfo.title": "VCPInfo Bridge", // TODO: translate
+  "settings.vcp.vcpInfo.description": "Expose VCPInfo metadata blocks in model output.", // TODO: translate
+  "settings.vcp.vcpInfo.startMarker.title": "Start Marker", // TODO: translate
+  "settings.vcp.vcpInfo.startMarker.description": "Marker inserted before a VCPInfo block.", // TODO: translate
+  "settings.vcp.vcpInfo.endMarker.title": "End Marker", // TODO: translate
+  "settings.vcp.vcpInfo.endMarker.description": "Marker inserted after a VCPInfo block.", // TODO: translate
+  "settings.vcp.toolRequest.title": "Tool Request Bridge", // TODO: translate
+  "settings.vcp.toolRequest.description": "Expose structured tool request blocks from model output.", // TODO: translate
+  "settings.vcp.toolRequest.bridgeMode.title": "Bridge Mode", // TODO: translate
+  "settings.vcp.toolRequest.bridgeMode.description": "Choose whether tool requests are executed directly or posted as events.", // TODO: translate
+  "settings.vcp.toolRequest.maxPerMessage.title": "Max Requests Per Message", // TODO: translate
+  "settings.vcp.toolRequest.maxPerMessage.description": "Maximum number of tool requests processed from a single message.", // TODO: translate
+  "settings.vcp.toolRequest.allowTools.title": "Allowed Tools", // TODO: translate
+  "settings.vcp.toolRequest.allowTools.description": "Comma-separated allowlist of tools that can be requested.", // TODO: translate
+  "settings.vcp.toolRequest.denyTools.title": "Blocked Tools", // TODO: translate
+  "settings.vcp.toolRequest.denyTools.description": "Comma-separated denylist of tools that are always blocked.", // TODO: translate
+  "settings.vcp.toolRequest.keepInOutput.title": "Keep Blocks in Output", // TODO: translate
+  "settings.vcp.toolRequest.keepInOutput.description": "Keep raw tool request blocks in assistant output text.", // TODO: translate
+  "settings.vcp.toolRequest.startMarker.title": "Start Marker", // TODO: translate
+  "settings.vcp.toolRequest.startMarker.description": "Marker inserted before a tool request block.", // TODO: translate
+  "settings.vcp.toolRequest.endMarker.title": "End Marker", // TODO: translate
+  "settings.vcp.toolRequest.endMarker.description": "Marker inserted after a tool request block.", // TODO: translate
+  "settings.vcp.html.title": "HTML Rendering", // TODO: translate
+  "settings.vcp.html.description": "Enable HTML response rendering for compatible clients.", // TODO: translate
+  "settings.vcp.agentTeam.title": "Agent Team", // TODO: translate
+  "settings.vcp.agentTeam.description": "Enable distributed multi-agent coordination.", // TODO: translate
+  "settings.vcp.agentTeam.maxParallel.title": "Max Parallel Agents", // TODO: translate
+  "settings.vcp.agentTeam.maxParallel.description": "Maximum number of agents allowed to run in parallel per wave.", // TODO: translate
+  "settings.vcp.agentTeam.waveStrategy.title": "Wave Strategy", // TODO: translate
+  "settings.vcp.agentTeam.waveStrategy.description": "Strategy for scheduling multi-agent execution waves.", // TODO: translate
+  "settings.vcp.agentTeam.requireFileSeparation.title": "Require File Separation", // TODO: translate
+  "settings.vcp.agentTeam.requireFileSeparation.description": "Require each agent to work on distinct files when possible.", // TODO: translate
+  "settings.vcp.agentTeam.handoffFormat.title": "Handoff Format", // TODO: translate
+  "settings.vcp.agentTeam.handoffFormat.description": "Preferred format for inter-agent handoff summaries.", // TODO: translate
+  "settings.vcp.memory.migratedNote": "Memory runtime settings moved to the dedicated Memory panel.", // TODO: translate
+  "settings.vcp.vcptoolbox.baseUrl.title": "Base URL", // TODO: translate
+  "settings.vcp.vcptoolbox.baseUrl.description": "Base URL for VCPToolBox API.", // TODO: translate
+  "settings.vcp.vcptoolbox.modelsPath.title": "Models Path", // TODO: translate
+  "settings.vcp.vcptoolbox.modelsPath.description": "Path used to fetch the model list.", // TODO: translate
+  "settings.vcp.vcptoolbox.modelsURL.title": "Models URL", // TODO: translate
+  "settings.vcp.vcptoolbox.modelsURL.description": "Full URL override for model discovery.", // TODO: translate
+  "settings.vcp.vcptoolbox.apiKey.title": "API Key", // TODO: translate
+  "settings.vcp.vcptoolbox.apiKey.description": "API key sent to VCPToolBox requests.", // TODO: translate
+  "settings.vcp.enabled.toast.enabled": "VCP mode enabled", // TODO: translate
+  "settings.vcp.enabled.toast.disabled": "VCP mode disabled", // TODO: translate
+  "settings.vcp.contextFold.toast.enabled": "Context Fold enabled", // TODO: translate
+  "settings.vcp.contextFold.toast.disabled": "Context Fold disabled", // TODO: translate
+  "settings.vcp.vcpInfo.toast.enabled": "VCPInfo bridge enabled", // TODO: translate
+  "settings.vcp.vcpInfo.toast.disabled": "VCPInfo bridge disabled", // TODO: translate
+  "settings.vcp.toolRequest.toast.enabled": "Tool Request bridge enabled", // TODO: translate
+  "settings.vcp.toolRequest.toast.disabled": "Tool Request bridge disabled", // TODO: translate
+  "settings.vcp.toolRequest.keepInOutput.toast.enabled": "Tool request blocks will be kept in output", // TODO: translate
+  "settings.vcp.toolRequest.keepInOutput.toast.disabled": "Tool request blocks will be hidden from output", // TODO: translate
+  "settings.vcp.html.toast.enabled": "HTML rendering enabled", // TODO: translate
+  "settings.vcp.html.toast.disabled": "HTML rendering disabled", // TODO: translate
+  "settings.vcp.agentTeam.toast.enabled": "Agent Team enabled", // TODO: translate
+  "settings.vcp.agentTeam.toast.disabled": "Agent Team disabled", // TODO: translate
+  "settings.vcp.agentTeam.requireFileSeparation.toast.enabled": "File separation requirement enabled", // TODO: translate
+  "settings.vcp.agentTeam.requireFileSeparation.toast.disabled": "File separation requirement disabled", // TODO: translate
 }
+
