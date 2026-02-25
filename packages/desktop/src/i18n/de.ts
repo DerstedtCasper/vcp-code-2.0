@@ -1,4 +1,4 @@
-﻿export const dict = {
+export const dict = {
   "desktop.menu.checkForUpdates": "Nach Updates suchen...",
   "desktop.menu.installCli": "CLI installieren...",
   "desktop.menu.reloadWebview": "Webview neu laden",
@@ -11,12 +11,12 @@
   "desktop.updater.checkFailed.title": "Updateprüfung fehlgeschlagen",
   "desktop.updater.checkFailed.message": "Updates konnten nicht geprüft werden",
   "desktop.updater.none.title": "Kein Update verfügbar",
-  "desktop.updater.none.message": "Sie verwenden bereits die neueste Version von VCP",
+  "desktop.updater.none.message": "Sie verwenden bereits die neueste Version von Kilo",
   "desktop.updater.downloadFailed.title": "Update fehlgeschlagen",
   "desktop.updater.downloadFailed.message": "Update konnte nicht heruntergeladen werden",
   "desktop.updater.downloaded.title": "Update heruntergeladen",
   "desktop.updater.downloaded.prompt":
-    "Version {{version}} von VCP wurde heruntergeladen. Möchten Sie sie installieren und neu starten?",
+    "Version {{version}} von Kilo wurde heruntergeladen. Möchten Sie sie installieren und neu starten?",
   "desktop.updater.installFailed.title": "Update fehlgeschlagen",
   "desktop.updater.installFailed.message": "Update konnte nicht installiert werden",
 
@@ -26,4 +26,3 @@
   "desktop.cli.failed.title": "Installation fehlgeschlagen",
   "desktop.cli.failed.message": "CLI konnte nicht installiert werden: {{error}}",
 }
-

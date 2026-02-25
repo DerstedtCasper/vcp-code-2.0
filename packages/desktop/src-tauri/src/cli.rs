@@ -226,7 +226,7 @@ pub fn spawn_command(
                 "BIN=\"$HOME/.opencode/bin/opencode\"".to_string(),
                 "if [ ! -x \"$BIN\" ]; then".to_string(),
                 format!(
-                    "  curl -fsSL https://raw.githubusercontent.com/DerstedtCasper/vcp-code-2.0/main/install | bash -s -- --version {} --no-modify-path",
+                    "  curl -fsSL https://kilo.ai/install | bash -s -- --version {} --no-modify-path",
                     shell_escape(&version)
                 ),
                 "fi".to_string(),
