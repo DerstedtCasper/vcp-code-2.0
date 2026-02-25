@@ -6,6 +6,7 @@ import { Button } from "@kilocode/kilo-ui/button"
 import { IconButton } from "@kilocode/kilo-ui/icon-button"
 import { Switch } from "@kilocode/kilo-ui/switch"
 import { Accordion } from "@kilocode/kilo-ui/accordion"
+import { showToast } from "@kilocode/kilo-ui/toast"
 
 import { useConfig } from "../../context/config"
 import { useSession } from "../../context/session"
@@ -447,6 +448,13 @@ const AgentBehaviourTab: Component = () => {
       return items.length > 0 ? items : undefined
     }
 
+    const showVcpSwitchToast = (keyPrefix: string, enabled: boolean) => {
+      showToast({
+        variant: "success",
+        title: language.t(`${keyPrefix}.toast.${enabled ? "enabled" : "disabled"}`),
+      })
+    }
+
     const vcptoolbox = createMemo<ProviderConfig>(() => (config().provider?.vcptoolbox as ProviderConfig) ?? {})
     const vcptoolboxOptions = createMemo<NonNullable<ProviderConfig["options"]>>(() => vcptoolbox().options ?? {})
     const updateVcptoolboxOptions = (partial: Partial<NonNullable<ProviderConfig["options"]>>) => {
@@ -482,7 +490,10 @@ const AgentBehaviourTab: Component = () => {
           >
             <Switch
               checked={vcp().enabled ?? false}
-              onChange={(checked) => updateVcp({ enabled: checked })}
+              onChange={(checked) => {
+                updateVcp({ enabled: checked })
+                showVcpSwitchToast("settings.vcp.enabled", checked)
+              }}
               hideLabel
             >
               {language.t("settings.vcp.enabled.title")}
@@ -495,7 +506,10 @@ const AgentBehaviourTab: Component = () => {
           >
             <Switch
               checked={contextFold().enabled ?? true}
-              onChange={(checked) => updateContextFold({ enabled: checked })}
+              onChange={(checked) => {
+                updateContextFold({ enabled: checked })
+                showVcpSwitchToast("settings.vcp.contextFold", checked)
+              }}
               hideLabel
             >
               {language.t("settings.vcp.contextFold.title")}
@@ -541,7 +555,14 @@ const AgentBehaviourTab: Component = () => {
           </SettingsRow>
 
           <SettingsRow title={language.t("settings.vcp.vcpInfo.title")} description={language.t("settings.vcp.vcpInfo.description")}>
-            <Switch checked={vcpInfo().enabled ?? true} onChange={(checked) => updateVcpInfo({ enabled: checked })} hideLabel>
+            <Switch
+              checked={vcpInfo().enabled ?? true}
+              onChange={(checked) => {
+                updateVcpInfo({ enabled: checked })
+                showVcpSwitchToast("settings.vcp.vcpInfo", checked)
+              }}
+              hideLabel
+            >
               {language.t("settings.vcp.vcpInfo.title")}
             </Switch>
           </SettingsRow>
@@ -574,7 +595,10 @@ const AgentBehaviourTab: Component = () => {
           >
             <Switch
               checked={toolRequest().enabled ?? true}
-              onChange={(checked) => updateToolRequest({ enabled: checked })}
+              onChange={(checked) => {
+                updateToolRequest({ enabled: checked })
+                showVcpSwitchToast("settings.vcp.toolRequest", checked)
+              }}
               hideLabel
             >
               {language.t("settings.vcp.toolRequest.title")}
@@ -636,7 +660,10 @@ const AgentBehaviourTab: Component = () => {
           >
             <Switch
               checked={toolRequest().keepBlockInText ?? false}
-              onChange={(checked) => updateToolRequest({ keepBlockInText: checked })}
+              onChange={(checked) => {
+                updateToolRequest({ keepBlockInText: checked })
+                showVcpSwitchToast("settings.vcp.toolRequest.keepInOutput", checked)
+              }}
               hideLabel
             >
               {language.t("settings.vcp.toolRequest.keepInOutput.title")}
@@ -666,13 +693,27 @@ const AgentBehaviourTab: Component = () => {
           </SettingsRow>
 
           <SettingsRow title={language.t("settings.vcp.html.title")} description={language.t("settings.vcp.html.description")}>
-            <Switch checked={html().enabled ?? true} onChange={(checked) => updateVcp({ html: { ...html(), enabled: checked } })} hideLabel>
+            <Switch
+              checked={html().enabled ?? true}
+              onChange={(checked) => {
+                updateVcp({ html: { ...html(), enabled: checked } })
+                showVcpSwitchToast("settings.vcp.html", checked)
+              }}
+              hideLabel
+            >
               {language.t("settings.vcp.html.title")}
             </Switch>
           </SettingsRow>
 
           <SettingsRow title={language.t("settings.vcp.agentTeam.title")} description={language.t("settings.vcp.agentTeam.description")}>
-            <Switch checked={agentTeam().enabled ?? false} onChange={(checked) => updateAgentTeam({ enabled: checked })} hideLabel>
+            <Switch
+              checked={agentTeam().enabled ?? false}
+              onChange={(checked) => {
+                updateAgentTeam({ enabled: checked })
+                showVcpSwitchToast("settings.vcp.agentTeam", checked)
+              }}
+              hideLabel
+            >
               {language.t("settings.vcp.agentTeam.title")}
             </Switch>
           </SettingsRow>
@@ -712,7 +753,10 @@ const AgentBehaviourTab: Component = () => {
           >
             <Switch
               checked={agentTeam().requireFileSeparation ?? true}
-              onChange={(checked) => updateAgentTeam({ requireFileSeparation: checked })}
+              onChange={(checked) => {
+                updateAgentTeam({ requireFileSeparation: checked })
+                showVcpSwitchToast("settings.vcp.agentTeam.requireFileSeparation", checked)
+              }}
               hideLabel
             >
               {language.t("settings.vcp.agentTeam.requireFileSeparation.title")}
