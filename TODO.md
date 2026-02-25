@@ -64,8 +64,8 @@
 
 ### 阶段 G — 构建验证
 - [x] `bun turbo typecheck` → 0 错误
-- [ ] `git grep -i "kilo"` 仅返回不可更改项
-- [ ] 提交: `brand: complete kilo->nova decoupling across all packages`
+- [x] `git grep -i "kilo"` 仅返回不可更改项（已审计：运行时协议值/CLI命令与兼容路径）
+- [x] 提交: `brand: complete kilo->nova decoupling across all packages`
 
 ---
 

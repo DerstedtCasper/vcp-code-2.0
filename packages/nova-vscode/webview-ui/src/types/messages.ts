@@ -154,6 +154,13 @@ export interface AgentInfo {
   native?: boolean
   hidden?: boolean
   color?: string
+  tools?: string[]
+  promptSummary?: string
+  autoApproval?: {
+    read?: boolean
+    write?: boolean
+    execute?: boolean
+  }
 }
 
 export interface SkillInfo {
@@ -180,7 +187,7 @@ export interface DeviceAuthState {
   error?: string
 }
 
-// Kilo notification types (mirrored from nova-gateway)
+// Nova notification types (mirrored from nova-gateway)
 export interface NovacodeNotificationAction {
   actionText: string
   actionURL: string
@@ -305,6 +312,13 @@ export interface ExperimentalConfig {
   primary_tools?: string[]
   continue_loop_on_deny?: boolean
   mcp_timeout?: number
+  codebaseIndex?: {
+    include?: string[]
+    exclude?: string[]
+    maxFileSizeKb?: number
+    storagePath?: string
+    autoIndex?: boolean
+  }
 }
 
 export interface KeybindsConfig {
@@ -657,6 +671,23 @@ export interface PromptQueueUpdatedMessage {
   items: PromptQueueItem[]
 }
 
+export interface CodebaseIndexStatusMessage {
+  type: "codebaseIndexStatus"
+  status: "idle" | "indexing" | "error"
+  indexedFiles: number
+  totalFiles: number
+  lastUpdated?: string
+}
+
+export interface CodebaseIndexProgressMessage {
+  type: "codebaseIndexProgress"
+  status: "indexing" | "idle" | "error"
+  indexedFiles: number
+  totalFiles: number
+  currentFile?: string
+  message?: string
+}
+
 export interface MemoryAtomicItem {
   id: string
   text: string
@@ -780,6 +811,19 @@ export interface VcpMemoryRefreshMessage {
   folderWeight: number
 }
 
+export interface VcpStatusUpdateMessage {
+  type: "vcpStatusUpdate"
+  payload: {
+    status: "idle" | "busy" | "error"
+    connected: boolean
+    currentModel?: string
+    currentProfile?: string
+    currentAgent?: string
+    tokens: { in: number; out: number; total: number }
+    lastRunId?: string
+  }
+}
+
 // Agent Manager worktree session metadata
 export interface AgentManagerSessionMetaMessage {
   type: "agentManager.sessionMeta"
@@ -889,6 +933,8 @@ export interface EnhancePromptErrorMessage {
   requestId: string
 }
 
+export type EnhancePromptResponse = EnhancePromptResultMessage | EnhancePromptErrorMessage
+
 export type ExtensionMessage =
   | ReadyMessage
   | ConnectionStateMessage
@@ -924,6 +970,8 @@ export type ExtensionMessage =
   | ConfigUpdatedMessage
   | ConfigConflictMessage
   | PromptQueueUpdatedMessage
+  | CodebaseIndexStatusMessage
+  | CodebaseIndexProgressMessage
   | MemoryOverviewMessage
   | MemorySearchResultMessage
   | MemoryAtomicUpdatedMessage
@@ -935,6 +983,7 @@ export type ExtensionMessage =
   | VcpToolRequestMessage
   | VcpToolRequestResultMessage
   | VcpMemoryRefreshMessage
+  | VcpStatusUpdateMessage
   | AgentManagerSessionMetaMessage
   | AgentManagerRepoInfoMessage
   | AgentManagerWorktreeSetupMessage
@@ -1148,6 +1197,14 @@ export interface RequestBrowserSettingsMessage {
 
 export interface RequestConfigMessage {
   type: "requestConfig"
+}
+
+export interface RequestCodebaseIndexStatusMessage {
+  type: "requestCodebaseIndexStatus"
+}
+
+export interface ReindexCodebaseRequestMessage {
+  type: "reindexCodebase"
 }
 
 export interface RequestPromptQueueMessage {
@@ -1382,6 +1439,8 @@ export type WebviewMessage =
   | UpdateSettingRequest
   | RequestBrowserSettingsMessage
   | RequestConfigMessage
+  | RequestCodebaseIndexStatusMessage
+  | ReindexCodebaseRequestMessage
   | RequestPromptQueueMessage
   | EnqueuePromptMessage
   | DequeuePromptMessage

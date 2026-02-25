@@ -87,7 +87,7 @@
 }
 
 /* ============================================
-   Kilo Logo (empty state)
+   Nova Logo (empty state)
    ============================================ */
 
 .nova-logo {
@@ -102,7 +102,7 @@
   object-fit: contain;
 }
 
-.kilo-about-text {
+.nova-about-text {
   max-width: 260px;
   font-size: 13px;
   line-height: 1.4;
@@ -520,6 +520,24 @@
   white-space: nowrap;
 }
 
+.model-selector-gateway-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+
+.model-selector-gateway-dot--connected {
+  background: #21c55d;
+  box-shadow: 0 0 0 1px rgba(33, 197, 93, 0.35);
+}
+
+.model-selector-gateway-dot--disconnected {
+  background: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.35);
+}
+
 .model-selector-trigger-chevron {
   flex-shrink: 0;
 }
@@ -848,6 +866,81 @@
   color: #fff;
 }
 
+.mode-switcher-create {
+  padding: 8px 12px;
+  border-top: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.2));
+  color: var(--vscode-textLink-foreground);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.mode-switcher-create:hover {
+  background: var(--surface-interactive-hover, var(--vscode-list-hoverBackground));
+}
+
+.mode-switcher-editor {
+  display: grid;
+  gap: 6px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.2));
+}
+
+.mode-switcher-editor-input,
+.mode-switcher-editor-textarea {
+  width: 100%;
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 4px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  font-size: 12px;
+  padding: 6px 8px;
+  font-family: var(--vscode-font-family);
+}
+
+.mode-switcher-editor-textarea {
+  min-height: 66px;
+  resize: vertical;
+}
+
+.mode-switcher-editor-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.mode-switcher-capabilities {
+  border-top: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.2));
+  padding: 8px 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.mode-switcher-capabilities-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.mode-switcher-capabilities-row {
+  display: grid;
+  grid-template-columns: 82px 1fr;
+  gap: 6px;
+  align-items: start;
+}
+
+.mode-switcher-capabilities-key {
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+}
+
+.mode-switcher-capabilities-value {
+  font-size: 11px;
+  color: var(--vscode-foreground);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
 /* ============================================
    Permission Dock (patterns inside BasicTool)
    ============================================ */
@@ -944,7 +1037,7 @@
 }
 
 /* ============================================
-   Kilo Notifications
+   Nova Notifications
    ============================================ */
 
 .nova-notifications {
