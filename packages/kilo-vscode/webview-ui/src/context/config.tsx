@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Config context
  * Manages backend configuration state (permissions, agents, providers, etc.)
  * and exposes an updateConfig method to apply partial updates.
@@ -37,14 +37,14 @@ export const ConfigProvider: ParentComponent = (props) => {
     !!value && typeof value === "object" && !Array.isArray(value)
 
   const mergeConfig = <T extends Record<string, unknown>>(left: T, right: Partial<T>): T => {
-    const next = { ...left }
-    for (const [key, value] of Object.entries(right)) {
+    const next: Record<string, unknown> = { ...left }
+    for (const [key, value] of Object.entries(right) as [string, unknown][]) {
       if (value === undefined) continue
       const prev = next[key]
       next[key] =
         isRecord(prev) && isRecord(value)
-          ? mergeConfig(prev as Record<string, unknown>, value as Record<string, unknown>)
-          : (value as unknown)
+          ? mergeConfig(prev, value)
+          : value
     }
     return next as T
   }
@@ -64,7 +64,7 @@ export const ConfigProvider: ParentComponent = (props) => {
     staged = null
     const mutationID = ++nextMutationID
     const expectedRevision = revision()
-    console.debug("[VCP] Config queue: send", { mutationID, expectedRevision, hasPending: !!staged })
+    console.debug("[Kilo New] Config queue: send", { mutationID, expectedRevision, hasPending: !!staged })
     const waiter = waitConfigMutation(mutationID)
     vscode.postMessage({
       type: "updateConfig",
@@ -79,14 +79,14 @@ export const ConfigProvider: ParentComponent = (props) => {
     } catch (error) {
       if (typeof error === "object" && error !== null && "type" in error && error.type === "configConflict") {
         const conflict = error as ConfigConflictMessage
-        console.warn("[VCP] Config queue: conflict", {
+        console.warn("[Kilo New] Config queue: conflict", {
           mutationID,
           revision: conflict.revision,
         })
         setConfig(conflict.config)
         setRevision(conflict.revision)
       } else {
-        console.error("[VCP] Config update failed", error)
+        console.error("[Kilo New] Config update failed", error)
       }
     }
 
@@ -96,7 +96,7 @@ export const ConfigProvider: ParentComponent = (props) => {
   const enqueueConfigMutation = (partial: Partial<Config>) => {
     const current = staged ?? {}
     staged = mergeConfig(current as Record<string, unknown>, partial as Record<string, unknown>) as Partial<Config>
-    console.debug("[VCP] Config queue: enqueue", { running, hasPending: !!staged })
+    console.debug("[Kilo New] Config queue: enqueue", { running, hasPending: !!staged })
     if (running) return
     running = true
     void sendNext()
@@ -113,7 +113,7 @@ export const ConfigProvider: ParentComponent = (props) => {
     }
     if (message.type === "configUpdated") {
       if (!inflight) {
-        console.debug("[VCP] Config queue: stale configUpdated dropped (no inflight)")
+        console.debug("[Kilo New] Config queue: stale configUpdated dropped (no inflight)")
         return
       }
       if (
@@ -121,7 +121,7 @@ export const ConfigProvider: ParentComponent = (props) => {
         typeof revision() === "number" &&
         message.revision < (revision() as number)
       ) {
-        console.warn("[VCP] Config queue: stale configUpdated dropped", {
+        console.warn("[Kilo New] Config queue: stale configUpdated dropped", {
           inflightMutationID: inflight.mutationID,
           incomingRevision: message.revision,
           currentRevision: revision(),
@@ -138,7 +138,7 @@ export const ConfigProvider: ParentComponent = (props) => {
     }
     if (message.type === "configConflict") {
       if (!inflight) {
-        console.debug("[VCP] Config queue: stale configConflict dropped (no inflight)")
+        console.debug("[Kilo New] Config queue: stale configConflict dropped (no inflight)")
         return
       }
       setConfig(message.config)
@@ -199,4 +199,3 @@ export function useConfig(): ConfigContextValue {
   }
   return context
 }
-

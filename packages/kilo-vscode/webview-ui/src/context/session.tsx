@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Session context
  * Manages session state, messages, and handles SSE events from the extension.
  * Also owns per-session model selection (provider context is catalog-only).
@@ -128,11 +128,6 @@ interface SessionContextValue {
   dequeuePrompt: (itemID?: string) => void
   reorderPromptQueue: (itemIDs: string[]) => void
   compact: () => void
-  undo: () => void
-  redo: () => void
-  fork: () => void
-  share: () => void
-  unshare: () => void
   respondToPermission: (permissionId: string, response: "once" | "always" | "reject") => void
   replyToQuestion: (requestID: string, answers: string[][]) => void
   rejectQuestion: (requestID: string) => void
@@ -161,9 +156,10 @@ export const SessionProvider: ParentComponent = (props) => {
   const [busySinceMap, setBusySinceMap] = createStore<Record<string, number>>({})
 
   // Derived accessors for the current session (backwards compatible)
-  const statusInfo = () => {
+  const idleStatus: SessionStatusInfo = { type: "idle" }
+  const statusInfo: Accessor<SessionStatusInfo> = () => {
     const id = currentSessionID()
-    return id ? (statusMap[id] ?? { type: "idle" }) : { type: "idle" }
+    return id ? (statusMap[id] ?? idleStatus) : idleStatus
   }
   const status = () => statusInfo().type as SessionStatus
   const busySince = () => {
@@ -506,7 +502,7 @@ export const SessionProvider: ParentComponent = (props) => {
     const effectiveMessageID = messageID || part.messageID
 
     if (!effectiveMessageID) {
-      console.warn("[VCP] Part updated without messageID:", part.id, part.type)
+      console.warn("[Kilo New] Part updated without messageID:", part.id, part.type)
       return
     }
 
@@ -762,7 +758,7 @@ export const SessionProvider: ParentComponent = (props) => {
     busyMode?: BusyInsertMode,
   ) {
     if (!server.isConnected()) {
-      console.warn("[VCP] Cannot send message: not connected")
+      console.warn("[Kilo New] Cannot send message: not connected")
       return
     }
 
@@ -798,7 +794,7 @@ export const SessionProvider: ParentComponent = (props) => {
   function abort() {
     const sessionID = currentSessionID()
     if (!sessionID) {
-      console.warn("[VCP] Cannot abort: no current session")
+      console.warn("[Kilo New] Cannot abort: no current session")
       return
     }
 
@@ -810,13 +806,13 @@ export const SessionProvider: ParentComponent = (props) => {
 
   function compact() {
     if (!server.isConnected()) {
-      console.warn("[VCP] Cannot compact: not connected")
+      console.warn("[Kilo New] Cannot compact: not connected")
       return
     }
 
     const sessionID = currentSessionID()
     if (!sessionID) {
-      console.warn("[VCP] Cannot compact: no current session")
+      console.warn("[Kilo New] Cannot compact: no current session")
       return
     }
 
@@ -826,70 +822,6 @@ export const SessionProvider: ParentComponent = (props) => {
       sessionID,
       providerID: sel?.providerID,
       modelID: sel?.modelID,
-    })
-  }
-
-  function undo() {
-    const sessionID = currentSessionID()
-    if (!sessionID) {
-      console.warn("[VCP] Cannot undo: no current session")
-      return
-    }
-    const lastUser = [...messages()].reverse().find((m) => m.role === "user")
-    vscode.postMessage({
-      type: "sessionUndo",
-      sessionID,
-      messageID: lastUser?.id,
-    })
-  }
-
-  function redo() {
-    const sessionID = currentSessionID()
-    if (!sessionID) {
-      console.warn("[VCP] Cannot redo: no current session")
-      return
-    }
-    vscode.postMessage({
-      type: "sessionRedo",
-      sessionID,
-    })
-  }
-
-  function fork() {
-    const sessionID = currentSessionID()
-    if (!sessionID) {
-      console.warn("[VCP] Cannot fork: no current session")
-      return
-    }
-    const lastUser = [...messages()].reverse().find((m) => m.role === "user")
-    vscode.postMessage({
-      type: "sessionFork",
-      sessionID,
-      messageID: lastUser?.id,
-    })
-  }
-
-  function share() {
-    const sessionID = currentSessionID()
-    if (!sessionID) {
-      console.warn("[VCP] Cannot share: no current session")
-      return
-    }
-    vscode.postMessage({
-      type: "sessionShare",
-      sessionID,
-    })
-  }
-
-  function unshare() {
-    const sessionID = currentSessionID()
-    if (!sessionID) {
-      console.warn("[VCP] Cannot unshare: no current session")
-      return
-    }
-    vscode.postMessage({
-      type: "sessionUnshare",
-      sessionID,
     })
   }
 
@@ -966,7 +898,7 @@ export const SessionProvider: ParentComponent = (props) => {
 
   function createSession() {
     if (!server.isConnected()) {
-      console.warn("[VCP] Cannot create session: not connected")
+      console.warn("[Kilo New] Cannot create session: not connected")
       return
     }
 
@@ -991,7 +923,7 @@ export const SessionProvider: ParentComponent = (props) => {
 
   function loadSessions() {
     if (!server.isConnected()) {
-      console.warn("[VCP] Cannot load sessions: not connected")
+      console.warn("[Kilo New] Cannot load sessions: not connected")
       return
     }
     vscode.postMessage({ type: "loadSessions" })
@@ -999,7 +931,7 @@ export const SessionProvider: ParentComponent = (props) => {
 
   function selectSession(id: string) {
     if (!server.isConnected()) {
-      console.warn("[VCP] Cannot select session: not connected")
+      console.warn("[Kilo New] Cannot select session: not connected")
       return
     }
     setCurrentSessionID(id)
@@ -1010,7 +942,7 @@ export const SessionProvider: ParentComponent = (props) => {
 
   function deleteSession(id: string) {
     if (!server.isConnected()) {
-      console.warn("[VCP] Cannot delete session: not connected")
+      console.warn("[Kilo New] Cannot delete session: not connected")
       return
     }
     vscode.postMessage({ type: "deleteSession", sessionID: id })
@@ -1018,7 +950,7 @@ export const SessionProvider: ParentComponent = (props) => {
 
   function renameSession(id: string, title: string) {
     if (!server.isConnected()) {
-      console.warn("[VCP] Cannot rename session: not connected")
+      console.warn("[Kilo New] Cannot rename session: not connected")
       return
     }
     vscode.postMessage({ type: "renameSession", sessionID: id, title })
@@ -1125,11 +1057,6 @@ export const SessionProvider: ParentComponent = (props) => {
     enqueuePrompt,
     dequeuePrompt,
     reorderPromptQueue,
-    undo,
-    redo,
-    fork,
-    share,
-    unshare,
     variantList,
     currentVariant,
     selectVariant,
@@ -1158,4 +1085,3 @@ export function useSession(): SessionContextValue {
   }
   return context
 }
-
