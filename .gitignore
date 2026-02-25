@@ -37,3 +37,9 @@ logs/
 
 # Telemetry ID
 telemetry-id
+
+# Build artifacts
+*.vsix
+
+# OpenCode skill cache
+.opencode/
