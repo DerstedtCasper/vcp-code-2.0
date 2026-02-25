@@ -1,15 +1,17 @@
-// kilocode_change - new file
+﻿// VCPcode_change - new file
 export const dict = {
-  // Kilo Gateway provider translations
-  "provider.connect.kiloGateway.line1":
-    "Kilo Gateway предоставляет доступ к подборке надёжных оптимизированных моделей для агентов кодирования.",
-  "provider.connect.kiloGateway.line2":
+  // VCP Gateway provider translations
+  "provider.connect.VCPGateway.line1":
+    "VCP Gateway предоставляет доступ к подборке надёжных оптимизированных моделей для агентов кодирования.",
+  "provider.connect.VCPGateway.line2":
     "С одним API-ключом вы получите доступ к моделям Claude, GPT, Gemini, GLM и другим.",
-  "provider.connect.kiloGateway.visit.prefix": "Посетите ",
-  "provider.connect.kiloGateway.visit.link": "kilo.ai",
-  "provider.connect.kiloGateway.visit.suffix": ", чтобы получить ваш API-ключ.",
+  "provider.connect.VCPGateway.visit.prefix": "Посетите ",
+  "provider.connect.VCPGateway.visit.link": "VCP.ai",
+  "provider.connect.VCPGateway.visit.suffix": ", чтобы получить ваш API-ключ.",
 
   // Provider dialog translations
   "dialog.provider.group.recommended": "Рекомендуемые",
-  "dialog.provider.kilo.note": "Доступ к 500+ моделям ИИ",
+  "dialog.provider.VCP.note": "Доступ к 500+ моделям ИИ",
 }
+
+

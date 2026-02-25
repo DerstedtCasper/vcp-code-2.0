@@ -1,15 +1,15 @@
----
+﻿---
 title: "Architecture Overview"
-description: "Overview of Kilo Code architecture"
+description: "Overview of VCP Code architecture"
 ---
 
 # Architecture Overview
 
-This document provides a high-level overview of Kilo Code's architecture to help contributors understand how the different components fit together.
+This document provides a high-level overview of VCP Code's architecture to help contributors understand how the different components fit together.
 
 ## System Architecture
 
-Kilo Code is a VS Code extension built with TypeScript that connects to various AI providers to deliver intelligent coding assistance. The architecture follows a layered approach:
+VCP Code is a VS Code extension built with TypeScript that connects to various AI providers to deliver intelligent coding assistance. The architecture follows a layered approach:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -35,7 +35,7 @@ Kilo Code is a VS Code extension built with TypeScript that connects to various 
 │  ┌──────────────────────────────────────────────────────────────┐   │
 │  │                   API Provider Layer                         │   │
 │  ├────────────┬────────────┬────────────┬───────────────────────┤   │
-│  │  Anthropic │   OpenAI   │   Kilo     │     OpenRouter        │   │
+│  │  Anthropic │   OpenAI   │   VCP     │     OpenRouter        │   │
 │  │    API     │    API     │ Provider   │        API            │   │
 │  └────────────┴────────────┴────────────┴───────────────────────┘   │
 │                                                                     │
@@ -50,7 +50,7 @@ For detailed documentation on current and planned features, see the [Architectur
 
 ### Modes
 
-Modes are configurable presets that customize Kilo Code's behavior:
+Modes are configurable presets that customize VCP Code's behavior:
 
 - Define which tools are available
 - Set custom system prompts
@@ -59,7 +59,7 @@ Modes are configurable presets that customize Kilo Code's behavior:
 
 ### Model Context Protocol (MCP)
 
-MCP enables extending Kilo Code with external tools:
+MCP enables extending VCP Code with external tools:
 
 - Servers provide additional capabilities
 - Standardized protocol for tool communication
@@ -145,3 +145,5 @@ The project uses:
 
 - [Development Environment](/docs/contributing/development-environment) - Setup guide
 - [Tools Reference](/docs/automate/tools) - Available tools
+
+

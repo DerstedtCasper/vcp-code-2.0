@@ -1,6 +1,6 @@
----
+﻿---
 title: "Team Management"
-description: "Add and manage team members in Kilo Code"
+description: "Add and manage team members in VCP Code"
 ---
 
 # Managing Your Team
@@ -11,7 +11,7 @@ Owners have full administrative oversight including billing, seat allocation, an
 
 Only Owners can conduct team management activities.
 
-Members can use the Kilo Code extension and see data on the team's usage in the [usage dashboard](/docs/collaborate/teams/analytics).
+Members can use the VCP Code extension and see data on the team's usage in the [usage dashboard](/docs/collaborate/teams/analytics).
 
 ## Adding Team Members
 
@@ -58,3 +58,4 @@ The Organization tab shows:
 - [Learn about team roles and permissions](/docs/collaborate/teams/team-management)
 
 Effective team management ensures your organization maximizes the benefits of AI-assisted development while maintaining cost control and security.
+

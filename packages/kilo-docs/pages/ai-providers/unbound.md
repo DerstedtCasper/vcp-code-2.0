@@ -1,10 +1,10 @@
----
+﻿---
 sidebar_label: Unbound
 ---
 
-# Using Unbound With Kilo Code
+# Using Unbound With VCP Code
 
-Kilo Code supports accessing models through [Unbound](https://getunbound.ai/), a platform that focuses on providing secure and reliable access to a variety of large language models (LLMs). Unbound acts as a gateway, allowing you to use models from providers like Anthropic and OpenAI without needing to manage multiple API keys and configurations directly. They emphasize security and compliance features for enterprise use.
+VCP Code supports accessing models through [Unbound](https://getunbound.ai/), a platform that focuses on providing secure and reliable access to a variety of large language models (LLMs). Unbound acts as a gateway, allowing you to use models from providers like Anthropic and OpenAI without needing to manage multiple API keys and configurations directly. They emphasize security and compliance features for enterprise use.
 
 **Website:** [https://getunbound.ai/](https://getunbound.ai/)
 
@@ -16,11 +16,11 @@ Kilo Code supports accessing models through [Unbound](https://getunbound.ai/), a
 
 ## Supported Models
 
-Unbound allows you configure a list of supported models in your application, and Kilo Code will automatically fetch the list of available models from the Unbound API.
+Unbound allows you configure a list of supported models in your application, and VCP Code will automatically fetch the list of available models from the Unbound API.
 
-## Configuration in Kilo Code
+## Configuration in VCP Code
 
-1.  **Open Kilo Code Settings:** Click the gear icon ({% codicon name="gear" /%}) in the Kilo Code panel.
+1.  **Open VCP Code Settings:** Click the gear icon ({% codicon name="gear" /%}) in the VCP Code panel.
 2.  **Select Provider:** Choose "Unbound" from the "API Provider" dropdown.
 3.  **Enter API Key:** Paste your Unbound API key into the "Unbound API Key" field.
 4.  **Select Model:** Choose your desired model from the "Model" dropdown.
@@ -28,3 +28,4 @@ Unbound allows you configure a list of supported models in your application, and
 ## Tips and Notes
 
 - **Security Focus:** Unbound emphasizes security features for enterprise use. If your organization has strict security requirements for AI usage, Unbound might be a good option.
+

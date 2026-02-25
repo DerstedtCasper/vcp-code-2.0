@@ -1,23 +1,23 @@
----
+﻿---
 title: Dev Container Persistence
-description: How to preserve Kilo Code threads and settings in dev containers
+description: How to preserve VCP Code threads and settings in dev containers
 ---
 
 # Dev Container Persistence
 
-When using Kilo Code in development containers (VS Code Dev Containers, GitHub Codespaces, etc.), your threads and settings can persist across container rebuilds by properly configuring volume mounts.
+When using VCP Code in development containers (VS Code Dev Containers, GitHub Codespaces, etc.), your threads and settings can persist across container rebuilds by properly configuring volume mounts.
 
 ## Why Persistence Matters
 
-Dev containers are ephemeral by default - when you rebuild the container, all data is lost unless explicitly persisted. Kilo Code stores important data including:
+Dev containers are ephemeral by default - when you rebuild the container, all data is lost unless explicitly persisted. VCP Code stores important data including:
 
-- **Conversation threads**: Your ongoing discussions with Kilo Code
+- **Conversation threads**: Your ongoing discussions with VCP Code
 - **Settings**: API configurations, custom modes, and preferences
 - **Cache**: Vector store for code indexing and browser tool data
 
 ## Required Configuration
 
-The Kilo Code dev container is pre-configured with named volumes to preserve your data. If you're setting up your own dev container, add these mounts to your `devcontainer.json`:
+The VCP Code dev container is pre-configured with named volumes to preserve your data. If you're setting up your own dev container, add these mounts to your `devcontainer.json`:
 
 ```json
 {
@@ -25,12 +25,12 @@ The Kilo Code dev container is pre-configured with named volumes to preserve you
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
   "mounts": [
     {
-      "source": "kilocode-global-storage",
-      "target": "/root/.vscode-remote/data/User/globalStorage/kilocode.kilo-code",
+      "source": "VCPcode-global-storage",
+      "target": "/root/.vscode-remote/data/User/globalStorage/VCPcode.VCP-code",
       "type": "volume"
     },
     {
-      "source": "kilocode-settings",
+      "source": "VCPcode-settings",
       "target": "/root/.vscode-remote/data/User/settings",
       "type": "volume"
     }
@@ -42,10 +42,10 @@ The Kilo Code dev container is pre-configured with named volumes to preserve you
 
 | Data Type    | Container Path                                                            |
 | ------------ | ------------------------------------------------------------------------- |
-| Threads      | `/root/.vscode-remote/data/User/globalStorage/kilocode.kilo-code/tasks/`  |
+| Threads      | `/root/.vscode-remote/data/User/globalStorage/VCPcode.VCP-code/tasks/`  |
 | Settings     | `/root/.vscode-remote/data/User/settings/`                                |
-| Cache        | `/root/.vscode-remote/data/User/globalStorage/kilocode.kilo-code/cache/`  |
-| Vector Store | `/root/.vscode-remote/data/User/globalStorage/kilocode.kilo-code/vector/` |
+| Cache        | `/root/.vscode-remote/data/User/globalStorage/VCPcode.VCP-code/cache/`  |
+| Vector Store | `/root/.vscode-remote/data/User/globalStorage/VCPcode.VCP-code/vector/` |
 
 ## Troubleshooting
 
@@ -60,7 +60,7 @@ The Kilo Code dev container is pre-configured with named volumes to preserve you
 If named volumes are accidentally deleted:
 
 1. Threads cannot be automatically recovered
-2. Start new conversations with Kilo Code
+2. Start new conversations with VCP Code
 3. Consider implementing a backup strategy for important threads
 
 ### Manual Backup
@@ -69,7 +69,7 @@ To manually back up your threads:
 
 ```bash
 # Copy thread data from the container
-docker cp <container-name>:/root/.vscode-remote/data/User/globalStorage/kilocode.kilo-code ./kilocode-backup
+docker cp <container-name>:/root/.vscode-remote/data/User/globalStorage/VCPcode.VCP-code ./VCPcode-backup
 ```
 
 ## Custom Storage Path
@@ -81,8 +81,8 @@ For advanced configurations, you can specify a custom storage path:
 ```json
 "mounts": [
   {
-    "source": "${localWorkspaceFolder}/.kilocode-data",
-    "target": "/home/vscode/kilocode-data",
+    "source": "${localWorkspaceFolder}/.VCPcode-data",
+    "target": "/home/vscode/VCPcode-data",
     "type": "bind"
   }
 ]
@@ -90,8 +90,8 @@ For advanced configurations, you can specify a custom storage path:
 
 2. Set the custom storage path in VS Code settings:
    - Open Settings (`Ctrl+,` or `Cmd+,`)
-   - Search for "Kilo Code: Custom Storage Path"
-   - Enter: `/home/vscode/kilocode-data`
+   - Search for "VCP Code: Custom Storage Path"
+   - Enter: `/home/vscode/VCPcode-data`
 
 ## Best Practices
 
@@ -102,6 +102,8 @@ For advanced configurations, you can specify a custom storage path:
 
 ## GitHub Codespaces
 
-GitHub Codespaces automatically persists your VS Code settings and extensions. For Kilo Code threads, the pre-configured dev container includes the necessary volume mounts.
+GitHub Codespaces automatically persists your VS Code settings and extensions. For VCP Code threads, the pre-configured dev container includes the necessary volume mounts.
 
 If using a custom Codespace configuration, ensure the mounts from the Required Configuration section are included.
+
+

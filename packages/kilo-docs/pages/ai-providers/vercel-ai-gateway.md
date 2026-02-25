@@ -1,7 +1,7 @@
----
-description: Configure the Vercel AI Gateway in Kilo Code to robustly access 100+ language models from various providers through a centralized interface.
+﻿---
+description: Configure the Vercel AI Gateway in VCP Code to robustly access 100+ language models from various providers through a centralized interface.
 keywords:
-  - kilo code
+  - VCP Code
   - vercel ai gateway
   - ai provider
   - language models
@@ -13,7 +13,7 @@ keywords:
 sidebar_label: Vercel AI Gateway
 ---
 
-# Using Vercel AI Gateway With Kilo Code
+# Using Vercel AI Gateway With VCP Code
 
 The AI Gateway provides a unified API to access hundreds of models through a single endpoint. It gives you the ability to set budgets, monitor usage, load-balance requests, and manage fallbacks.
 
@@ -37,7 +37,7 @@ An API key is required for authentication.
 
 ## Supported Models
 
-The Vercel AI Gateway supports a large and growing number of models. Kilo Code automatically fetches the list of available models from the `https://ai-gateway.vercel.sh/v1/models` endpoint. Only language models are shown.
+The Vercel AI Gateway supports a large and growing number of models. VCP Code automatically fetches the list of available models from the `https://ai-gateway.vercel.sh/v1/models` endpoint. Only language models are shown.
 
 The default model is `anthropic/claude-sonnet-4` if no model is selected.
 
@@ -52,9 +52,9 @@ Check the model description in the dropdown for specific capabilities.
 
 ---
 
-## Configuration in Kilo Code
+## Configuration in VCP Code
 
-1.  **Open Kilo Code Settings:** Click the gear icon ({% codicon name="gear" /%}) in the Kilo Code panel.
+1.  **Open VCP Code Settings:** Click the gear icon ({% codicon name="gear" /%}) in the VCP Code panel.
 2.  **Select Provider:** Choose "Vercel AI Gateway" from the "API Provider" dropdown.
 3.  **Enter API Key:** Paste your Vercel AI Gateway API key into the "Vercel AI Gateway API Key" field.
 4.  **Select Model:** Choose your desired model from the "Model" dropdown.
@@ -74,3 +74,4 @@ Vercel AI Gateway supports automatic prompt caching for select models including 
 - **Temperature:** The default temperature is `0.7` and is configurable per model.
 - **Bring Your Own Key (BYOK):** The Vercel AI Gateway has **no markup** if you decide to use your own key for the underlying service.
 - **More info:** Vercel does not add rate limits. Upstream providers may. New accounts receive $5 credits every 30 days until the first payment.
+

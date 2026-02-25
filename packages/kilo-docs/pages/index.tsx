@@ -1,11 +1,11 @@
-import React, { useState } from "react"
+﻿import React, { useState } from "react"
 import Link from "next/link"
 
 // Terminal content for each tab
 const terminalContent = {
   installation: (
     <>
-      <span className="terminal-comment"># Install Kilo Code VS Code Extension</span>
+      <span className="terminal-comment"># Install VCP Code VS Code Extension</span>
       {"\n"}
       <span className="terminal-prompt">$</span> code --install-extension kilocode.kilo-code
       {"\n"}
@@ -17,25 +17,25 @@ const terminalContent = {
   ),
   gateway: (
     <>
-      <span className="terminal-comment"># Call Kilo Gateway with a quick curl script</span>
+      <span className="terminal-comment"># Call VCP Gateway with a quick curl script</span>
       {"\n"}
       <span className="terminal-prompt">$</span> export KILO_API_KEY="YOUR_API_KEY"
       {"\n"}
       <span className="terminal-prompt">$</span> curl https://api.kilo.ai/api/gateway/chat/completions \{"\n"}
       -H "Authorization: Bearer $KILO_API_KEY" \{"\n"}
       -H "Content-Type: application/json" \{"\n"}
-      {`  -d '{"model":"anthropic/claude-sonnet-4.5","messages":[{"role":"user","content":"Say hi from Kilo Gateway"}]}'`}
+      {`  -d '{"model":"anthropic/claude-sonnet-4.5","messages":[{"role":"user","content":"Say hi from VCP Gateway"}]}'`}
     </>
   ),
   firstTask: (
     <>
-      <span className="terminal-comment"># Start a new task with Kilo Code</span>
+      <span className="terminal-comment"># Start a new task with VCP Code</span>
       {"\n"}
       <span className="terminal-prompt">$</span> kilo "Create a React component for a user profile"
       {"\n"}
       {"\n"}
       <span className="terminal-comment">
-        # Or for interactive sessions, just run the Kilo CLI in your project folder
+        # Or for interactive sessions, just run the VCP CLI in your project folder
       </span>
       {"\n"}
       <span className="terminal-prompt">$</span> kilo
@@ -71,7 +71,7 @@ const terminalContent = {
 const categories = [
   {
     title: "Get Started",
-    description: "Install Kilo Code and get up and running in minutes",
+    description: "Install VCP Code and get up and running in minutes",
     href: "/getting-started",
     icon: (
       <svg className="category-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -86,7 +86,7 @@ const categories = [
   },
   {
     title: "Code with AI",
-    description: "Learn how to use Kilo Code to write, edit, and understand code",
+    description: "Learn how to use VCP Code to write, edit, and understand code",
     href: "/code-with-ai",
     icon: (
       <svg className="category-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -114,7 +114,7 @@ const categories = [
     ),
     links: [
       { title: "Sessions & Sharing", href: "/collaborate" },
-      { title: "Kilo for Teams", href: "/collaborate" },
+      { title: "VCP Code for Teams", href: "/collaborate" },
       { title: "Enterprise", href: "/collaborate" },
     ],
   },
@@ -154,7 +154,7 @@ const categories = [
     ],
   },
   {
-    title: "Kilo Gateway",
+    title: "VCP Gateway",
     description:
       "A unified API to access hundreds of AI models through a single endpoint with streaming, BYOK, and usage tracking.",
     href: "/gateway",
@@ -173,7 +173,7 @@ const categories = [
   },
   {
     title: "Contributing",
-    description: "Help improve Kilo Code and learn about its architecture",
+    description: "Help improve VCP Code and learn about its architecture",
     href: "/contributing",
     icon: (
       <svg className="category-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -203,13 +203,13 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="hero">
         <div className="hero-content">
-          <h1 className="hero-title">Kilo Code Documentation</h1>
+          <h1 className="hero-title">VCP Code Documentation</h1>
           <p className="hero-subtitle">
-            Explore our guides and examples to build with Kilo Code, the most popular open source coding agent.
+            Explore our guides and examples to build with VCP Code, the most popular open source coding agent.
           </p>
           <div className="hero-buttons">
             <Link href="/getting-started" className="btn btn-primary">
-              Get started with Kilo Code →
+              Get started with VCP Code →
             </Link>
             <Link href="/code-with-ai" className="btn btn-secondary">
               Explore all features
@@ -291,7 +291,7 @@ export default function HomePage() {
       <section className="terminal-section">
         <div className="terminal-intro">
           <h2 className="section-title">Try it out</h2>
-          <p className="terminal-description">Get started quickly with common Kilo Code commands</p>
+          <p className="terminal-description">Get started quickly with common VCP Code commands</p>
         </div>
         <div className="terminal-container">
           <div className="terminal-tabs">
@@ -317,7 +317,7 @@ export default function HomePage() {
               className={`terminal-tab ${activeTab === "gateway" ? "active" : ""}`}
               onClick={() => setActiveTab("gateway")}
             >
-              Kilo Gateway
+              VCP Gateway
             </button>
           </div>
           <div className="terminal-window">
@@ -345,7 +345,7 @@ export default function HomePage() {
             <span className="footer-icon">💬</span>
             <div>
               <strong>Need help?</strong>
-              <Link href="https://kilo.ai/discord" className="footer-link">
+              <Link href="https://github.com/DerstedtCasper/vcp-code-2.0/discussions" className="footer-link">
                 Join our Discord
               </Link>
             </div>
@@ -354,7 +354,7 @@ export default function HomePage() {
             <span className="footer-icon">📝</span>
             <div>
               <strong>Check out our</strong>
-              <Link href="https://github.com/Kilo-Org/kilocode/releases" className="footer-link">
+              <Link href="https://github.com/DerstedtCasper/vcp-code-2.0/releases" className="footer-link">
                 Changelog
               </Link>
             </div>
@@ -363,7 +363,7 @@ export default function HomePage() {
             <span className="footer-icon">🐛</span>
             <div>
               <strong>Found a bug?</strong>
-              <Link href="https://github.com/Kilo-Org/kilocode/issues" className="footer-link">
+              <Link href="https://github.com/DerstedtCasper/vcp-code-2.0/issues" className="footer-link">
                 Report an issue
               </Link>
             </div>
@@ -915,3 +915,4 @@ export default function HomePage() {
     </div>
   )
 }
+

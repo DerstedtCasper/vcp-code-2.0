@@ -1,11 +1,11 @@
----
+﻿---
 title: "Codebase Indexing"
 description: "Index your codebase for improved AI understanding"
 ---
 
 # Codebase Indexing
 
-Codebase Indexing enables semantic code search across your entire project using AI embeddings. Instead of searching for exact text matches, it understands the _meaning_ of your queries, helping Kilo Code find relevant code even when you don't know specific function names or file locations.
+Codebase Indexing enables semantic code search across your entire project using AI embeddings. Instead of searching for exact text matches, it understands the _meaning_ of your queries, helping VCP Code find relevant code even when you don't know specific function names or file locations.
 
 {% image src="/docs/img/codebase-indexing/codebase-indexing.png" alt="Codebase Indexing Settings" width="800" caption="Codebase Indexing Settings" /%}
 
@@ -16,14 +16,14 @@ When enabled, the indexing system:
 1. **Parses your code** using Tree-sitter to identify semantic blocks (functions, classes, methods)
 2. **Creates embeddings** of each code block using AI models
 3. **Stores vectors** in a Qdrant database for fast similarity search
-4. **Provides the [`codebase_search`](/docs/automate/tools/codebase-search) tool** to Kilo Code for intelligent code discovery
+4. **Provides the [`codebase_search`](/docs/automate/tools/codebase-search) tool** to VCP Code for intelligent code discovery
 
 This enables natural language queries like "user authentication logic" or "database connection handling" to find relevant code across your entire project.
 
 ## Key Benefits
 
 - **Semantic Search**: Find code by meaning, not just keywords
-- **Enhanced AI Understanding**: Kilo Code can better comprehend and work with your codebase
+- **Enhanced AI Understanding**: VCP Code can better comprehend and work with your codebase
 - **Cross-Project Discovery**: Search across all files, not just what's open
 - **Pattern Recognition**: Locate similar implementations and code patterns
 
@@ -101,7 +101,7 @@ For team or production use:
 
 1. In the chat header, click the database icon (indexing status)
 2. The Codebase Indexing settings panel opens
-3. If you don't see the icon, open Kilo Code settings (<Codicon name="gear" />) and search for **Codebase Indexing**
+3. If you don't see the icon, open VCP Code settings (<Codicon name="gear" />) and search for **Codebase Indexing**
 
 ### Configure Settings
 
@@ -154,7 +154,7 @@ The indexer automatically excludes:
 - Large files (&gt;1MB)
 - Git repositories (`.git` folders)
 - Dependencies (`node_modules`, `vendor`, etc.)
-- Files matching `.gitignore` and [`.kilocodeignore`](/docs/customize/context/kilocodeignore) patterns
+- Files matching `.gitignore` and [`.VCPcodeignore`](/docs/customize/context/VCPcodeignore) patterns
 
 ### Incremental Updates
 
@@ -201,7 +201,7 @@ If your local embedding server is based on llama.cpp (including Ollama), indexin
 
 ## Using the Search Feature
 
-Once indexed, Kilo Code can use the [`codebase_search`](/docs/automate/tools/codebase-search) tool to find relevant code:
+Once indexed, VCP Code can use the [`codebase_search`](/docs/automate/tools/codebase-search) tool to find relevant code:
 
 **Example Queries:**
 
@@ -210,7 +210,7 @@ Once indexed, Kilo Code can use the [`codebase_search`](/docs/automate/tools/cod
 - "Error handling patterns"
 - "API endpoint definitions"
 
-The tool provides Kilo Code with:
+The tool provides VCP Code with:
 
 - Relevant code snippets (up to your configured max results limit)
 - File paths and line numbers
@@ -243,3 +243,5 @@ Planned improvements:
 - Enhanced filtering and configuration options
 - Team sharing capabilities
 - Integration with VS Code's native search
+
+

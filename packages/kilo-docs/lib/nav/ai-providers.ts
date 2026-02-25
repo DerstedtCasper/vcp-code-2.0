@@ -1,11 +1,11 @@
-import { NavSection } from "../types"
+﻿import { NavSection } from "../types"
 
 export const AiProvidersNav: NavSection[] = [
   {
     title: "AI Providers",
     links: [
       { href: "/ai-providers", children: "Overview" },
-      { href: "/ai-providers/kilocode", children: "Kilo Code (Default)" },
+      { href: "/ai-providers/kilocode", children: "VCP Code (Default)" },
     ],
   },
   {
@@ -83,3 +83,4 @@ export const AiProvidersNav: NavSection[] = [
     ],
   },
 ]
+

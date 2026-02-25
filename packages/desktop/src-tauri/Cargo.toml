@@ -2,7 +2,7 @@
 name = "kilo-desktop"
 version = "0.0.0"
 description = "The open source AI coding agent"
-authors = ["Kilo"]
+authors = ["VCP Code"]
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

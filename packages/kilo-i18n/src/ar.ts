@@ -1,15 +1,17 @@
-// kilocode_change - new file
+﻿// VCPcode_change - new file
 export const dict = {
-  // Kilo Gateway provider translations
-  "provider.connect.kiloGateway.line1":
-    "يمنحك Kilo Gateway الوصول إلى مجموعة مختارة من النماذج الموثوقة والمحسّنة لوكلاء البرمجة.",
-  "provider.connect.kiloGateway.line2":
+  // VCP Gateway provider translations
+  "provider.connect.VCPGateway.line1":
+    "يمنحك VCP Gateway الوصول إلى مجموعة مختارة من النماذج الموثوقة والمحسّنة لوكلاء البرمجة.",
+  "provider.connect.VCPGateway.line2":
     "بمفتاح API واحد، ستحصل على إمكانية الوصول إلى نماذج مثل Claude وGPT وGemini وGLM والمزيد.",
-  "provider.connect.kiloGateway.visit.prefix": "قم بزيارة ",
-  "provider.connect.kiloGateway.visit.link": "kilo.ai",
-  "provider.connect.kiloGateway.visit.suffix": " للحصول على مفتاح API الخاص بك.",
+  "provider.connect.VCPGateway.visit.prefix": "قم بزيارة ",
+  "provider.connect.VCPGateway.visit.link": "VCP.ai",
+  "provider.connect.VCPGateway.visit.suffix": " للحصول على مفتاح API الخاص بك.",
 
   // Provider dialog translations
   "dialog.provider.group.recommended": "موصى به",
-  "dialog.provider.kilo.note": "الوصول إلى أكثر من 500 نموذج ذكاء اصطناعي",
+  "dialog.provider.VCP.note": "الوصول إلى أكثر من 500 نموذج ذكاء اصطناعي",
 }
+
+

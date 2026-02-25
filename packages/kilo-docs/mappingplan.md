@@ -1,4 +1,4 @@
-## Mapping Existing Pages to New Structure
+﻿## Mapping Existing Pages to New Structure
 
 ### Get Started
 
@@ -64,7 +64,7 @@
 | New Item                              | Existing Page(s)                                    |
 | ------------------------------------- | --------------------------------------------------- |
 | Sessions & Sharing                    | `advanced-usage/sessions`                           |
-| **Kilo for Teams** (subheader)        |                                                     |
+| **VCP for Teams** (subheader)        |                                                     |
 | About Plans                           | `plans/about`                                       |
 | Getting Started with Teams            | `plans/getting-started`                             |
 | Dashboard                             | `plans/dashboard`                                   |
@@ -92,13 +92,13 @@
 | Integrations Overview          | `advanced-usage/integrations`         |
 | Code Reviews                   | `advanced-usage/code-reviews`         |
 | Agent Manager                  | `advanced-usage/agent-manager`        |
-| **Extending Kilo** (subheader) |                                       |
+| **Extending VCP** (subheader) |                                       |
 | Local Models                   | `advanced-usage/local-models`         |
 | Shell Integration              | `features/shell-integration`          |
 | Auto-launch Configuration      | `features/auto-launch-configuration`  |
 | **MCP** (subheader)            |                                       |
 | MCP Overview                   | `features/mcp/overview`               |
-| Using MCP in Kilo Code         | `features/mcp/using-mcp-in-kilo-code` |
+| Using MCP in VCP Code         | `features/mcp/using-mcp-in-VCP-code` |
 | Using MCP in CLI               | `features/mcp/using-mcp-in-cli`       |
 | What is MCP                    | `features/mcp/what-is-mcp`            |
 | Server Transports              | `features/mcp/server-transports`      |
@@ -187,3 +187,5 @@
 **Tools Reference:** Decide if this stays in nav or becomes a "Reference" footer link - it's useful but clutters the IA
 
 Want me to mock up the actual sidebar structure with the subheaders?
+
+

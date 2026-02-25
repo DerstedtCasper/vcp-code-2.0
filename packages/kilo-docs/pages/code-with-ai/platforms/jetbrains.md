@@ -1,6 +1,6 @@
----
+﻿---
 title: "JetBrains Extension"
-description: "Using Kilo Code in JetBrains IDEs"
+description: "Using VCP Code in JetBrains IDEs"
 ---
 
 # JetBrains Extension
@@ -8,3 +8,4 @@ description: "Using Kilo Code in JetBrains IDEs"
 ## Installation
 
 {% partial file="install-jetbrains.md" /%}
+

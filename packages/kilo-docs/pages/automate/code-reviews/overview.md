@@ -1,11 +1,11 @@
----
+﻿---
 title: "Code Reviews"
 description: "Automate code reviews with AI assistance"
 ---
 
 # Code Reviews
 
-Kilo's **Code Reviews** feature automatically analyzes your pull or merge requests using an AI model of your choice. It can review code the moment a PR/MR is opened or updated, surface issues, and provide structured feedback across performance, security, style, and test coverage.
+VCP's **Code Reviews** feature automatically analyzes your pull or merge requests using an AI model of your choice. It can review code the moment a PR/MR is opened or updated, surface issues, and provide structured feedback across performance, security, style, and test coverage.
 
 ## What Code Reviews Enable
 
@@ -26,19 +26,19 @@ Kilo's **Code Reviews** feature automatically analyzes your pull or merge reques
 
 Before enabling Code Reviews:
 
-- **A platform integration must be configured:** Connect your GitHub or GitLab account via the [Integrations page](https://app.kilo.ai/integrations) so that the Review Agent can access your repositories.
-- **Kilo Code credits:** The AI model uses credits when analyzing your code.
+- **A platform integration must be configured:** Connect your GitHub or GitLab account via the [Integrations page](https://github.com/DerstedtCasper/vcp-code-2.0/integrations) so that the Review Agent can access your repositories.
+- **VCP Code credits:** The AI model uses credits when analyzing your code.
 
 ## Cost
 
 - **Compute and review time are free during limited beta**
   - Feedback is welcome in the Code Reviews beta Discord channel:
-    - [Kilo Discord](https://discord.gg/hZnd57qN)
-- **Kilo Code credits are still used** when the agent performs model reasoning during a review.
+    - [VCP Discord](https://discord.gg/hZnd57qN)
+- **VCP Code credits are still used** when the agent performs model reasoning during a review.
 
 ## Getting Started
 
-1. Go to the **Code Reviews** page in your [personal dashboard](https://app.kilo.ai/profile) or [organization dashboard](https://app.kilo.ai/organizations).
+1. Go to the **Code Reviews** page in your [personal dashboard](https://github.com/DerstedtCasper/vcp-code-2.0/profile) or [organization dashboard](https://github.com/DerstedtCasper/vcp-code-2.0/organizations).
 2. Toggle **Enable AI Code Review** to on.
 3. Choose an **AI Model** (e.g., Claude Sonnet 4.5).
 4. Select a **Review Style** — Strict, Balanced, or Lenient.
@@ -163,3 +163,5 @@ The Review Agent is ideal for:
 - Some highly dynamic or domain-specific code may require additional context in custom instructions.
 - The agent will only run on **selected repositories**.
 - During beta, review capacity may be throttled for extremely large PRs.
+
+

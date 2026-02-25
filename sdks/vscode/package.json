@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "opencode",
   "displayName": "opencode",
   "description": "opencode for VS Code",
@@ -6,7 +6,7 @@
   "publisher": "sst-dev",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Kilo-Org/kilocode"
+    "url": "https://github.com/DerstedtCasper/vcp-code-2.0"
   },
   "license": "MIT",
   "icon": "images/icon.png",
@@ -106,4 +106,5 @@
     "@vscode/test-electron": "^2.5.2"
   }
 }
+
 

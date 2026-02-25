@@ -1,4 +1,4 @@
----
+﻿---
 title: "MCP vs API"
 description: "Comparing MCP to traditional APIs"
 ---
@@ -81,19 +81,20 @@ Consider a task requiring multiple services: "Check recent commits, create a JIR
 - Maintains context across the entire workflow
 - New tools can be swapped in without code changes
 
-## Why Kilo Code Uses MCP
+## Why VCP Code Uses MCP
 
-Kilo Code leverages MCP to provide:
+VCP Code leverages MCP to provide:
 
 1. **Extensibility**: Add unlimited custom tools without waiting for official integration
 2. **Contextual awareness**: Tools can access conversation history and project context
 3. **Simplified integration**: One standard protocol rather than numerous API patterns
 4. **Runtime flexibility**: Discover and use new capabilities on-the-fly
 
-MCP creates a universal connector between Kilo Code and external services, with REST APIs often powering those services behind the scenes.
+MCP creates a universal connector between VCP Code and external services, with REST APIs often powering those services behind the scenes.
 
 ## Conclusion: Complementary, Not Competing Technologies
 
 MCP doesn't replace REST APIs - it builds upon them. REST excels at providing discrete services, while MCP excels at orchestrating those services for AI agents.
 
 The critical distinction is that MCP is AI-native: it treats the model as a first-class user, providing the contextual, stateful interaction layer that AI agents need to function effectively in complex environments.
+

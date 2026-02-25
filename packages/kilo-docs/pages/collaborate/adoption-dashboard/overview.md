@@ -1,4 +1,4 @@
----
+﻿---
 title: "Overview"
 description: "AI Adoption Dashboard overview"
 ---
@@ -20,7 +20,7 @@ This dashboard is designed for **team leads, engineering managers, and executive
 
 ## Accessing the Dashboard
 
-1. Navigate to [app.kilo.ai](https://app.kilo.ai) and sign in
+1. Navigate to [app.VCP.ai](https://github.com/DerstedtCasper/vcp-code-2.0) and sign in
 2. Select your organization
 3. Click the **Usage** tab in the dashboard navigation
 4. The AI Adoption Score card appears at the top of the usage view
@@ -95,3 +95,5 @@ Click on any dimension card to view detailed analysis and improvement suggestion
 - [Understand what each dimension measures](/docs/collaborate/adoption-dashboard/understanding-your-score)
 - [Learn strategies to improve your score](/docs/collaborate/adoption-dashboard/improving-your-score)
 - [Use the dashboard for team leadership](/docs/collaborate/adoption-dashboard/for-team-leads)
+
+

@@ -1,18 +1,18 @@
----
+﻿---
 title: "Analytics"
 description: "Track team usage and performance analytics"
 ---
 
 # Analytics
 
-Using Kilo seats with an Enterprise or Teams subscription provides detailed usage analytics to help you monitor and understand your organization’s AI usage patterns, costs, and activity through the Kilo Gateway provider.
+Using VCP seats with an Enterprise or Teams subscription provides detailed usage analytics to help you monitor and understand your organization’s AI usage patterns, costs, and activity through the VCP Gateway provider.
 
 ## Analytics Dashboard Overview
 
-Access your organization’s usage analytics through the **Usage Details** section in your dashboard. The analytics show comprehensive data about your team's usage of the Kilo Gateway provider.
+Access your organization’s usage analytics through the **Usage Details** section in your dashboard. The analytics show comprehensive data about your team's usage of the VCP Gateway provider.
 
 {% callout type="info" title="Usage Scope" %}
-This usage overview includes all of your usage of the Kilo Gateway provider. It does **NOT** include any usage made via the Kilo Code extension to other, non-Kilo Code providers. You can choose which API provider to use from the extension's main settings page.
+This usage overview includes all of your usage of the VCP Gateway provider. It does **NOT** include any usage made via the VCP Code extension to other, non-VCP Code providers. You can choose which API provider to use from the extension's main settings page.
 {% /callout %}
 
 ## Summary Metrics
@@ -88,9 +88,9 @@ For example, if the following were in your `.git/config`:
 
 The project name would be `example-repo`.
 
-You can also manually override the project name in the `.kilocode/config.json` file in your project.
+You can also manually override the project name in the `.VCPcode/config.json` file in your project.
 
-To set the project identifier to `my-project`, create a `.kilocode/config.json` file with the following contents:
+To set the project identifier to `my-project`, create a `.VCPcode/config.json` file with the following contents:
 
 ```json
 {
@@ -133,3 +133,5 @@ All costs are displayed in USD with detailed precision, helping you:
 - [Configure team roles and permissions](/docs/collaborate/teams/team-management)
 
 The usage analytics provide the insights needed to optimize your team's AI usage while maintaining visibility into costs and activity patterns.
+
+

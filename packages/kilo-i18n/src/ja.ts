@@ -1,14 +1,16 @@
-// kilocode_change - new file
+﻿// VCPcode_change - new file
 export const dict = {
-  // Kilo Gateway provider translations
-  "provider.connect.kiloGateway.line1":
-    "Kilo Gatewayは、コーディングエージェント向けに厳選された信頼性の高い最適化モデルへのアクセスを提供します。",
-  "provider.connect.kiloGateway.line2": "1つのAPIキーで、Claude、GPT、Gemini、GLMなどのモデルにアクセスできます。",
-  "provider.connect.kiloGateway.visit.prefix": "",
-  "provider.connect.kiloGateway.visit.link": "kilo.ai",
-  "provider.connect.kiloGateway.visit.suffix": " にアクセスしてAPIキーを取得してください。",
+  // VCP Gateway provider translations
+  "provider.connect.VCPGateway.line1":
+    "VCP Gatewayは、コーディングエージェント向けに厳選された信頼性の高い最適化モデルへのアクセスを提供します。",
+  "provider.connect.VCPGateway.line2": "1つのAPIキーで、Claude、GPT、Gemini、GLMなどのモデルにアクセスできます。",
+  "provider.connect.VCPGateway.visit.prefix": "",
+  "provider.connect.VCPGateway.visit.link": "VCP.ai",
+  "provider.connect.VCPGateway.visit.suffix": " にアクセスしてAPIキーを取得してください。",
 
   // Provider dialog translations
   "dialog.provider.group.recommended": "おすすめ",
-  "dialog.provider.kilo.note": "500以上のAIモデルにアクセス",
+  "dialog.provider.VCP.note": "500以上のAIモデルにアクセス",
 }
+
+

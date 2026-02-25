@@ -1,10 +1,10 @@
----
+﻿---
 sidebar_label: Mistral AI
 ---
 
-# Using Mistral AI With Kilo Code
+# Using Mistral AI With VCP Code
 
-Kilo Code supports accessing models through the Mistral AI API, including both standard Mistral models and the code-specialized Codestral model.
+VCP Code supports accessing models through the Mistral AI API, including both standard Mistral models and the code-specialized Codestral model.
 
 **Website:** [https://mistral.ai/](https://mistral.ai/)
 
@@ -15,9 +15,9 @@ Kilo Code supports accessing models through the Mistral AI API, including both s
     - [La Plateforme API Key](https://console.mistral.ai/api-keys/) and/or
     - [Codestral API Key](https://console.mistral.ai/codestral)
 
-## Configuration in Kilo Code
+## Configuration in VCP Code
 
-1.  **Open Kilo Code Settings:** Click the gear icon ({% codicon name="gear" /%}) in the Kilo Code panel.
+1.  **Open VCP Code Settings:** Click the gear icon ({% codicon name="gear" /%}) in the VCP Code panel.
 2.  **Select Provider:** Choose "Mistral" from the "API Provider" dropdown.
 3.  **Enter API Key:** Paste your Mistral API key into the "Mistral API Key" field if you're using a `mistral` model. If you intend to use `codestral-latest`, see the "Codestral" section below.
 4.  **Select Model:** Choose your desired model from the "Model" dropdown.
@@ -33,3 +33,4 @@ To use Codestral:
 1.  **Select "Mistral" as the API Provider.**
 2.  **Select a Codestral Model**
 3.  **Enter your Codestral (codestral.mistral.ai) or La Plateforme (api.mistral.ai) API Key.**
+

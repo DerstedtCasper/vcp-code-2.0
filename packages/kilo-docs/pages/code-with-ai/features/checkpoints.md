@@ -1,11 +1,11 @@
----
+﻿---
 title: "Checkpoints"
 description: "Save and restore code states with checkpoints"
 ---
 
 # Checkpoints
 
-Checkpoints automatically version your workspace files during Kilo Code tasks, enabling non-destructive exploration of AI suggestions and easy recovery from unwanted changes.
+Checkpoints automatically version your workspace files during VCP Code tasks, enabling non-destructive exploration of AI suggestions and easy recovery from unwanted changes.
 
 Checkpoints let you:
 
@@ -27,16 +27,16 @@ Checkpoints let you:
 
 ## Configuration Options
 
-Access checkpoint settings in Kilo Code settings under the "Checkpoints" section:
+Access checkpoint settings in VCP Code settings under the "Checkpoints" section:
 
 1. Open Settings by clicking the gear icon {% codicon name="gear" /%} → Checkpoints
 2. Check or uncheck the "Enable automatic checkpoints" checkbox
 
-   {% image src="/docs/img/checkpoints/checkpoints.png" alt="Checkpoint settings in Kilo Code configuration" width="500" /%}
+   {% image src="/docs/img/checkpoints/checkpoints.png" alt="Checkpoint settings in VCP Code configuration" width="500" /%}
 
 ## How Checkpoints Work
 
-Kilo Code captures snapshots of your project's state using a shadow Git repository, separate from your main version control system. These snapshots, called checkpoints, automatically record changes throughout your AI-assisted workflow—whenever tasks begin, files change, or commands run.
+VCP Code captures snapshots of your project's state using a shadow Git repository, separate from your main version control system. These snapshots, called checkpoints, automatically record changes throughout your AI-assisted workflow—whenever tasks begin, files change, or commands run.
 
 Checkpoints are stored as Git commits in the shadow repository, capturing:
 
@@ -95,7 +95,7 @@ To restore a project to a previous checkpoint state:
 
 ### Limitations and Considerations
 
-- **Scope**: Checkpoints only capture changes made during active Kilo Code tasks
+- **Scope**: Checkpoints only capture changes made during active VCP Code tasks
 - **External changes**: Modifications made outside of tasks (manual edits, other tools) aren't included
 - **Large files**: Very large binary files may impact performance
 - **Unsaved work**: Restoration will overwrite any unsaved changes in your workspace
@@ -118,7 +118,7 @@ The checkpoint system consists of:
 
 ### Restoration Process
 
-When restoration executes, Kilo Code:
+When restoration executes, VCP Code:
 
 - Performs a hard reset to the specified checkpoint commit
 - Copies all files from the shadow repository to your workspace
@@ -162,14 +162,14 @@ The checkpoint system respects `.gitignore` patterns in your workspace:
 - Excluded files won't appear in checkpoint diffs
 - Standard Git ignore rules apply when staging file changes
 
-#### .kilocodeignore Behavior
+#### .VCPcodeignore Behavior
 
-The `.kilocodeignore` file (which controls AI access to files) is separate from checkpoint tracking:
+The `.VCPcodeignore` file (which controls AI access to files) is separate from checkpoint tracking:
 
-- Files excluded by `.kilocodeignore` but not by `.gitignore` will still be checkpointed
+- Files excluded by `.VCPcodeignore` but not by `.gitignore` will still be checkpointed
 - Changes to AI-inaccessible files can still be restored through checkpoints
 
-This separation is intentional, as `.kilocodeignore` limits which files the AI can access, not which files should be tracked for version history.
+This separation is intentional, as `.VCPcodeignore` limits which files the AI can access, not which files should be tracked for version history.
 
 #### Nested Git Repositories
 
@@ -252,3 +252,5 @@ sudo pacman -S git
 - Open Terminal
 - Type `git --version`
 - You should see a version number
+
+

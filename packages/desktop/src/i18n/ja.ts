@@ -1,4 +1,4 @@
-export const dict = {
+﻿export const dict = {
   "desktop.menu.checkForUpdates": "アップデートを確認...",
   "desktop.menu.installCli": "CLI をインストール...",
   "desktop.menu.reloadWebview": "Webview を再読み込み",
@@ -11,12 +11,12 @@ export const dict = {
   "desktop.updater.checkFailed.title": "アップデートの確認に失敗しました",
   "desktop.updater.checkFailed.message": "アップデートを確認できませんでした",
   "desktop.updater.none.title": "利用可能なアップデートはありません",
-  "desktop.updater.none.message": "すでに最新バージョンの Kilo を使用しています",
+  "desktop.updater.none.message": "すでに最新バージョンの VCP を使用しています",
   "desktop.updater.downloadFailed.title": "アップデートに失敗しました",
   "desktop.updater.downloadFailed.message": "アップデートをダウンロードできませんでした",
   "desktop.updater.downloaded.title": "アップデートをダウンロードしました",
   "desktop.updater.downloaded.prompt":
-    "Kilo のバージョン {{version}} がダウンロードされました。インストールして再起動しますか？",
+    "VCP のバージョン {{version}} がダウンロードされました。インストールして再起動しますか？",
   "desktop.updater.installFailed.title": "アップデートに失敗しました",
   "desktop.updater.installFailed.message": "アップデートをインストールできませんでした",
 
@@ -26,3 +26,4 @@ export const dict = {
   "desktop.cli.failed.title": "インストールに失敗しました",
   "desktop.cli.failed.message": "CLI のインストールに失敗しました: {{error}}",
 }
+

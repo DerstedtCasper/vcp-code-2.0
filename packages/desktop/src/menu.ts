@@ -16,7 +16,7 @@ export async function createMenu(trigger: (id: string) => void) {
   const menu = await Menu.new({
     items: [
       await Submenu.new({
-        text: "Kilo",
+        text: "VCP Code",
         items: [
           await PredefinedMenuItem.new({
             item: { About: null },
@@ -159,8 +159,8 @@ export async function createMenu(trigger: (id: string) => void) {
         items: [
           // missing native macos search
           await MenuItem.new({
-            action: () => openUrl("https://kilo.ai/docs"),
-            text: "Kilo Documentation",
+            action: () => openUrl("https://github.com/DerstedtCasper/vcp-code-2.0/tree/main/packages/kilo-docs"),
+            text: "VCP Code Documentation",
           }),
           await MenuItem.new({
             action: () => openUrl("https://discord.com/invite/opencode"),
@@ -176,11 +176,12 @@ export async function createMenu(trigger: (id: string) => void) {
             item: "Separator",
           }),
           await MenuItem.new({
-            action: () => openUrl("https://github.com/Kilo-Org/kilocode/issues/new?template=feature_request.yml"),
+            action: () =>
+              openUrl("https://github.com/DerstedtCasper/vcp-code-2.0/issues/new?template=feature_request.yml"),
             text: "Share Feedback",
           }),
           await MenuItem.new({
-            action: () => openUrl("https://github.com/Kilo-Org/kilocode/issues/new?template=bug_report.yml"),
+            action: () => openUrl("https://github.com/DerstedtCasper/vcp-code-2.0/issues/new?template=bug_report.yml"),
             text: "Report a Bug",
           }),
         ],

@@ -1,16 +1,16 @@
-# Setting Up Mistral for Free Autocomplete
+﻿# Setting Up Mistral for Free Autocomplete
 
-This guide walks you through setting up Mistral's Codestral model for free autocomplete in Kilo Code. Mistral offers a free tier that's perfect for getting started with AI-powered code completions.
+This guide walks you through setting up Mistral's Codestral model for free autocomplete in VCP Code. Mistral offers a free tier that's perfect for getting started with AI-powered code completions.
 
 ## Video Walkthrough
 
-{% youtube url="https://www.youtube.com/embed/0aqBbB8fPho" caption="Setting up Mistral for free autocomplete in Kilo Code" /%}
+{% youtube url="https://www.youtube.com/embed/0aqBbB8fPho" caption="Setting up Mistral for free autocomplete in VCP Code" /%}
 
-## Step 1: Open Kilo Code Settings
+## Step 1: Open VCP Code Settings
 
-In VS Code, open the Kilo Code panel and click the **Settings** icon (gear) in the top-right corner.
+In VS Code, open the VCP Code panel and click the **Settings** icon (gear) in the top-right corner.
 
-![Open Kilo Code Settings](/docs/img/mistral-setup/01-open-kilo-code-settings.png)
+![Open VCP Code Settings](/docs/img/mistral-setup/01-open-VCP-code-settings.png)
 
 ## Step 2: Add a New Configuration Profile
 
@@ -33,7 +33,7 @@ The profile name is just a label for your reference—it doesn't affect function
 In the **API Provider** dropdown, search for and select **Mistral**.
 
 {% callout type="note" %}
-When creating an autocomplete profile, you don't need to select a specific model—Kilo Code will automatically use the appropriate Codestral model optimized for code completions.
+When creating an autocomplete profile, you don't need to select a specific model—VCP Code will automatically use the appropriate Codestral model optimized for code completions.
 {% /callout %}
 
 ![Select Mistral Provider](/docs/img/mistral-setup/04-select-mistral-provider.png)
@@ -62,9 +62,9 @@ Once generated, click the **copy** button next to your API key to copy it to you
 
 ![Copy API Key](/docs/img/mistral-setup/08-copy-api-key.png)
 
-## Step 9: Paste API Key in Kilo Code
+## Step 9: Paste API Key in VCP Code
 
-Return to Kilo Code settings and paste your API key into the **Mistral API Key** field.
+Return to VCP Code settings and paste your API key into the **Mistral API Key** field.
 
 ![Paste API Key](/docs/img/mistral-setup/09-paste-api-key.png)
 
@@ -79,3 +79,5 @@ Click **Save** to apply your Mistral configuration. You're now ready to use free
 - Learn more about [Autocomplete features](/docs/code-with-ai/features/autocomplete)
 - Explore [triggering options](/docs/code-with-ai/features/autocomplete#triggering-options) for autocomplete
 - Check out [best practices](/docs/code-with-ai/features/autocomplete#best-practices) for optimal results
+
+

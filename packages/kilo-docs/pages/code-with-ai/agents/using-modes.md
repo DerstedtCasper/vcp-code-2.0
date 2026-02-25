@@ -1,11 +1,11 @@
----
+﻿---
 title: "Using Modes"
-description: "Understanding and using different modes in Kilo Code"
+description: "Understanding and using different modes in VCP Code"
 ---
 
 # Using Modes
 
-Modes in Kilo Code are specialized personas that tailor the assistant's behavior to your current task. Each mode offers different capabilities, expertise, and access levels to help you accomplish specific goals.
+Modes in VCP Code are specialized personas that tailor the assistant's behavior to your current task. Each mode offers different capabilities, expertise, and access levels to help you accomplish specific goals.
 
 ## Why Use Different Modes?
 
@@ -14,7 +14,7 @@ Modes in Kilo Code are specialized personas that tailor the assistant's behavior
 - **Focused interactions:** Receive responses optimized for your current activity
 - **Workflow optimization:** Seamlessly transition between planning, implementing, debugging, and learning
 
-{% youtube url="https://youtu.be/cS4vQfX528w" caption="Explaining the different modes in Kilo Code" /%}
+{% youtube url="https://youtu.be/cS4vQfX528w" caption="Explaining the different modes in VCP Code" /%}
 
 ## Switching Between Modes
 
@@ -45,9 +45,9 @@ Users often confuse `/newtask` and `/smol`. Here's the key difference:
    | Windows          | Ctrl + . |
    | Linux            | Ctrl + . |
 
-4. **Accept suggestions:** Click on mode switch suggestions that Kilo Code offers when appropriate
+4. **Accept suggestions:** Click on mode switch suggestions that VCP Code offers when appropriate
 
-   {% image src="/docs/img/modes/modes-2.png" alt="Accepting a mode switch suggestion from Kilo Code" width="400" /%}
+   {% image src="/docs/img/modes/modes-2.png" alt="Accepting a mode switch suggestion from VCP Code" width="400" /%}
 
 ## Built-in Modes
 
@@ -88,7 +88,7 @@ Users often confuse `/newtask` and `/smol`. Here's the key difference:
 | **Special Features** | Uses a methodical approach of analyzing, narrowing possibilities, and fixing issues |
 
 {% callout type="tip" %}
-**Keep debugging separate from main tasks:** When using Debug mode, ask Kilo to "start a new task in Debug mode with all of the necessary context needed to figure out X" so that the debugging process uses its own context window and doesn't pollute the main task.
+**Keep debugging separate from main tasks:** When using Debug mode, ask VCP to "start a new task in Debug mode with all of the necessary context needed to figure out X" so that the debugging process uses its own context window and doesn't pollute the main task.
 {% /callout %}
 
 ### Orchestrator Mode
@@ -119,3 +119,5 @@ EXISTING PAGES TO MIGRATE:
 
 Migrate the existing modes documentation here.
 -->
+
+

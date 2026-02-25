@@ -1,4 +1,4 @@
----
+﻿---
 title: "What is MCP"
 description: "Introduction to the Model Context Protocol"
 ---
@@ -28,9 +28,9 @@ For example, an AI using MCP can perform tasks like "search our company database
 
 - **How is security handled?** Users control which MCP servers they connect to and what permissions those servers have. As with any tool that accesses data or services, use trusted sources and configure appropriate access controls.
 
-## MCP in Kilo Code
+## MCP in VCP Code
 
-Kilo Code implements the Model Context Protocol to:
+VCP Code implements the Model Context Protocol to:
 
 - Connect to both local and remote MCP servers
 - Provide a consistent interface for accessing tools
@@ -44,6 +44,8 @@ MCP provides a standardized way for AI systems to interact with external tools a
 Ready to dig deeper? Check out these guides:
 
 - [MCP Overview](overview) - A quick glance at the MCP documentation structure
-- [Using MCP in Kilo Code](using-in-kilo-code) - Get started with MCP in Kilo Code, including creating simple servers
+- [Using MCP in VCP Code](using-in-VCP-code) - Get started with MCP in VCP Code, including creating simple servers
 - [MCP vs API](mcp-vs-api) - Technical advantages compared to traditional APIs
 - [STDIO & SSE Transports](server-transports) - Local vs. hosted deployment models
+
+

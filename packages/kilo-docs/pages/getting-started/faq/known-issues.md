@@ -1,12 +1,12 @@
----
+﻿---
 title: "Known Issues"
-description: "Known issues and limitations of Kilo Code"
+description: "Known issues and limitations of VCP Code"
 tocDepth: 2
 ---
 
 # Known Issues
 
-This section contains known issues and limitations of Kilo Code.
+This section contains known issues and limitations of VCP Code.
 
 ## VSCode
 
@@ -91,3 +91,4 @@ where powershell
 ```
 
 If PowerShell is missing or blocked, system policies or security tools may need to be reviewed.
+

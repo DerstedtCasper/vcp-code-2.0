@@ -1,4 +1,4 @@
----
+﻿---
 title: "For Team Leads"
 description: "AI adoption insights for team leaders"
 ---
@@ -124,7 +124,7 @@ Use the score tiers as milestones:
 
 **For Coverage:**
 
-- New hire onboarding includes Kilo setup
+- New hire onboarding includes VCP setup
 - Weekly "AI wins" sharing in stand-ups
 - Pair low-usage developers with enthusiastic adopters
 
@@ -238,3 +238,4 @@ Additional views for comparing multiple teams within an organization are planned
 - [Understand what each dimension measures](/docs/collaborate/adoption-dashboard/understanding-your-score)
 - [Learn strategies to improve your score](/docs/collaborate/adoption-dashboard/improving-your-score)
 - [Return to the dashboard overview](/docs/collaborate/adoption-dashboard/overview)
+

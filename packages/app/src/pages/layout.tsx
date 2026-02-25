@@ -1968,7 +1968,7 @@ export default function Layout(props: ParentProps) {
               settingsKeybind={() => command.keybind("settings.open")}
               onOpenSettings={openSettings}
               helpLabel={() => language.t("sidebar.help")}
-              onOpenHelp={() => platform.openLink("https://kilo.ai/desktop-feedback")}
+              onOpenHelp={() => platform.openLink("https://github.com/DerstedtCasper/vcp-code-2.0/discussions")}
               renderPanel={() => <SidebarPanel project={currentProject()} />}
             />
           </div>
@@ -2033,7 +2033,7 @@ export default function Layout(props: ParentProps) {
               settingsKeybind={() => command.keybind("settings.open")}
               onOpenSettings={openSettings}
               helpLabel={() => language.t("sidebar.help")}
-              onOpenHelp={() => platform.openLink("https://kilo.ai/desktop-feedback")}
+              onOpenHelp={() => platform.openLink("https://github.com/DerstedtCasper/vcp-code-2.0/discussions")}
               renderPanel={() => <SidebarPanel project={currentProject()} mobile />}
             />
           </nav>

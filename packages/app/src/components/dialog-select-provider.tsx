@@ -75,7 +75,7 @@ export const DialogSelectProvider: Component = () => {
             {/* kilocode_change start - Provider tags and notes */}
             <Show when={i.id === "kilo"}>
               <Tag>{language.t("dialog.provider.tag.recommended")}</Tag>
-              <div class="text-14-regular text-text-weak">{language.t("dialog.provider.kilo.note")}</div>
+              <div class="text-14-regular text-text-weak">{language.t("dialog.provider.VCP.note")}</div>
             </Show>
             {/* kilocode_change end */}
             <Show when={i.id === CUSTOM_ID}>

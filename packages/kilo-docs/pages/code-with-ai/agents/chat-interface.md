@@ -1,12 +1,12 @@
----
+﻿---
 title: "The Chat Interface"
-description: "Learn how to use the Kilo Code chat interface effectively"
+description: "Learn how to use the VCP Code chat interface effectively"
 ---
 
-# Chatting with Kilo Code
+# Chatting with VCP Code
 
 {% callout type="tip" %}
-**Bottom line:** Kilo Code is an AI coding assistant that lives in VS Code. You chat with it in plain English, and it writes, edits, and explains code for you.
+**Bottom line:** VCP Code is an AI coding assistant that lives in VS Code. You chat with it in plain English, and it writes, edits, and explains code for you.
 {% /callout %}
 
 {% callout type="note" title="Prefer quick completions?" %}
@@ -15,15 +15,15 @@ If you're typing code in the editor and want AI to finish your line or block, ch
 
 ## Quick Setup
 
-Find the Kilo Code icon ({% kilo-code-icon /%}) in VS Code's Primary Side Bar. Click it to open the chat panel.
+Find the VCP Code icon ({% VCP-code-icon /%}) in VS Code's Primary Side Bar. Click it to open the chat panel.
 
-**Lost the panel?** Go to View > Open View... and search for "Kilo Code"
+**Lost the panel?** Go to View > Open View... and search for "VCP Code"
 
-## How to Talk to Kilo Code
+## How to Talk to VCP Code
 
 **The key insight:** Just type what you want in normal English. No special commands needed.
 
-{% image src="/docs/img/typing-your-requests/typing-your-requests.png" alt="Example of typing a request in Kilo Code" width="800" caption="Example of typing a request in Kilo Code" /%}
+{% image src="/docs/img/typing-your-requests/typing-your-requests.png" alt="Example of typing a request in VCP Code" width="800" caption="Example of typing a request in VCP Code" /%}
 
 **Good requests:**
 
@@ -52,9 +52,9 @@ Find the Kilo Code icon ({% kilo-code-icon /%}) in VS Code's Primary Side Bar. C
 
 - **Chat history** - See your conversation and task history
 - **Input field** - Type your requests here (press Enter to send)
-- **Action buttons** - Approve or reject Kilo's proposed changes
+- **Action buttons** - Approve or reject VCP's proposed changes
 - **Plus button** - Start a new task session
-- **Mode selector** - Choose how Kilo should approach your task
+- **Mode selector** - Choose how VCP should approach your task
 
 ## Quick Interactions
 
@@ -67,7 +67,7 @@ Find the Kilo Code icon ({% kilo-code-icon /%}) in VS Code's Primary Side Bar. C
 
 **Status signals:**
 
-- Spinning → Kilo is working
+- Spinning → VCP is working
 - Red → Error occurred
 - Green → Success
 
@@ -76,22 +76,22 @@ Find the Kilo Code icon ({% kilo-code-icon /%}) in VS Code's Primary Side Bar. C
 | Instead of this...                | Try this                                                                            |
 | --------------------------------- | ----------------------------------------------------------------------------------- |
 | "Fix the code"                    | "Fix the bug in `calculateTotal` that returns incorrect results"                    |
-| Assuming Kilo knows context       | Use `@` to reference specific files                                                 |
+| Assuming VCP knows context       | Use `@` to reference specific files                                                 |
 | Multiple unrelated tasks          | Submit one focused request at a time                                                |
 | Technical jargon overload         | Clear, straightforward language works best                                          |
 | Using chat for tiny code changes. | Use [autocomplete](/docs/code-with-ai/features/autocomplete) for inline completions |
 
-**Why it matters:** Kilo Code works best when you communicate like you're talking to a smart teammate who needs clear direction.
+**Why it matters:** VCP Code works best when you communicate like you're talking to a smart teammate who needs clear direction.
 
 ## Suggested Responses
 
-When Kilo Code needs more information to complete a task, it uses the [`ask_followup_question`](/docs/automate/tools/ask-followup-question) tool. To make responding easier and faster, Kilo Code often provides suggested answers alongside the question.
+When VCP Code needs more information to complete a task, it uses the [`ask_followup_question`](/docs/automate/tools/ask-followup-question) tool. To make responding easier and faster, VCP Code often provides suggested answers alongside the question.
 
-{% image src="/docs/img/suggested-responses/suggested-responses.png" alt="Example of Kilo Code asking a question with suggested response buttons below it" width="800" caption="Suggested responses appear as clickable buttons below questions" /%}
+{% image src="/docs/img/suggested-responses/suggested-responses.png" alt="Example of VCP Code asking a question with suggested response buttons below it" width="800" caption="Suggested responses appear as clickable buttons below questions" /%}
 
 **How it works:**
 
-1. **Question Appears** - Kilo Code asks a question using the `ask_followup_question` tool
+1. **Question Appears** - VCP Code asks a question using the `ask_followup_question` tool
 2. **Suggestions Displayed** - If suggestions are provided, they appear as buttons below the question
 3. **Interaction** - You can interact with these suggestions in two ways
 
@@ -101,7 +101,7 @@ You have two options for using suggested responses:
 
 1. **Direct Selection**:
    - **Action**: Simply click the button containing the answer you want to provide
-   - **Result**: The selected answer is immediately sent back to Kilo Code as your response. This is the quickest way to reply if one of the suggestions perfectly matches your intent.
+   - **Result**: The selected answer is immediately sent back to VCP Code as your response. This is the quickest way to reply if one of the suggestions perfectly matches your intent.
 
 2. **Edit Before Sending**:
    - **Action**:
@@ -112,21 +112,23 @@ You have two options for using suggested responses:
 **Benefits:**
 
 - **Speed** - Quickly respond without typing full answers
-- **Clarity** - Suggestions often clarify the type of information Kilo Code needs
+- **Clarity** - Suggestions often clarify the type of information VCP Code needs
 - **Flexibility** - Edit suggestions to provide precise, customized answers when needed
 
-This feature streamlines the interaction when Kilo Code requires clarification, allowing you to guide the task effectively with minimal effort.
+This feature streamlines the interaction when VCP Code requires clarification, allowing you to guide the task effectively with minimal effort.
 
 ## Tips for Better Workflow
 
 {% callout type="tip" %}
-**Move Kilo Code to the Secondary Side Bar** for a better layout. Right-click on the Kilo Code icon in the Activity Bar and select **Move To → Secondary Side Bar**. This lets you see the Explorer, Search, Source Control, etc. alongside Kilo Code.
+**Move VCP Code to the Secondary Side Bar** for a better layout. Right-click on the VCP Code icon in the Activity Bar and select **Move To → Secondary Side Bar**. This lets you see the Explorer, Search, Source Control, etc. alongside VCP Code.
 
-{% image src="/docs/img/move-to-secondary.png" alt="Move to Secondary Side Bar" width="600" caption="Move Kilo Code to the Secondary Side Bar for better workspace organization" /%}
+{% image src="/docs/img/move-to-secondary.png" alt="Move to Secondary Side Bar" width="600" caption="Move VCP Code to the Secondary Side Bar for better workspace organization" /%}
 {% /callout %}
 
 {% callout type="tip" %}
-**Drag files directly into chat.** Once you have Kilo Code in a separate sidebar from the file explorer, you can drag files from the explorer into the chat window (even multiple at once). Just hold down the Shift key after you start dragging the files.
+**Drag files directly into chat.** Once you have VCP Code in a separate sidebar from the file explorer, you can drag files from the explorer into the chat window (even multiple at once). Just hold down the Shift key after you start dragging the files.
 {% /callout %}
 
 Ready to start coding? Open the chat panel and describe what you want to build!
+
+

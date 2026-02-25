@@ -1,11 +1,11 @@
----
+﻿---
 title: "App Builder"
-description: "Build complete applications with Kilo Code"
+description: "Build complete applications with VCP Code"
 ---
 
 # App Builder
 
-Kilo's **App Builder** lets you create end-to-end applications through natural language conversation. Describe what you want to build, watch it come to life in a real-time preview, and deploy directly from your Kilo dashboard. No local environment setup required.
+VCP's **App Builder** lets you create end-to-end applications through natural language conversation. Describe what you want to build, watch it come to life in a real-time preview, and deploy directly from your VCP dashboard. No local environment setup required.
 
 ---
 
@@ -23,14 +23,14 @@ Kilo's **App Builder** lets you create end-to-end applications through natural l
 
 Before using App Builder:
 
-- **Active Kilo Code account**  
-  Sign up or log in at [app.kilo.ai](https://app.kilo.ai)
+- **Active VCP Code account**  
+  Sign up or log in at [app.VCP.ai](https://github.com/DerstedtCasper/vcp-code-2.0)
 
 ---
 
 ## Cost
 
-- You pay only for the AI model usage via Kilo Code credits
+- You pay only for the AI model usage via VCP Code credits
 - Credit consumption varies based on app complexity and number of iterations
 - Deployment hosting is included during limited launch period
 
@@ -38,7 +38,7 @@ Before using App Builder:
 
 ## How to Use
 
-1. Navigate to **[App Builder](https://app.kilo.ai/app-builder)** from your Kilo dashboard.
+1. Navigate to **[App Builder](https://github.com/DerstedtCasper/vcp-code-2.0/app-builder)** from your VCP dashboard.
 2. Choose an **AI Model** for development (e.g., Grok Code Fast 1, Claude Sonnet 4.5, GPT-5.2).
 3. Describe your application in plain language:
    - What it should do
@@ -104,3 +104,5 @@ App Builder is ideal for:
 - Complex enterprise applications may require additional development outside App Builder.
 - Some advanced integrations (e.g., specific third-party APIs) may need manual configuration.
 - Live preview reflects most changes instantly, but some updates may require a brief rebuild.
+
+

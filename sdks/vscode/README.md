@@ -1,4 +1,4 @@
-# opencode VS Code Extension
+﻿# opencode VS Code Extension
 
 A Visual Studio Code extension that integrates [opencode](https://opencode.ai) directly into your development workflow.
 
@@ -15,7 +15,7 @@ This extension requires the [opencode CLI](https://opencode.ai) to be installed 
 
 ## Support
 
-This is an early release. If you encounter issues or have feedback, please create an issue at https://github.com/Kilo-Org/kilocode/issues.
+This is an early release. If you encounter issues or have feedback, please create an issue at https://github.com/DerstedtCasper/vcp-code-2.0/issues.
 
 ## Development
 
@@ -32,3 +32,4 @@ To test your changes:
 1. In the debug VS Code window, press `Cmd+Shift+P`
 2. Search for `Developer: Reload Window`
 3. Reload to see your changes without restarting the debug session
+

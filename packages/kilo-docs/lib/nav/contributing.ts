@@ -15,7 +15,7 @@ export const ContributingNav: NavSection[] = [
       },
       {
         href: "/contributing/cline-to-kilo-migration",
-        children: "Cline to Kilo Migration",
+        children: "Cline to VCP Code Migration",
       },
     ],
   },

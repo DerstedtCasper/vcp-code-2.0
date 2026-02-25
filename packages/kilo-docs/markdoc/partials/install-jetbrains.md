@@ -1,8 +1,8 @@
-Kilo Code supports all JetBrains IDEs including IntelliJ IDEA, WebStorm, PyCharm, and more.
+﻿VCP Code supports all JetBrains IDEs including IntelliJ IDEA, WebStorm, PyCharm, and more.
 
 ### Prerequisites
 
-Before installing the Kilo Code plugin, ensure you have:
+Before installing the VCP Code plugin, ensure you have:
 
 1. **JetBrains Toolbox (Recommended):**
    - Download from [https://www.jetbrains.com/toolbox-app/](https://www.jetbrains.com/toolbox-app/)
@@ -16,16 +16,16 @@ Before installing the Kilo Code plugin, ensure you have:
 ### Install directly
 
 1. If you don't have a JetBrains IDE installed, download one from [jetbrains.com](https://www.jetbrains.com/)
-2. Then, you can click the button below to install Kilo Code directly from the JetBrains Marketplace:
+2. Then, you can click the button below to install VCP Code directly from the JetBrains Marketplace:
 
-[![Install Kilo Code](https://img.shields.io/badge/Install%20Kilo%20Code-F8F674?style=for-the-badge)](https://plugins.jetbrains.com/plugin/28350-kilo-code)
+[![Install VCP Code](https://img.shields.io/badge/Install%20VCP%20Code-F8F674?style=for-the-badge)](https://plugins.jetbrains.com/plugin/28350-VCP-code)
 
 ### Install from JetBrains Marketplace
 
 1. Open your JetBrains IDE
 2. Go to **Settings/Preferences → Plugins**
 3. Click **Marketplace** tab
-4. Search for "Kilo Code"
+4. Search for "VCP Code"
 5. Click **Install** and restart your IDE
 
 ### Supported IDEs
@@ -43,3 +43,5 @@ Before installing the Kilo Code plugin, ensure you have:
 {% callout type="info" %}
 Both Community and Ultimate editions are supported. Some AI features may vary based on your JetBrains license.
 {% /callout %}
+
+

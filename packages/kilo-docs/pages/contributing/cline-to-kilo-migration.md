@@ -1,17 +1,17 @@
----
-title: "Cline to Kilo: Contributor Migration Guide"
-description: "A guide for Cline contributors who want to start contributing to Kilo Code"
+﻿---
+title: "Cline to VCP: Contributor Migration Guide"
+description: "A guide for Cline contributors who want to start contributing to VCP Code"
 ---
 
-# Cline to Kilo: Contributor Migration Guide
+# Cline to VCP: Contributor Migration Guide
 
-If you've been contributing to Cline and you're ready to bring those skills over to Kilo Code, you're in the right place. This guide will walk you through what's different, what's the same, and how to get up and running as a Kilo contributor.
+If you've been contributing to Cline and you're ready to bring those skills over to VCP Code, you're in the right place. This guide will walk you through what's different, what's the same, and how to get up and running as a VCP contributor.
 
 The good news: if you've been contributing to Cline, you already have most of the skills you need. The workflows are similar, but there are some differences worth knowing about before you dive in.
 
 ## The Quick Version
 
-| What You Know from Cline                     | What's Different in Kilo |
+| What You Know from Cline                     | What's Different in VCP |
 | -------------------------------------------- | ------------------------ |
 | `npm run install:all`                        | `pnpm install`           |
 | `npm run protos` required before first build | Not required             |
@@ -30,7 +30,7 @@ The good news: if you've been contributing to Cline, you already have most of th
 
 **Package Manager: pnpm instead of npm**
 
-Kilo uses pnpm for dependency management. If you don't have it installed:
+VCP uses pnpm for dependency management. If you don't have it installed:
 
 ```bash
 npm install -g pnpm
@@ -46,7 +46,7 @@ npm run install:all
 You'll run:
 
 ```bash
-# Kilo
+# VCP
 pnpm install
 ```
 
@@ -54,7 +54,7 @@ This single command handles everything — the main extension, webview UI, and e
 
 **No Protocol Buffer Generation**
 
-In Cline, you needed to run `npm run protos` before your first build. Kilo doesn't require this step. Just install dependencies and you're ready to go.
+In Cline, you needed to run `npm run protos` before your first build. VCP doesn't require this step. Just install dependencies and you're ready to go.
 
 **Building the Extension**
 
@@ -68,18 +68,18 @@ This builds the webview UI, compiles TypeScript, bundles everything, and drops a
 
 ### Hot Reloading
 
-Kilo has improved hot reloading in development mode:
+VCP has improved hot reloading in development mode:
 
 - **Webview UI changes:** Apply immediately without restart (same as Cline)
-- **Core extension changes:** In dev mode (`NODE_ENV="development"`), Kilo automatically triggers `workbench.action.reloadWindow` — no manual debugger restarts needed
+- **Core extension changes:** In dev mode (`NODE_ENV="development"`), VCP automatically triggers `workbench.action.reloadWindow` — no manual debugger restarts needed
 
-In Cline, you had to manually stop debugging, kill background tasks, and restart. Kilo handles this for you during development.
+In Cline, you had to manually stop debugging, kill background tasks, and restart. VCP handles this for you during development.
 
 **Note:** Production builds still require the manual stop/restart cycle.
 
 ### Git Hooks
 
-Kilo uses Husky for git hooks, which run automatically:
+VCP uses Husky for git hooks, which run automatically:
 
 **Pre-commit:**
 
@@ -149,15 +149,15 @@ pnpm lint          # ESLint
 pnpm check-types   # TypeScript type checking
 ```
 
-## What's New in Kilo
+## What's New in VCP
 
-Beyond the workflow changes, Kilo has expanded significantly as a platform. As a contributor, you might find opportunities to work on:
+Beyond the workflow changes, VCP has expanded significantly as a platform. As a contributor, you might find opportunities to work on:
 
 - **Multiple interfaces:** VS Code, JetBrains, CLI, and web (Cloud Agents, App Builder)
 - **Specialized Agent modes:** Code, Ask, Debug, Architect, Orchestrator
 - **Custom Modes:** A system for creating and sharing specialized agent configurations
 - **Platform features:** Sessions, Parallel Agents, Deploy, Code Reviews, Managed Indexing
-- **Kilo Marketplace:** A community-driven repository where you can contribute Skills (modular workflows), MCP Servers (tool integrations), and Modes (custom agent behaviors)
+- **VCP Marketplace:** A community-driven repository where you can contribute Skills (modular workflows), MCP Servers (tool integrations), and Modes (custom agent behaviors)
 
 Check the [Architecture Overview](architecture) to understand how these pieces fit together.
 
@@ -170,11 +170,13 @@ Check the [Architecture Overview](architecture) to understand how these pieces f
 ## TL;DR Checklist
 
 - ✅ Install pnpm globally
-- ✅ Fork and clone the Kilo repo
+- ✅ Fork and clone the VCP repo
 - ✅ Run `pnpm install` (not `npm run install:all`)
 - ✅ Skip the protos step — it's not needed
 - ✅ Press F5 to launch the dev extension
 - ✅ Create a changeset before your PR (`pnpm changeset`)
 - ✅ Let the git hooks do their thing
 
-Welcome to Kilo. We're glad you're here.
+Welcome to VCP. We're glad you're here.
+
+

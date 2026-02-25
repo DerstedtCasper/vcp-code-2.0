@@ -1,11 +1,11 @@
----
+﻿---
 title: "Custom Rules"
-description: "Define custom rules for Kilo Code behavior"
+description: "Define custom rules for VCP Code behavior"
 ---
 
 # Custom Rules
 
-Custom rules provide a powerful way to define project-specific and global behaviors and constraints for the Kilo Code AI agent. With custom rules, you can ensure consistent formatting, restrict access to sensitive files, enforce coding standards, and customize the AI's behavior for your specific project needs or across all projects.
+Custom rules provide a powerful way to define project-specific and global behaviors and constraints for the VCP Code AI agent. With custom rules, you can ensure consistent formatting, restrict access to sensitive files, enforce coding standards, and customize the AI's behavior for your specific project needs or across all projects.
 
 ## Overview
 
@@ -21,7 +21,7 @@ Custom rules can be written in plain text, but Markdown format is recommended fo
 
 ## Rule Types
 
-Kilo Code supports two types of custom rules:
+VCP Code supports two types of custom rules:
 
 - **Project Rules**: Apply only to the current project workspace
 - **Global Rules**: Apply across all projects and workspaces
@@ -34,11 +34,11 @@ The built-in rules management UI is available for general rules only. Mode-speci
 
 ### Project Rules
 
-Custom rules are primarily loaded from the **`.kilocode/rules/` directory**. This is the recommended approach for organizing your project-specific rules. Each rule is typically placed in its own Markdown file with a descriptive name:
+Custom rules are primarily loaded from the **`.VCPcode/rules/` directory**. This is the recommended approach for organizing your project-specific rules. Each rule is typically placed in its own Markdown file with a descriptive name:
 
 ```
 project/
-├── .kilocode/
+├── .VCPcode/
 │   ├── rules/
 │   │   ├── formatting.md
 │   │   ├── restricted_files.md
@@ -52,7 +52,7 @@ project/
 Global rules are stored in your home directory and apply to all projects:
 
 ```
-~/.kilocode/
+~/.VCPcode/
 ├── rules/
 │   ├── coding_standards.md
 │   ├── security_guidelines.md
@@ -61,7 +61,7 @@ Global rules are stored in your home directory and apply to all projects:
 
 ## Managing Rules Through the UI
 
-Kilo Code provides a built-in interface for managing your custom rules without manually editing files in the `.kilocode/rules/` directories. To access the UI, click on the <Codicon name="law" /> icon in the **bottom right corner** of the Kilo Code window.
+VCP Code provides a built-in interface for managing your custom rules without manually editing files in the `.VCPcode/rules/` directories. To access the UI, click on the <Codicon name="law" /> icon in the **bottom right corner** of the VCP Code window.
 
 You can access the rules management UI to:
 
@@ -76,25 +76,25 @@ You can access the rules management UI to:
 
 Rules are loaded in the following priority order:
 
-1. **Global rules** from `~/.kilocode/rules/` directory
-2. **Project rules** from `.kilocode/rules/` directory
+1. **Global rules** from `~/.VCPcode/rules/` directory
+2. **Project rules** from `.VCPcode/rules/` directory
 3. **Legacy fallback files** (for backward compatibility):
    - `.roorules`
    - `.clinerules`
-   - `.kilocoderules` (deprecated)
+   - `.VCPcoderules` (deprecated)
 
 When both global and project rules exist, they are combined with project rules taking precedence over global rules for conflicting directives.
 
 {% callout type="note" %}
-We strongly recommend keeping your rules in the `.kilocode/rules/` folder as it provides better organization and is the preferred approach for future versions. The folder-based structure allows for more granular rule organization and clearer separation of concerns. The legacy file-based approach is maintained for backward compatibility but may be subject to change in future releases.
+We strongly recommend keeping your rules in the `.VCPcode/rules/` folder as it provides better organization and is the preferred approach for future versions. The folder-based structure allows for more granular rule organization and clearer separation of concerns. The legacy file-based approach is maintained for backward compatibility but may be subject to change in future releases.
 {% /callout %}
 
 ### Mode-Specific Rules
 
 Additionally, the system supports mode-specific rules, which are loaded separately and have their own priority order:
 
-1. First, it checks for `.kilocode/rules-${mode}/` directory
-2. If that doesn't exist or is empty, it falls back to `.kilocoderules-${mode}` file (deprecated)
+1. First, it checks for `.VCPcode/rules-${mode}/` directory
+2. If that doesn't exist or is empty, it falls back to `.VCPcoderules-${mode}` file (deprecated)
 
 Currently, mode-specific rules are only supported at the project level.
 When both generic rules and mode-specific rules exist, the mode-specific rules are given priority in the final output.
@@ -103,11 +103,11 @@ When both generic rules and mode-specific rules exist, the mode-specific rules a
 
 ### Using the UI Interface
 
-{% image src="/docs/img/custom-rules/rules-ui.png" alt="Rules tab in Kilo Code" width="400" /%}
+{% image src="/docs/img/custom-rules/rules-ui.png" alt="Rules tab in VCP Code" width="400" /%}
 
 The easiest way to create and manage rules is through the built-in UI:
 
-1. Access the rules management interface from the Kilo Code panel
+1. Access the rules management interface from the VCP Code panel
 2. Choose between creating project-specific or global rules
 3. Use the interface to create, edit, or toggle rules
 4. Rules are automatically saved and applied immediately
@@ -118,19 +118,19 @@ To create rules manually:
 
 **For Project Rules:**
 
-1. Create the `.kilocode/rules/` directory if it doesn't already exist
+1. Create the `.VCPcode/rules/` directory if it doesn't already exist
 2. Create a new Markdown file with a descriptive name in this directory
 3. Write your rule using Markdown formatting
 4. Save the file
 
 **For Global Rules:**
 
-1. Create the `~/.kilocode/rules/` directory if it doesn't already exist
+1. Create the `~/.VCPcode/rules/` directory if it doesn't already exist
 2. Create a new Markdown file with a descriptive name in this directory
 3. Write your rule using Markdown formatting
 4. Save the file
 
-Rules will be automatically applied to all future Kilo Code interactions. Any new changes will be applied immediately.
+Rules will be automatically applied to all future VCP Code interactions. Any new changes will be applied immediately.
 
 ## Example Rules
 
@@ -158,7 +158,7 @@ Files in the list contain sensitive data, they MUST NOT be read
 
 This rule prevents the AI from reading or accessing sensitive files, even if explicitly requested to do so.
 
-{% image src="/docs/img/custom-rules/custom-rules.png" alt="Kilo Code ignores request to read sensitive file" width="600" /%}
+{% image src="/docs/img/custom-rules/custom-rules.png" alt="VCP Code ignores request to read sensitive file" width="600" /%}
 
 ## Use Cases
 
@@ -193,7 +193,7 @@ Custom rules can be applied to a wide variety of scenarios:
 - **Update Regularly**: Review and update rules as project requirements change
 
 {% callout type="tip" title="Pro Tip: File-Based Team Standards" %}
-When working in team environments, placing `.kilocode/rules/codestyle.md` files under version control allows you to standardize Kilo's behavior across your entire development team. This ensures consistent code style, documentation practices, and development workflows for everyone on the project.
+When working in team environments, placing `.VCPcode/rules/codestyle.md` files under version control allows you to standardize VCP's behavior across your entire development team. This ensures consistent code style, documentation practices, and development workflows for everyone on the project.
 {% /callout %}
 
 ## Limitations
@@ -210,9 +210,9 @@ If your custom rules aren't being properly followed:
 1. **Check rule status in the UI**: Use the rules management interface to verify that your rules are active and properly loaded
 1. **Verify rule formatting**: Ensure that your rules are properly formatted with clear Markdown structure
 1. **Check rule locations**: Ensure that your rules are located in supported locations:
-   - Global rules: `~/.kilocode/rules/` directory
-   - Project rules: `.kilocode/rules/` directory
-   - Legacy files: `.kilocoderules`, `.roorules`, or `.clinerules`
+   - Global rules: `~/.VCPcode/rules/` directory
+   - Project rules: `.VCPcode/rules/` directory
+   - Legacy files: `.VCPcoderules`, `.roorules`, or `.clinerules`
 1. **Rule specificity**: Verify that the rules are specific and unambiguous
 1. **Restart VS Code**: Restart VS Code to ensure the rules are properly loaded
 
@@ -222,3 +222,5 @@ If your custom rules aren't being properly followed:
 - [Custom Instructions](/docs/customize/custom-instructions)
 - [Settings Management](/docs/getting-started/settings)
 - [Auto-Approval Settings](/docs/getting-started/settings/auto-approving-actions)
+
+

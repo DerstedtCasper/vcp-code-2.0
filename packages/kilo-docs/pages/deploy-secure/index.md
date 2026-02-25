@@ -1,12 +1,12 @@
----
+﻿---
 title: "Deploy & Secure"
-description: "Deploy applications and manage security with Kilo Code"
+description: "Deploy applications and manage security with VCP Code"
 ---
 
 # {% $markdoc.frontmatter.title %}
 
 {% callout type="generic" %}
-Deploy your applications directly from Kilo Code and manage security with AI-powered reviews and scans.
+Deploy your applications directly from VCP Code and manage security with AI-powered reviews and scans.
 {% /callout %}
 
 ## Deploy
@@ -80,3 +80,4 @@ AI-powered security analysis for your code and dependencies:
 - **Enable automatic rebuilds** — Push to GitHub and deploy automatically
 - **Run security scans** — Review security findings before merging PRs
 - **Track your security posture** — Monitor trends over time
+
