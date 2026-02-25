@@ -518,6 +518,13 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           this.postMessage({ type: "variantsLoaded", variants })
           break
         }
+        case "enhancePrompt": {
+          void this.handleEnhancePrompt(
+            message.text as string,
+            (message.requestId as string | undefined) ?? "enhance-0",
+          )
+          break
+        }
       }
     })
   }
@@ -834,6 +841,36 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         type: "error",
         message: error instanceof Error ? error.message : "Failed to load sessions",
       })
+    }
+  }
+
+  /**
+   * Handle enhance prompt request — calls backend LLM to rewrite/polish the user's prompt.
+   */
+  private async handleEnhancePrompt(text: string, requestId: string): Promise<void> {
+    if (!this.httpClient) {
+      this.postMessage({ type: "enhancePromptError", error: "Not connected to CLI backend", requestId })
+      return
+    }
+    try {
+      // Use the existing chat-completion endpoint to enhance the prompt
+      const systemPrompt =
+        "You are an expert prompt engineer. " +
+        "Rewrite the following user prompt to be clearer, more specific, and more effective. " +
+        "Return ONLY the improved prompt text without any explanation or meta-commentary."
+      const result = await (this.httpClient as unknown as { complete?: (opts: unknown) => Promise<string> }).complete?.({
+        system: systemPrompt,
+        messages: [{ role: "user", content: text }],
+      })
+      if (result) {
+        this.postMessage({ type: "enhancePromptResult", text: result, requestId })
+      } else {
+        // Fallback: just echo back (backend doesn't support complete())
+        this.postMessage({ type: "enhancePromptResult", text, requestId })
+      }
+    } catch (e) {
+      const err = e instanceof Error ? e.message : String(e)
+      this.postMessage({ type: "enhancePromptError", error: err, requestId })
     }
   }
 

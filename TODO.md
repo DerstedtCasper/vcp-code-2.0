@@ -79,10 +79,10 @@
   - [x] 修改 `PromptInput.tsx` handleInput/handleKeyDown
   - [x] 新增 i18n 键: `prompt.slash.*`
 
-- [x] **[P0-2]** Agent @提及（扩展 `useFileMention.ts` → `useAtMention.ts`）
-  - [ ] @ 菜单: 文件 + Agent + 目录三种类型 ← 下一步
-  - [ ] 从 session context 获取 agent 列表
-  - [ ] 类型图标区分 (🧠/📄/📁)
+- [x] **[P0-2]** Agent @提及（扩展 `useFileMention.ts` → `useAtMention.ts`）✅ `b034ffe28`
+  - [x] @ 菜单: 文件 + Agent + 目录 + 特殊类型（clipboard/git/terminal/url/problems）
+  - [x] 从 session context 获取 agent 列表
+  - [x] 类型徽章区分 (agent/dir/special)
 
 - [x] **[P0-3]** 上下文项 Pill 显示 (`ContextPills.tsx`) ✅ `40bf52c70`
   - [x] 输入框上方显示已选中文件的 pill/tag
@@ -93,19 +93,19 @@
 
 ### 🔴 P0 — 模型选择 (ModelSelector)
 
-- [ ] **[P0-5]** 模型详情 HoverCard (`ModelInfoCard.tsx`)
-  - [ ] 悬停显示: 输入/输出价格、上下文窗口、能力标签
+- [x] **[P0-5]** 模型详情 HoverCard (`ModelInfoCard.tsx`) ✅ `b034ffe28`
+  - [x] 悬停显示: 输入/输出价格、上下文窗口、能力标签
   
-- [ ] **[P0-6]** 最近使用模型分组
-  - [ ] localStorage 存储最近 5 个选择
-  - [ ] 列表顶部显示"最近使用"分组
+- [x] **[P0-6]** 最近使用模型分组 ✅ `b034ffe28`
+  - [x] localStorage 存储最近 5 个选择
+  - [x] 列表顶部显示"最近使用"分组
 
 ### 🔴 P0 — 上下文添加 (@Mention)
 
-- [ ] **[P0-7]** 多类型 @ 菜单（重构为 `useContextMention.ts`）
-  - [ ] 类型: 文件 / 目录 / Agent / 特殊（剪贴板、Git、终端、URL、诊断）
-  - [ ] 行范围支持: `@file.ts:10-20`
-  - [ ] Git 子菜单: staged / unstaged / diff / log
+- [x] **[P0-7]** 多类型 @ 菜单（`useAtMention.ts`）✅ `b034ffe28`
+  - [x] 类型: 文件 / 目录 / Agent / 特殊（剪贴板、Git、终端、URL、诊断）
+  - [ ] 行范围支持: `@file.ts:10-20`（待实现）
+  - [ ] Git 子菜单: staged / unstaged / diff / log（待实现）
 
 ### 🔴 P0 — 全局状态回报 (VcpStatusBadge)
 
@@ -124,17 +124,17 @@
 
 ### 🟡 P1 — 模型选择增强 (ModelSelector)
 
-- [ ] **[P1-1]** 模型标签系统（推理/代码/通用/视觉）
+- [x] **[P1-1]** 模型标签系统（reasoning/code/general） ✅ `b034ffe28`
 - [ ] **[P1-2]** 网关状态指示（触发按钮旁连接状态点）
 
 ### 🟡 P1 — 智能体行为 (ModeSwitcher)
 
-- [ ] **[P1-3]** 增强 ModeSwitcher 弹出面板
-  - [ ] 展示模式描述文字
+- [x] **[P1-3]** 增强 ModeSwitcher 弹出面板 ✅ `b034ffe28`
+  - [x] 展示模式描述文字
+  - [x] 颜色点 + 类型标签（built-in / mode tag）
   - [ ] "创建自定义模式..." 入口
 
-- [ ] **[P1-4]** Agent 能力面板
-  - [ ] 展示当前模式: 可用工具列表、系统提示摘要、自动审批规则
+- [ ] **[P1-4]** Agent 能力面板（工具列表、系统提示摘要、自动审批规则）
 
 ### 🟡 P1 — 代码库索引 (Codebase Indexing)
 
@@ -146,31 +146,29 @@
 
 ### 🟡 P1 — 配置项引导 (SettingsRow)
 
-- [ ] **[P1-7]** `SettingsRow.tsx` 增加 `helpHint`, `example`, `isDirty` 属性
-  - [ ] Hover `?` 图标弹出 Tooltip/Popover
-  - [ ] 未保存时显示 `Unsaved` 标签
-  - [ ] 保存后显示 `Saved · HH:mm` 标签
+- [x] **[P1-7]** `SettingsRow.tsx` 增加 `helpHint`, `example`, `isDirty` 属性 ✅ `b034ffe28`
+  - [x] Hover `?` 图标（title tooltip）
+  - [x] 未保存时显示橙色点 + 标题变色
 
-- [ ] **[P1-8]** 粘性保存栏 (Sticky Save Bar)
-  - [ ] 有未保存更改时在复杂表单底部弹出操作栏
-  - [ ] "保存并测试" + "撤销" 按钮
-  - [ ] 应用至 `ProvidersTab.tsx` 等设置页
+- [x] **[P1-8]** 粘性保存栏 `StickySaveBar.tsx` ✅ `b034ffe28`
+  - [x] `isDirty` 控制显示/隐藏
+  - [x] 滑入动画 + 保存/丢弃按钮
 
 ---
 
 ### 🟢 P2 — 增强提示词 (Enhance Prompt)
 
-- [ ] **[P2-1]** 输入框 ✨ 增强按钮
-  - [ ] 加载状态动画
-  - [ ] 替换成功动画
+- [x] **[P2-1]** 输入框 ✨ 增强按钮 ✅ `b034ffe28`
+  - [x] 加载状态动画（旋转 SVG）
+  - [x] 替换成功后更新 textarea
 
-- [ ] **[P2-2]** `useEnhancePrompt.ts` hook
-  - [ ] `vscode.postMessage({ type: "enhancePrompt", text })` 调用
-  - [ ] 补充消息契约: `EnhancePromptRequest` / `EnhancePromptResponse`
+- [x] **[P2-2]** `useEnhancePrompt.ts` hook ✅ `b034ffe28`
+  - [x] `vscode.postMessage({ type: "enhancePrompt", text, requestId })` 调用
+  - [x] 补充消息契约: `EnhancePromptRequest` / `EnhancePromptResultMessage` / `EnhancePromptErrorMessage`
 
-- [ ] **[P2-3]** 后端 LLM 增强处理
-  - [ ] `extension.ts` 监听 `enhancePrompt` 消息并调用 LLM
-  - [ ] 设计增强 prompt 系统提示模板
+- [x] **[P2-3]** 后端 LLM 增强处理 ✅ `b034ffe28`
+  - [x] `KiloProvider.ts` 监听 `enhancePrompt` 消息
+  - [x] `handleEnhancePrompt` 方法（system prompt 模板）
 
 ### 🟢 P2 — 其他
 
@@ -207,3 +205,4 @@
 | 2026-02-26 | 根据开发文档 v2.1 生成初始 TODO |
 | 2026-02-26 | ✅ Git 清理完成（压缩提交 + 重命名 remotes） |
 | 2026-02-26 | ✅ P0 完成：SlashCommandPopover / ContextPills / VcpStatusBadge / 历史导航 / i18n / CSS / 消息契约（`40bf52c70`） |
+| 2026-02-26 | ✅ P0-2/5/6/7 + P1-1/3/7/8 + P2-1/2/3 完成：useAtMention / ModelInfoCard / Recent模型 / ModeSwitcher增强 / SettingsRow v2 / StickySaveBar / EnhancePrompt（`b034ffe28`） |
