@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TaskHeader component
  * Sticky header above the chat messages showing session title,
  * cost, context usage, and a compact button.
@@ -75,3 +75,5 @@ export const TaskHeader: Component = () => {
     </Show>
   )
 }
+
+

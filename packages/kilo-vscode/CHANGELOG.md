@@ -1,6 +1,6 @@
-# Change Log
+﻿# Change Log
 
-All notable changes to the "kilo-code" extension will be documented in this file.
+All notable changes to the "VCP-code" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
@@ -19,3 +19,4 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - VCP 控制中心增加 `vcp_dynamic_fold` 与 WindowSensor/ScreenPilot 观测可视化
 - 完成品牌与 i18n 收口（VCP 页面硬编码清理、zh/en parity 校验）
 - 完成 parity e2e 基线与全链路回归 smoke 验证
+

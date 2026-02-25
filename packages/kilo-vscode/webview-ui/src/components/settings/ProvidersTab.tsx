@@ -1,4 +1,4 @@
-import { Component, For, Show, Match, Switch, createEffect, createMemo, createSignal } from "solid-js"
+﻿import { Component, For, Show, Match, Switch, createEffect, createMemo, createSignal } from "solid-js"
 import { Select } from "@kilocode/kilo-ui/select"
 import { Card } from "@kilocode/kilo-ui/card"
 import { Button } from "@kilocode/kilo-ui/button"
@@ -59,7 +59,7 @@ interface ProviderEditorDraft {
 }
 
 const POPULAR_PROVIDERS = [
-  "kilo",
+  "VCP",
   "opencode",
   "anthropic",
   "github-copilot",
@@ -77,8 +77,8 @@ const PROVIDER_NPM_MAP: Record<string, string> = {
   openrouter: "@openrouter/ai-sdk-provider",
   azure: "@ai-sdk/azure",
   "github-copilot": "@ai-sdk/github-copilot",
-  kilo: "@kilocode/kilo-gateway",
-  opencode: "@kilocode/kilo-gateway",
+  VCP: "@kilocode/VCP-gateway",
+  opencode: "@kilocode/VCP-gateway",
 }
 
 const PROVIDER_NOTES = [
@@ -1509,3 +1509,5 @@ const ProvidersTab: Component = () => {
 }
 
 export default ProvidersTab
+
+

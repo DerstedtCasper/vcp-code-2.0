@@ -1,13 +1,13 @@
-// it runtime translations for autocomplete
+﻿// it runtime translations for autocomplete
 
 export const dict = {
-  "kilocode:autocomplete.statusBar.enabled": "$(kilo-logo) Autocomplete",
+  "kilocode:autocomplete.statusBar.enabled": "$(VCP-logo) Autocomplete",
   "kilocode:autocomplete.statusBar.snoozed": "in pausa",
   "kilocode:autocomplete.statusBar.warning": "$(warning) Autocomplete",
-  "kilocode:autocomplete.statusBar.tooltip.basic": "Kilo Code Autocomplete",
-  "kilocode:autocomplete.statusBar.tooltip.disabled": "Kilo Code Autocomplete (disabilitato)",
+  "kilocode:autocomplete.statusBar.tooltip.basic": "VCP Code Autocomplete",
+  "kilocode:autocomplete.statusBar.tooltip.disabled": "VCP Code Autocomplete (disabilitato)",
   "kilocode:autocomplete.statusBar.tooltip.noCredits":
-    "**Nessun credito nel tuo account**\n\nIl tuo account Kilo Code non ha crediti. Per usare l'autocompletamento, aggiungi crediti al tuo account.\n\n[Apri Impostazioni](command:vcp-code.new.settingsButtonClicked)",
+    "**Nessun credito nel tuo account**\n\nIl tuo account VCP Code non ha crediti. Per usare l'autocompletamento, aggiungi crediti al tuo account.\n\n[Apri Impostazioni](command:vcp-code.new.settingsButtonClicked)",
   "kilocode:autocomplete.statusBar.tooltip.noUsableProvider":
     "**Nessun modello di autocompletamento configurato**\n\nPer abilitare l'autocompletamento, aggiungi un profilo con uno di questi provider supportati: {{providers}}.\n\n[Apri Impostazioni](command:vcp-code.new.settingsButtonClicked)",
   "kilocode:autocomplete.statusBar.tooltip.sessionTotal": "Costo totale della sessione:",
@@ -21,26 +21,27 @@ export const dict = {
     "Autocompletamenti forniti da {{model}} tramite {{provider}}.",
   "kilocode:autocomplete.statusBar.cost.zero": "$0.00",
   "kilocode:autocomplete.statusBar.cost.lessThanCent": "<$0.01",
-  "kilocode:autocomplete.toggleMessage": "Kilo Code Autocomplete {{status}}",
-  "kilocode:autocomplete.progress.title": "Kilo Code",
+  "kilocode:autocomplete.toggleMessage": "VCP Code Autocomplete {{status}}",
+  "kilocode:autocomplete.progress.title": "VCP Code",
   "kilocode:autocomplete.progress.analyzing": "Analizzando il tuo codice...",
   "kilocode:autocomplete.progress.generating": "Generando modifiche suggerite...",
   "kilocode:autocomplete.progress.processing": "Elaborando modifiche suggerite...",
   "kilocode:autocomplete.progress.showing": "Mostrando modifiche suggerite...",
-  "kilocode:autocomplete.input.title": "Kilo Code: Attività Rapida",
+  "kilocode:autocomplete.input.title": "VCP Code: Attività Rapida",
   "kilocode:autocomplete.input.placeholder": "es., 'refactorizza questa funzione per renderla più efficiente'",
-  "kilocode:autocomplete.commands.generateSuggestions": "Kilo Code: Genera Modifiche Suggerite",
+  "kilocode:autocomplete.commands.generateSuggestions": "VCP Code: Genera Modifiche Suggerite",
   "kilocode:autocomplete.commands.displaySuggestions": "Mostra Modifiche Suggerite",
   "kilocode:autocomplete.commands.cancelSuggestions": "Annulla Modifiche Suggerite",
   "kilocode:autocomplete.commands.applyCurrentSuggestion": "Applica Modifica Suggerita Corrente",
   "kilocode:autocomplete.commands.applyAllSuggestions": "Applica Tutte le Modifiche Suggerite",
-  "kilocode:autocomplete.commands.category": "Kilo Code",
-  "kilocode:autocomplete.codeAction.title": "Kilo Code: Modifiche Suggerite",
-  "kilocode:autocomplete.chatParticipant.fullName": "Kilo Code Agent",
+  "kilocode:autocomplete.commands.category": "VCP Code",
+  "kilocode:autocomplete.codeAction.title": "VCP Code: Modifiche Suggerite",
+  "kilocode:autocomplete.chatParticipant.fullName": "VCP Code Agent",
   "kilocode:autocomplete.chatParticipant.name": "Agent",
   "kilocode:autocomplete.chatParticipant.description": "Posso aiutarti con attività rapide e modifiche suggerite.",
   "kilocode:autocomplete.incompatibilityExtensionPopup.message":
-    "Il Kilo Code Autocomplete è bloccato da un conflitto con GitHub Copilot. Per risolvere questo problema, devi disabilitare i suggerimenti in linea di Copilot.",
+    "Il VCP Code Autocomplete è bloccato da un conflitto con GitHub Copilot. Per risolvere questo problema, devi disabilitare i suggerimenti in linea di Copilot.",
   "kilocode:autocomplete.incompatibilityExtensionPopup.disableCopilot": "Disabilita Copilot",
   "kilocode:autocomplete.incompatibilityExtensionPopup.disableInlineAssist": "Disabilita Autocomplete",
 }
+

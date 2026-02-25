@@ -1,4 +1,4 @@
-# Follow-Up Questions
+﻿# Follow-Up Questions
 
 Suggested replies presented as interactive chips/buttons.
 
@@ -16,10 +16,11 @@ Suggested replies presented as interactive chips/buttons.
 
 ## Suggested migration
 
-**Reimplement?** Likely yes (feature may not exist in Kilo CLI).
+**Reimplement?** Likely yes (feature may not exist in VCP CLI).
 
-- This feature requires explicit “suggestions” data. Kilo CLI’s core API/events focus on sessions/messages/permissions; follow-up suggestion generation is not obviously part of that contract.
+- This feature requires explicit “suggestions” data. VCP CLI’s core API/events focus on sessions/messages/permissions; follow-up suggestion generation is not obviously part of that contract.
 - Options:
-  - Keep the current Kilo-side follow-up suggestion generation (if it’s already Kilo-generated), or
-  - Add an adapter step that asks Kilo CLI for suggested follow-ups after a turn completes (and then surfaces them to the webview).
+  - Keep the current VCP-side follow-up suggestion generation (if it’s already VCP-generated), or
+  - Add an adapter step that asks VCP CLI for suggested follow-ups after a turn completes (and then surfaces them to the webview).
 - Treat this as **non-blocking** for Phase 2 MVP in [`docs/opencode-core/opencode-migration-plan.md`](docs/opencode-core/opencode-migration-plan.md:1) unless UX parity requires it immediately.
+

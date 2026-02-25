@@ -1,4 +1,4 @@
-import { Component } from "solid-js"
+﻿import { Component } from "solid-js"
 import { Select } from "@kilocode/kilo-ui/select"
 import { TextField } from "@kilocode/kilo-ui/text-field"
 import { Card } from "@kilocode/kilo-ui/card"
@@ -58,3 +58,5 @@ const DisplayTab: Component = () => {
 }
 
 export default DisplayTab
+
+

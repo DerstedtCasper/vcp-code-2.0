@@ -1,4 +1,4 @@
-# Deploy & Secure surfaces (navigation implies)
+﻿# Deploy & Secure surfaces (navigation implies)
 
 - **What it is**: Product areas hinted by docs navigation (deploy workflows, managed indexing, security reviews).
 
@@ -8,8 +8,9 @@
 
 ## Suggested migration
 
-- **Kilo CLI availability**: Not present.
+- **VCP CLI availability**: Not present.
 - **Migration recommendation**:
   - Keep deploy/security approval and policy UX in the VS Code extension host.
-  - Add server-side policy surfaces only if/when Kilo CLI needs centralized enforcement beyond basic permissions.
+  - Add server-side policy surfaces only if/when VCP CLI needs centralized enforcement beyond basic permissions.
 - **Reimplementation required?**: Yes.
+

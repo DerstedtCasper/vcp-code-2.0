@@ -1,8 +1,8 @@
-import { ResponseMetaData } from "./types"
+﻿import { ResponseMetaData } from "./types"
 import type { KiloConnectionService } from "../cli-backend"
 
 const DEFAULT_MODEL = "mistralai/codestral-2508"
-const PROVIDER_DISPLAY_NAME = "Kilo Gateway"
+const PROVIDER_DISPLAY_NAME = "VCP Gateway"
 
 /** Chunk from an LLM streaming response */
 export type ApiStreamChunk =
@@ -58,7 +58,7 @@ export class AutocompleteModel {
 
   /**
    * Generate a FIM (Fill-in-the-Middle) completion via the CLI backend.
-   * The CLI backend handles auth using the stored kilo OAuth token.
+   * The CLI backend handles auth using the stored VCP OAuth token.
    */
   public async generateFimResponse(
     prefix: string,
@@ -125,3 +125,4 @@ export class AutocompleteModel {
     return this.connectionService.getConnectionState() === "connected"
   }
 }
+

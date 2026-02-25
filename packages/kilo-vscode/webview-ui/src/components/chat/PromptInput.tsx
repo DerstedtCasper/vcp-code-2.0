@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PromptInput component
  * Text input with send/abort buttons, ghost-text autocomplete, and @ file mention support
  */
@@ -801,4 +801,6 @@ export const PromptInput: Component = () => {
     </div>
   )
 }
+
+
 

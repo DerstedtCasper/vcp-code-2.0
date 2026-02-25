@@ -295,11 +295,11 @@ const AppContent: Component = () => {
     const handler = (event: MessageEvent) => {
       const message = event.data
       if (message?.type === "action" && message.action) {
-        console.log("[Kilo New] App: 馃幀 action:", message.action)
+        console.log("[VCP] App: 馃幀 action:", message.action)
         handleViewAction(message.action)
       }
       if (message?.type === "navigate" && message.view && VALID_VIEWS.has(message.view)) {
-        console.log("[Kilo New] App: 馃Л navigate:", message.view)
+        console.log("[VCP] App: 馃Л navigate:", message.view)
         setCurrentView(message.view as ViewType)
       }
     }
@@ -348,7 +348,7 @@ const AppContent: Component = () => {
 // Main App component with context providers
 const App: Component = () => {
   return (
-    <ThemeProvider defaultTheme="kilo-vscode">
+    <ThemeProvider defaultTheme="VCP-vscode">
       <DialogProvider>
         <VSCodeProvider>
           <ServerProvider>
@@ -380,4 +380,6 @@ const App: Component = () => {
 }
 
 export default App
+
+
 

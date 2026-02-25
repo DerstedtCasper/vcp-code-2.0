@@ -1,4 +1,4 @@
-import { Component, Show, createSignal, createMemo, createEffect, onMount } from "solid-js"
+﻿import { Component, Show, createSignal, createMemo, createEffect, onMount } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { Card } from "@kilocode/kilo-ui/card"
 import { Select } from "@kilocode/kilo-ui/select"
@@ -89,7 +89,7 @@ const ProfileView: Component<ProfileViewProps> = (props) => {
   }
 
   const handleDashboard = () => {
-    vscode.postMessage({ type: "openExternal", url: "https://app.kilo.ai/profile" })
+    vscode.postMessage({ type: "openExternal", url: "https://github.com/DerstedtCasper/vcp-code-2.0" })
   }
 
   const handleCancelLogin = () => {
@@ -270,3 +270,5 @@ const ProfileView: Component<ProfileViewProps> = (props) => {
 }
 
 export default ProfileView
+
+

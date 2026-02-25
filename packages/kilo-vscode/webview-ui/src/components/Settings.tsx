@@ -1,4 +1,4 @@
-import { Component, createEffect, createSignal, on } from "solid-js"
+﻿import { Component, createEffect, createSignal, on } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { Tabs } from "@kilocode/kilo-ui/tabs"
@@ -205,3 +205,5 @@ const Settings: Component<SettingsProps> = (props) => {
 }
 
 export default Settings
+
+

@@ -1,4 +1,4 @@
-import * as vscode from "vscode"
+﻿import * as vscode from "vscode"
 import { type KiloConnectionService, type McpStatus } from "../cli-backend"
 
 export type BrowserAutomationState = "disabled" | "registering" | "connected" | "failed" | "disconnected"
@@ -9,7 +9,7 @@ export class BrowserAutomationService implements vscode.Disposable {
   private stateListeners: Array<(state: BrowserAutomationState) => void> = []
 
   // MCP server name used when registering with the CLI backend
-  private static readonly MCP_SERVER_NAME = "kilo-playwright"
+  private static readonly MCP_SERVER_NAME = "VCP-playwright"
 
   constructor(private readonly connectionService: KiloConnectionService) {
     // Listen for settings changes
@@ -73,7 +73,7 @@ export class BrowserAutomationService implements vscode.Disposable {
 
     const httpClient = this.getHttpClient()
     if (!httpClient) {
-      console.error("[Kilo New] BrowserAutomationService: No HTTP client available")
+      console.error("[VCP] BrowserAutomationService: No HTTP client available")
       this.setState("failed")
       return
     }
@@ -109,7 +109,7 @@ export class BrowserAutomationService implements vscode.Disposable {
         this.setState("connected")
       } else if (serverStatus?.status === "failed") {
         console.error(
-          "[Kilo New] BrowserAutomationService: MCP server failed:",
+          "[VCP] BrowserAutomationService: MCP server failed:",
           (serverStatus as { error?: string }).error,
         )
         this.setState("failed")
@@ -117,7 +117,7 @@ export class BrowserAutomationService implements vscode.Disposable {
         this.setState("disconnected")
       }
     } catch (error) {
-      console.error("[Kilo New] BrowserAutomationService: Failed to register MCP server:", error)
+      console.error("[VCP] BrowserAutomationService: Failed to register MCP server:", error)
       this.setState("failed")
     }
   }
@@ -136,7 +136,7 @@ export class BrowserAutomationService implements vscode.Disposable {
         const directory = this.getWorkspaceDirectory()
         await httpClient.disconnectMcpServer(BrowserAutomationService.MCP_SERVER_NAME, directory)
       } catch (error) {
-        console.error("[Kilo New] BrowserAutomationService: Failed to disconnect MCP server:", error)
+        console.error("[VCP] BrowserAutomationService: Failed to disconnect MCP server:", error)
       }
     }
 
@@ -181,7 +181,7 @@ export class BrowserAutomationService implements vscode.Disposable {
     if (this.state === state) {
       return
     }
-    console.log(`[Kilo New] BrowserAutomationService: State ${this.state} → ${state}`)
+    console.log(`[VCP] BrowserAutomationService: State ${this.state} → ${state}`)
     this.state = state
     for (const listener of this.stateListeners) {
       listener(state)
@@ -196,3 +196,4 @@ export class BrowserAutomationService implements vscode.Disposable {
     this.stateListeners = []
   }
 }
+

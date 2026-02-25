@@ -1,4 +1,4 @@
-import { Component } from "solid-js"
+﻿import { Component } from "solid-js"
 import { Switch } from "@kilocode/kilo-ui/switch"
 import { Card } from "@kilocode/kilo-ui/card"
 import { useConfig } from "../../context/config"
@@ -31,3 +31,5 @@ const CheckpointsTab: Component = () => {
 }
 
 export default CheckpointsTab
+
+

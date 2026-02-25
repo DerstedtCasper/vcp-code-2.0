@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   ServerConfig,
   SessionInfo,
   SessionStatusInfo,
@@ -39,17 +39,17 @@ export class ConfigConflictError extends Error {
 export class HttpClient {
   private readonly baseUrl: string
   private readonly authHeader: string
-  private readonly authUsername = "kilo"
+  private readonly authUsername = "VCP"
 
   constructor(config: ServerConfig) {
     this.baseUrl = config.baseUrl
-    // Auth header format: Basic base64("kilo:password")
-    // NOTE: The CLI server expects a non-empty username ("kilo"). Using an empty username
+    // Auth header format: Basic base64("VCP:password")
+    // NOTE: The CLI server expects a non-empty username ("VCP"). Using an empty username
     // (":password") results in 401 for both REST and SSE endpoints.
     this.authHeader = `Basic ${Buffer.from(`${this.authUsername}:${config.password}`).toString("base64")}`
 
     // Safe debug logging: no secrets.
-    console.log("[Kilo New] HTTP: 🔐 Auth configured", {
+    console.log("[VCP] HTTP: 🔐 Auth configured", {
       username: this.authUsername,
       passwordLength: config.password.length,
     })
@@ -90,7 +90,7 @@ export class HttpClient {
       const errorMessage = extractHttpErrorMessage(response.statusText, rawText)
 
       if (!options?.silent) {
-        console.error("[Kilo New] HTTP: ❌ Request failed", {
+        console.error("[VCP] HTTP: ❌ Request failed", {
           method,
           path,
           status: response.status,
@@ -108,7 +108,7 @@ export class HttpClient {
         return undefined as T
       }
 
-      console.error("[Kilo New] HTTP: ❌ Empty response body", {
+      console.error("[VCP] HTTP: ❌ Empty response body", {
         method,
         path,
         status: response.status,
@@ -119,7 +119,7 @@ export class HttpClient {
     try {
       return JSON.parse(rawText) as T
     } catch (error) {
-      console.error("[Kilo New] HTTP: ❌ Invalid JSON response", {
+      console.error("[VCP] HTTP: ❌ Invalid JSON response", {
         method,
         path,
         status: response.status,
@@ -487,26 +487,26 @@ export class HttpClient {
   // ============================================
 
   /**
-   * Get the current user's profile from the kilo-gateway.
+   * Get the current user's profile from the VCP-gateway.
    * Returns null if not logged in or if the request fails.
    */
   async getProfile(): Promise<ProfileData | null> {
     try {
-      return await this.request<ProfileData>("GET", "/kilo/profile")
+      return await this.request<ProfileData>("GET", "/VCP/profile")
     } catch {
       return null
     }
   }
 
   /**
-   * Fetch Kilo notifications for the current user from the kilo-gateway.
+   * Fetch VCP notifications for the current user from the VCP-gateway.
    * Returns an empty array if not logged in or if the request fails.
    */
   async getNotifications(): Promise<KilocodeNotification[]> {
     try {
-      return await this.request<KilocodeNotification[]>("GET", "/kilo/notifications")
+      return await this.request<KilocodeNotification[]>("GET", "/VCP/notifications")
     } catch (err) {
-      console.warn("[Kilo] Failed to fetch notifications:", err)
+      console.warn("[VCP] Failed to fetch notifications:", err)
       return []
     }
   }
@@ -516,7 +516,7 @@ export class HttpClient {
    * Pass null to switch back to personal account.
    */
   async setOrganization(organizationId: string | null): Promise<void> {
-    await this.request<boolean>("POST", "/kilo/organization", { organizationId })
+    await this.request<boolean>("POST", "/VCP/organization", { organizationId })
   }
 
   // ============================================
@@ -524,7 +524,7 @@ export class HttpClient {
   // ============================================
 
   /**
-   * Stream a FIM (Fill-in-the-Middle) completion from the Kilo Gateway via the CLI backend.
+   * Stream a FIM (Fill-in-the-Middle) completion from the VCP Gateway via the CLI backend.
    * The CLI backend handles auth — no API key needed in the extension.
    *
    * @param prefix - Code before the cursor
@@ -539,7 +539,7 @@ export class HttpClient {
     onChunk: (text: string) => void,
     options?: { model?: string; maxTokens?: number; temperature?: number },
   ): Promise<{ cost: number; inputTokens: number; outputTokens: number }> {
-    const url = `${this.baseUrl}/kilo/fim`
+    const url = `${this.baseUrl}/VCP/fim`
 
     const response = await fetch(url, {
       method: "POST",
@@ -605,7 +605,7 @@ export class HttpClient {
 
   /**
    * Remove authentication credentials for a provider.
-   * Used for logout when called with "kilo".
+   * Used for logout when called with "VCP".
    */
   async removeAuth(providerId: string): Promise<boolean> {
     return this.request<boolean>("DELETE", `/auth/${providerId}`)
@@ -633,7 +633,7 @@ export class HttpClient {
 
   /**
    * Complete OAuth callback for a provider.
-   * For "auto" method providers (like kilo), this blocks until polling completes.
+   * For "auto" method providers (like VCP), this blocks until polling completes.
    */
   async oauthCallback(providerId: string, method: number, directory: string, code?: string): Promise<boolean> {
     return this.request<boolean>("POST", `/provider/${providerId}/oauth/callback`, { method, code }, { directory })
@@ -696,3 +696,4 @@ export class HttpClient {
     return this.request<boolean>("POST", `/mcp/${encodeURIComponent(name)}/disconnect`, undefined, { directory })
   }
 }
+

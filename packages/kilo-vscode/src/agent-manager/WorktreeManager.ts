@@ -1,4 +1,4 @@
-/**
+﻿/**
  * WorktreeManager - Manages git worktrees for agent sessions.
  *
  * Ported from kilocode/src/core/kilocode/agent-manager/WorktreeManager.ts.
@@ -183,9 +183,9 @@ export class WorktreeManager {
   async ensureGitExclude(): Promise<void> {
     const gitDir = await this.resolveGitDir()
     const excludePath = path.join(gitDir, "info", "exclude")
-    await this.addExcludeEntry(excludePath, ".kilocode/worktrees/", "Kilo Code agent worktrees")
-    await this.addExcludeEntry(excludePath, ".kilocode/agent-manager.json", "Kilo Agent Manager state")
-    await this.addExcludeEntry(excludePath, ".kilocode/setup-script", "Kilo Code worktree setup script")
+    await this.addExcludeEntry(excludePath, ".kilocode/worktrees/", "VCP Code agent worktrees")
+    await this.addExcludeEntry(excludePath, ".kilocode/agent-manager.json", "VCP Agent Manager state")
+    await this.addExcludeEntry(excludePath, ".kilocode/setup-script", "VCP Code worktree setup script")
   }
 
   private async ensureWorktreeExclude(worktreePath: string): Promise<void> {
@@ -199,7 +199,7 @@ export class WorktreeManager {
       await this.addExcludeEntry(
         path.join(mainGitDir, "info", "exclude"),
         `${KILOCODE_DIR}/`,
-        "Kilo Code session metadata",
+        "VCP Code session metadata",
       )
     } catch (error) {
       this.log(`Warning: Failed to update git exclude for worktree: ${error}`)
@@ -304,3 +304,4 @@ export class WorktreeManager {
     return "main"
   }
 }
+

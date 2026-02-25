@@ -1,4 +1,4 @@
-import { dict as en } from "./en"
+﻿import { dict as en } from "./en"
 
 type Keys = keyof typeof en
 
@@ -254,7 +254,7 @@ export const dict = {
   "dialog.directory.empty": "폴더 없음",
 
   "dialog.server.title": "서버",
-  "dialog.server.description": "이 앱이 연결할 Kilo 서버를 전환합니다.",
+  "dialog.server.description": "이 앱이 연결할 VCP 서버를 전환합니다.",
   "dialog.server.search.placeholder": "서버 검색",
   "dialog.server.empty": "서버 없음",
   "dialog.server.add.title": "서버 추가",
@@ -373,7 +373,7 @@ export const dict = {
   "error.page.action.checking": "확인 중...",
   "error.page.action.checkUpdates": "업데이트 확인",
   "error.page.action.updateTo": "{{version}} 버전으로 업데이트",
-  "error.page.report.prefix": "이 오류를 Kilo 팀에 제보해 주세요: ",
+  "error.page.report.prefix": "이 오류를 VCP 팀에 제보해 주세요: ",
   "error.page.report.discord": "Discord",
   "error.page.version": "버전: {{version}}",
 
@@ -504,7 +504,7 @@ export const dict = {
   "sidebar.project.recentSessions": "최근 세션",
   "sidebar.project.viewAllSessions": "모든 세션 보기",
 
-  "app.name.desktop": "Kilo Desktop",
+  "app.name.desktop": "VCP Desktop",
   "settings.section.desktop": "데스크톱",
   "settings.section.server": "서버",
   "settings.tab.general": "일반",
@@ -516,11 +516,11 @@ export const dict = {
   "settings.general.section.sounds": "효과음",
 
   "settings.general.row.language.title": "언어",
-  "settings.general.row.language.description": "Kilo 표시 언어 변경",
+  "settings.general.row.language.description": "VCP 표시 언어 변경",
   "settings.general.row.appearance.title": "모양",
   "settings.general.row.appearance.description": "기기에서 Kilo가 보이는 방식 사용자 지정",
   "settings.general.row.theme.title": "테마",
-  "settings.general.row.theme.description": "Kilo 테마 사용자 지정",
+  "settings.general.row.theme.description": "VCP 테마 사용자 지정",
   "settings.general.row.font.title": "글꼴",
   "settings.general.row.font.description": "코드 블록에 사용되는 고정폭 글꼴 사용자 지정",
 
@@ -723,7 +723,7 @@ export const dict = {
   "deviceAuth.toast.urlCopied": "URL이 클립보드에 복사되었습니다",
   "deviceAuth.toast.codeCopied": "코드가 클립보드에 복사되었습니다",
   "deviceAuth.status.initiating": "로그인 시작 중...",
-  "deviceAuth.title": "Kilo Code에 로그인",
+  "deviceAuth.title": "VCP Code에 로그인",
   "deviceAuth.step1": "1단계: 이 URL을 여세요",
   "deviceAuth.action.copyUrl": "URL 복사",
   "deviceAuth.action.openBrowser": "브라우저 열기",
@@ -741,7 +741,7 @@ export const dict = {
 
   "profile.title": "프로필",
   "profile.notLoggedIn": "로그인하지 않음",
-  "profile.action.login": "Kilo Code로 로그인",
+  "profile.action.login": "VCP Code로 로그인",
   "profile.balance.title": "잔액",
   "profile.balance.refresh": "잔액 새로고침",
   "profile.action.dashboard": "대시보드",
@@ -760,11 +760,11 @@ export const dict = {
   "settings.prompts.title": "프롬프트",
   "settings.experimental.title": "실험적",
   "settings.language.title": "언어",
-  "settings.aboutKiloCode.title": "Kilo Code 정보",
+  "settings.aboutKiloCode.title": "VCP Code 정보",
 
   "session.messages.empty": "아래에 메시지를 입력하여 대화를 시작하세요.",
   "session.messages.welcome":
-    "Kilo Code는 AI 코딩 어시스턴트입니다. 기능 구축, 버그 수정 또는 코드베이스 설명을 요청하세요.",
+    "VCP Code는 AI 코딩 어시스턴트입니다. 기능 구축, 버그 수정 또는 코드베이스 설명을 요청하세요.",
   "session.messages.scrollToBottom": "하단으로 스크롤",
   "session.status.writingResponse": "응답 작성 중...",
   "session.status.retrying": "재시도 중 ({{ attempt }}번째 시도)… {{ message }}",
@@ -797,14 +797,14 @@ export const dict = {
   "settings.aboutKiloCode.port.label": "포트:",
   "settings.aboutKiloCode.versionInfo": "버전 정보",
   "settings.aboutKiloCode.version.label": "버전:",
-  "settings.aboutKiloCode.extensionName": "Kilo Code 확장 프로그램",
+  "settings.aboutKiloCode.extensionName": "VCP Code 확장 프로그램",
   "settings.aboutKiloCode.community": "커뮤니티 및 지원",
   "settings.aboutKiloCode.feedback.prefix": "질문이나 피드백이 있으시면 다음에서 이슈를 열어주세요",
   "settings.aboutKiloCode.feedback.or": "또는",
   "settings.aboutKiloCode.support.prefix": "결제 또는 계정 관련 문의는 고객 지원팀에 문의하세요",
   "settings.aboutKiloCode.resetSettings.title": "설정 초기화",
   "settings.aboutKiloCode.resetSettings.description":
-    "Kilo Code 확장 프로그램의 모든 설정을 기본값으로 초기화합니다. CLI 또는 백엔드 구성에는 영향을 미치지 않습니다.",
+    "VCP Code 확장 프로그램의 모든 설정을 기본값으로 초기화합니다. CLI 또는 백엔드 구성에는 영향을 미치지 않습니다.",
   "settings.aboutKiloCode.resetSettings.button": "모든 설정 초기화",
 
   "settings.agentBehaviour.subtab.modes": "모드",
@@ -823,7 +823,7 @@ export const dict = {
   "settings.browser.headless.title": "헤드리스 모드",
   "settings.browser.headless.description": "헤드리스 모드로 실행합니다 (브라우저 창이 표시되지 않음).",
 
-  "settings.language.description": 'Kilo Code UI의 언어를 선택하세요. "자동"은 VS Code 표시 언어를 사용합니다.',
+  "settings.language.description": 'VCP Code UI의 언어를 선택하세요. "자동"은 VS Code 표시 언어를 사용합니다.',
   "settings.language.auto": "자동 (VS Code 언어)",
   "settings.language.current": "현재:",
 
@@ -938,3 +938,4 @@ export const dict = {
   "dialog.model.notSet": "설정되지 않음",
   "profile.personalAccount": "개인 계정",
 }
+

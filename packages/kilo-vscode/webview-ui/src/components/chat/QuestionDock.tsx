@@ -1,7 +1,7 @@
-/**
+﻿/**
  * QuestionDock component
  * Displays question requests from the AI assistant inline above the prompt input.
- * Uses kilo-ui's data-component/data-slot CSS pattern for styling.
+ * Uses VCP-ui's data-component/data-slot CSS pattern for styling.
  */
 
 import { Component, For, Show, createMemo, createEffect } from "solid-js"
@@ -306,3 +306,5 @@ export const QuestionDock: Component<{ request: QuestionRequest }> = (props) => 
     </div>
   )
 }
+
+

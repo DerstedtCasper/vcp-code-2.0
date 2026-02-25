@@ -825,9 +825,9 @@ export const dict = {
   "settings.aboutKiloCode.version.label": "版本：",
   "settings.aboutKiloCode.extensionName": "VCP Code 扩展",
   "settings.aboutKiloCode.community": "社区与支持",
-  "settings.aboutKiloCode.feedback.prefix": "如果您有任何问题或反馈，欢迎在以下平台提交 issue",
+  "settings.aboutKiloCode.feedback.prefix": "如果您有任何问题或反馈，欢迎访问",
   "settings.aboutKiloCode.feedback.or": "或",
-  "settings.aboutKiloCode.support.prefix": "如有账单或账户问题，请联系客户支持",
+  "settings.aboutKiloCode.support.prefix": "如有支持或账户问题，请在以下地址提交 issue",
   "settings.aboutKiloCode.resetSettings.title": "重置设置",
   "settings.aboutKiloCode.resetSettings.description":
     "将所有 VCP Code 扩展设置重置为默认值。这不会影响 CLI 或后端配置。",

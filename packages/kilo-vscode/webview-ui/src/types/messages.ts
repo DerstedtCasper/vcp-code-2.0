@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Types for extension <-> webview message communication
  */
 
@@ -180,7 +180,7 @@ export interface DeviceAuthState {
   error?: string
 }
 
-// Kilo notification types (mirrored from kilo-gateway)
+// VCP notification types (mirrored from VCP-gateway)
 export interface KilocodeNotificationAction {
   actionText: string
   actionURL: string
@@ -194,7 +194,7 @@ export interface KilocodeNotification {
   showIn?: string[]
 }
 
-// Profile types from kilo-gateway
+// Profile types from VCP-gateway
 export interface KilocodeBalance {
   balance: number
 }
@@ -1498,3 +1498,4 @@ export interface VSCodeAPI {
 declare global {
   function acquireVsCodeApi(): VSCodeAPI
 }
+

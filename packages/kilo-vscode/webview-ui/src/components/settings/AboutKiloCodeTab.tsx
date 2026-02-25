@@ -12,6 +12,9 @@ export interface AboutKiloCodeTabProps {
 const AboutKiloCodeTab: Component<AboutKiloCodeTabProps> = (props) => {
   const language = useLanguage()
   const vscode = useVSCode()
+  const repoBaseUrl = "https://github.com/DerstedtCasper/vcp-code-2.0"
+  const repoIssuesUrl = `${repoBaseUrl}/issues`
+  const repoDiscussionsUrl = `${repoBaseUrl}/discussions`
 
   const open = (url: string) => {
     vscode.postMessage({ type: "openExternal", url })
@@ -100,16 +103,16 @@ const AboutKiloCodeTab: Component<AboutKiloCodeTabProps> = (props) => {
           }}
         >
           {language.t("settings.aboutKiloCode.feedback.prefix")}{" "}
-          <span style={linkStyle} onClick={() => open("https://github.com/Kilo-Org/kilocode")}>
+          <span style={linkStyle} onClick={() => open(repoBaseUrl)}>
             GitHub
           </span>
           ,{" "}
-          <span style={linkStyle} onClick={() => open("https://reddit.com/r/kilocode")}>
-            Reddit
+          <span style={linkStyle} onClick={() => open(repoIssuesUrl)}>
+            Issues
           </span>
           , {language.t("settings.aboutKiloCode.feedback.or")}{" "}
-          <span style={linkStyle} onClick={() => open("https://kilo.ai/discord")}>
-            Discord
+          <span style={linkStyle} onClick={() => open(repoDiscussionsUrl)}>
+            Discussions
           </span>
           .
         </p>
@@ -122,8 +125,8 @@ const AboutKiloCodeTab: Component<AboutKiloCodeTabProps> = (props) => {
           }}
         >
           {language.t("settings.aboutKiloCode.support.prefix")}{" "}
-          <span style={linkStyle} onClick={() => open("https://kilo.ai/support")}>
-            kilo.ai/support
+          <span style={linkStyle} onClick={() => open(repoIssuesUrl)}>
+            github.com/DerstedtCasper/vcp-code-2.0/issues
           </span>
           .
         </p>

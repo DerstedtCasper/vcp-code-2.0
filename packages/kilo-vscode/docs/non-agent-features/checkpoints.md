@@ -1,4 +1,4 @@
-# Checkpoints (shadow versioning, workspace time travel)
+﻿# Checkpoints (shadow versioning, workspace time travel)
 
 - **What it is**: Task-scoped snapshots stored in a shadow git repository, with UI to diff/restore.
 
@@ -14,12 +14,13 @@
 
 ## Suggested migration
 
-- **Kilo CLI availability**: Partial.
+- **VCP CLI availability**: Partial.
 - **Migration recommendation**:
-  - Evaluate whether Kilo CLI snapshots/revert semantics map to Kilo checkpoints (per-task, excludes, UX expectations).
-  - If they map, delegate snapshot creation/storage/revert to Kilo CLI; otherwise keep the existing Kilo checkpoint service.
+  - Evaluate whether VCP CLI snapshots/revert semantics map to VCP checkpoints (per-task, excludes, UX expectations).
+  - If they map, delegate snapshot creation/storage/revert to VCP CLI; otherwise keep the existing VCP checkpoint service.
 - **Reimplementation required?**: Partial.
 
 ## Primary implementation anchors
 
 - [`src/services/checkpoints/`](../../src/services/checkpoints/)
+

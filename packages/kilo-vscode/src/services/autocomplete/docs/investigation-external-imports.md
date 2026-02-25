@@ -1,4 +1,4 @@
-# External Imports Investigation — `src/services/autocomplete/`
+﻿# External Imports Investigation — `src/services/autocomplete/`
 
 > Generated: 2026-02-12
 >
@@ -61,7 +61,7 @@ All files import `* as vscode from "vscode"`.
 ## 2. Internal Project Imports (non-continuedev files)
 
 These are imports from files **outside** the `src/services/autocomplete/` directory tree,
-originating from the "Kilo Code" layer (not the continuedev fork).
+originating from the "VCP Code" layer (not the continuedev fork).
 
 ### `src/core/` imports
 
@@ -407,3 +407,4 @@ src/shared/package                         (via continuedev KiloCode.ts)
 src/utils/path                             (../../utils/path)
 webview-ui/src/components/settings/constants
 ```
+

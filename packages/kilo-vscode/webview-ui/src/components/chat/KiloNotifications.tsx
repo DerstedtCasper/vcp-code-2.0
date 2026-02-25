@@ -1,4 +1,4 @@
-import { Component, Show, createMemo, createSignal } from "solid-js"
+﻿import { Component, Show, createMemo, createSignal } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { IconButton } from "@kilocode/kilo-ui/icon-button"
 import { Icon } from "@kilocode/kilo-ui/icon"
@@ -31,23 +31,23 @@ export const KiloNotifications: Component = () => {
 
   return (
     <Show when={total() > 0}>
-      <div class="kilo-notifications">
-        <div class="kilo-notifications-card">
-          <div class="kilo-notifications-header">
-            <span class="kilo-notifications-title">{current()?.title}</span>
+      <div class="VCP-notifications">
+        <div class="VCP-notifications-card">
+          <div class="VCP-notifications-header">
+            <span class="VCP-notifications-title">{current()?.title}</span>
             <IconButton size="small" variant="ghost" icon="close" onClick={handleDismiss} title="Dismiss" />
           </div>
-          <p class="kilo-notifications-message">{current()?.message}</p>
-          <div class="kilo-notifications-footer">
+          <p class="VCP-notifications-message">{current()?.message}</p>
+          <div class="VCP-notifications-footer">
             <Show when={total() > 1}>
-              <div class="kilo-notifications-nav">
-                <button class="kilo-notifications-nav-btn" onClick={prev} title="Previous">
+              <div class="VCP-notifications-nav">
+                <button class="VCP-notifications-nav-btn" onClick={prev} title="Previous">
                   <Icon name="arrow-left" size="small" />
                 </button>
-                <span class="kilo-notifications-nav-count">
+                <span class="VCP-notifications-nav-count">
                   {safeIndex() + 1} / {total()}
                 </span>
-                <button class="kilo-notifications-nav-btn" onClick={next} title="Next">
+                <button class="VCP-notifications-nav-btn" onClick={next} title="Next">
                   <Icon name="arrow-right" size="small" />
                 </button>
               </div>
@@ -65,3 +65,5 @@ export const KiloNotifications: Component = () => {
     </Show>
   )
 }
+
+

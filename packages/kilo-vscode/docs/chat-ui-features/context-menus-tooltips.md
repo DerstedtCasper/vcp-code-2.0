@@ -1,4 +1,4 @@
-# Context Menus & Tooltips (Webview)
+﻿# Context Menus & Tooltips (Webview)
 
 Right-click/context actions and tooltip affordances within the chat webview UI.
 
@@ -6,11 +6,11 @@ Right-click/context actions and tooltip affordances within the chat webview UI.
 
 ## Scope
 
-This document covers **webview-internal** context menus and tooltips — i.e., right-click menus and hover tooltips rendered inside the Kilo Code chat panel.
+This document covers **webview-internal** context menus and tooltips — i.e., right-click menus and hover tooltips rendered inside the VCP Code chat panel.
 
 ## Current State
 
-- kilo-ui provides `Tooltip` and `Popover` components, already in use throughout the webview (TaskHeader, ModelSelector, etc.)
+- VCP-ui provides `Tooltip` and `Popover` components, already in use throughout the webview (TaskHeader, ModelSelector, etc.)
 - No webview-internal right-click context menu exists yet
 
 ## Remaining Work
@@ -22,8 +22,9 @@ This document covers **webview-internal** context menus and tooltips — i.e., r
 ## Location
 
 - [`webview-ui/src/components/common/ContextMenu.tsx`](../../webview-ui/src/components/common/ContextMenu.tsx:1)
-- kilo-ui `Tooltip` component usage throughout webview
+- VCP-ui `Tooltip` component usage throughout webview
 
 ## Implementation Notes
 
-These are presentation-layer affordances; the CLI backend is not involved. kilo-ui already provides the tooltip infrastructure needed.
+These are presentation-layer affordances; the CLI backend is not involved. VCP-ui already provides the tooltip infrastructure needed.
+

@@ -1,4 +1,4 @@
-import { Component, For, Show, createMemo } from "solid-js"
+﻿import { Component, For, Show, createMemo } from "solid-js"
 import { Switch } from "@kilocode/kilo-ui/switch"
 import { Select } from "@kilocode/kilo-ui/select"
 import { TextField } from "@kilocode/kilo-ui/text-field"
@@ -159,3 +159,5 @@ const ExperimentalTab: Component = () => {
 }
 
 export default ExperimentalTab
+
+

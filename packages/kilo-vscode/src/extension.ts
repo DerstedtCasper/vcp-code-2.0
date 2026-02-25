@@ -1,4 +1,4 @@
-import * as vscode from "vscode"
+﻿import * as vscode from "vscode"
 import { KiloProvider } from "./KiloProvider"
 import { AgentManagerProvider } from "./agent-manager/AgentManagerProvider"
 import { EXTENSION_DISPLAY_NAME } from "./constants"
@@ -174,8 +174,8 @@ async function openKiloInNewTab(context: vscode.ExtensionContext, connectionServ
   })
 
   panel.iconPath = {
-    light: vscode.Uri.joinPath(context.extensionUri, "assets", "icons", "kilo-light.svg"),
-    dark: vscode.Uri.joinPath(context.extensionUri, "assets", "icons", "kilo-dark.svg"),
+    light: vscode.Uri.joinPath(context.extensionUri, "assets", "icons", "VCP-light.svg"),
+    dark: vscode.Uri.joinPath(context.extensionUri, "assets", "icons", "VCP-dark.svg"),
   }
 
   const tabProvider = new KiloProvider(context.extensionUri, connectionService, context)
@@ -211,3 +211,4 @@ function waitForWebviewPanelToBeActive(panel: vscode.WebviewPanel): Promise<void
     })
   })
 }
+

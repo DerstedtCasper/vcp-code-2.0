@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ModeSwitcher component
  * Popover-based selector for choosing an agent/mode in the chat prompt area.
  * Includes Agent Team mapping to vcp.agentTeam.enabled.
@@ -159,3 +159,5 @@ export const ModeSwitcher: Component = () => {
     />
   )
 }
+
+

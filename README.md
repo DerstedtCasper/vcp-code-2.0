@@ -1,88 +1,58 @@
-<p align="center">
-  <a href="https://marketplace.visualstudio.com/items?itemName=kilocode.Kilo-Code"><img src="https://img.shields.io/badge/VS_Code_Marketplace-007ACC?style=flat&logo=visualstudiocode&logoColor=white" alt="VS Code Marketplace"></a>
-  <a href="https://x.com/kilocode"><img src="https://img.shields.io/badge/kilocode-000000?style=flat&logo=x&logoColor=white" alt="X (Twitter)"></a>
-  <a href="https://blog.kilo.ai"><img src="https://img.shields.io/badge/Blog-555?style=flat&logo=substack&logoColor=white" alt="Substack Blog"></a>
-  <a href="https://kilo.ai/discord"><img src="https://img.shields.io/badge/Join%20Discord-5865F2?style=flat&logo=discord&logoColor=white" alt="Discord"></a>
-  <a href="https://www.reddit.com/r/kilocode/"><img src="https://img.shields.io/badge/Join%20r%2Fkilocode-D84315?style=flat&logo=reddit&logoColor=white" alt="Reddit"></a>
-</p>
+﻿# VCP Code 2.0
 
-# 🚀 Kilo
+VCP Code 2.0 是面向长期工程维护的 AI 编程扩展与运行时组合项目，当前仓库以 VS Code 扩展 `packages/kilo-vscode` 为主交付目标，持续对齐并重构原有交互，同时补充 VCP 协议相关能力。
 
-> Kilo is the all-in-one agentic engineering platform. Build, ship, and iterate faster with the most popular open source coding agent.
-> #1 on OpenRouter. 1.5M+ Kilo Coders. 25T+ tokens processed
+## 仓库定位
 
-- ✨ Generate code from natural language
-- ✅ Checks its own work
-- 🧪 Run terminal commands
-- 🌐 Automate the browser
-- ⚡ Inline autocomplete suggestions
-- 🤖 Latest AI models
-- 🎁 API keys optional
-- 💡 **Get $20 in bonus credits when you top-up for the first time** Credits can be used with 500+ models like Gemini 3.1 Pro, Claude 4.6 Sonnet & Opus, and GPT-5.2
+- 目标：在复用成熟能力的基础上，交付可维护、可发布、可扩展的 VCP Code 版本。
+- 主要交付：VS Code 扩展（`.vsix`）、设置页交互、对话交互与 VCP 功能映射。
+- 协作方式：以 GitHub PR/Issue 为主，面向多人长期维护。
 
-<p align="center">
-  <img src="https://media.githubusercontent.com/media/Kilo-Org/kilocode/main/kilo.gif" width="100%" />
-</p>
+## 目录概览
 
-## Quick Links
+- `packages/kilo-vscode/`：VS Code 扩展主工程（当前主要开发目录）
+- `packages/opencode/`：CLI/服务端运行时
+- `packages/app/`：共享 UI 相关实现
+- `helloagents/`：规划与知识库文档
 
-- [VS Code Marketplace](https://kilo.ai/vscode-marketplace?utm_source=Readme) (download)
-- Install CLI: `npm install -g @kilocode/cli`
-- [Official Kilo.ai Home page](https://kilo.ai) (learn more)
+## 本地开发
 
-## Key Features
-
-- **Code Generation:** Kilo can generate code using natural language.
-- **Inline Autocomplete:** Get intelligent code completions as you type, powered by AI.
-- **Task Automation:** Kilo can automate repetitive coding tasks to save time.
-- **Automated Refactoring:** Kilo can refactor and improve existing code efficiently.
-- **MCP Server Marketplace**: Kilo can easily find, and use MCP servers to extend the agent capabilities.
-- **Multi Mode**: Plan with Architect, Code with Coder, and Debug with Debugger, and make your own custom modes.
-
-## Get Started in Visual Studio Code
-
-1. Install the Kilo Code extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=kilocode.Kilo-Code).
-2. Create your account to access 500+ cutting-edge AI models including Gemini 3 Pro, Claude 4.5 Sonnet & Opus, and GPT-5 – with transparent pricing that matches provider rates exactly.
-3. Start coding with AI that adapts to your workflow. Watch our quick-start guide to see Kilo in action:
-
-[![Watch the video](https://img.youtube.com/vi/pqGfYXgrhig/maxresdefault.jpg)](https://youtu.be/pqGfYXgrhig)
-
-## Get Started with the CLI
+1. 安装依赖
 
 ```bash
-# npm
-npm install -g @kilocode/cli
-
-# Or run directly with npx
-npx @kilocode/cli
+bun install
 ```
 
-Then run `kilo` in any project directory to start.
-
-### Autonomous Mode (CI/CD)
-
-Use the `--auto` flag with `kilo run` to enable fully autonomous operation without user interaction. This is ideal for CI/CD pipelines and automated workflows:
+2. 构建扩展
 
 ```bash
-kilo run --auto "run tests and fix any failures"
+cd packages/kilo-vscode
+bun run package
 ```
 
-**Important:** The `--auto` flag disables all permission prompts and allows the agent to execute any action without confirmation. Only use this in trusted environments like CI/CD pipelines.
+3. 类型检查与 Lint
 
-## Contributing
+```bash
+bun run check-types
+bun run lint
+```
 
-We welcome contributions from developers, writers, and enthusiasts!
-To get started, please read our [Contributing Guide](/CONTRIBUTING.md). It includes details on setting up your environment, coding standards, types of contribution and how to submit pull requests.
+## 打包 VSIX
 
-## Code of Conduct
+在 `packages/kilo-vscode` 目录执行：
 
-Our community is built on respect, inclusivity, and collaboration. Please review our [Code of Conduct](/CODE_OF_CONDUCT.md) to understand the expectations for all contributors and community members.
+```bash
+bunx @vscode/vsce package --no-dependencies -o vcp-code-<version>.vsix
+```
 
-## License
+示例产物：`vcp-code-7.0.31.vsix`。
 
-This project is licensed under the MIT License.
-You’re free to use, modify, and distribute this code, including for commercial purposes as long as you include proper attribution and license notices. See [License](/LICENSE).
+## 反馈与协作
 
-### Where did Kilo CLI come from?
+- 项目主页：https://github.com/DerstedtCasper/vcp-code-2.0
+- 问题反馈（Issues）：https://github.com/DerstedtCasper/vcp-code-2.0/issues
+- 讨论区（Discussions）：https://github.com/DerstedtCasper/vcp-code-2.0/discussions
 
-Kilo CLI is a fork of [OpenCode](https://github.com/anomalyco/opencode), enhanced to work within the Kilo agentic engineering platform.
+## 许可证
+
+本项目遵循仓库内 `LICENSE` 文件。

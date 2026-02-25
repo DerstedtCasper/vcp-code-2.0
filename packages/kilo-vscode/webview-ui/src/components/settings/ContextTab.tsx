@@ -1,4 +1,4 @@
-import { Component, For, Show, createSignal, onCleanup, onMount } from "solid-js"
+﻿import { Component, For, Show, createSignal, onCleanup, onMount } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { Card } from "@kilocode/kilo-ui/card"
 import { IconButton } from "@kilocode/kilo-ui/icon-button"
@@ -513,3 +513,5 @@ export default ContextTab
   type VcpMemoryWriter = NonNullable<VcpMemory["writer"]>
   type VcpMemoryRetrieval = NonNullable<VcpMemory["retrieval"]>
   type VcpMemoryRefresh = NonNullable<VcpMemory["refresh"]>
+
+

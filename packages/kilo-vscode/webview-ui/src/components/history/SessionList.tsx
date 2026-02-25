@@ -1,7 +1,7 @@
-/**
+﻿/**
  * SessionList component
  * Displays all sessions grouped by date, with context menu for rename/delete.
- * Uses kilo-ui List component for keyboard navigation and accessibility.
+ * Uses VCP-ui List component for keyboard navigation and accessibility.
  */
 
 import { Component, Show, createSignal, onMount, type JSX } from "solid-js"
@@ -47,7 +47,7 @@ const SessionList: Component<SessionListProps> = (props) => {
   const [renameValue, setRenameValue] = createSignal("")
 
   onMount(() => {
-    console.log("[Kilo New] SessionList mounted, loading sessions")
+    console.log("[VCP] SessionList mounted, loading sessions")
     session.loadSessions()
   })
 
@@ -184,3 +184,5 @@ const SessionList: Component<SessionListProps> = (props) => {
 }
 
 export default SessionList
+
+

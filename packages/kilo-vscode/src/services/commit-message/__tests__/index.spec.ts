@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
+﻿import { describe, it, expect, vi, beforeEach } from "vitest"
 
 // Mock vscode following the pattern from AutocompleteServiceManager.spec.ts
 vi.mock("vscode", () => {
@@ -130,7 +130,7 @@ describe("commit-message service", () => {
       await commandCallback()
 
       expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
-        "Kilo backend is not connected. Please wait for the connection to establish.",
+        "VCP backend is not connected. Please wait for the connection to establish.",
       )
     })
 
@@ -205,3 +205,4 @@ describe("commit-message service", () => {
     })
   })
 })
+

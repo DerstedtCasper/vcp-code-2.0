@@ -1,4 +1,4 @@
-// Session types from @kilocode/cli
+﻿// Session types from @kilocode/cli
 export interface SessionInfo {
   id: string
   title: string
@@ -220,7 +220,7 @@ export interface ProviderAuthMethod {
 
 export type ProviderAuthResponse = Record<string, ProviderAuthMethod[]>
 
-// Kilo notification from kilo-gateway
+// VCP notification from VCP-gateway
 export interface KilocodeNotificationAction {
   actionText: string
   actionURL: string
@@ -234,7 +234,7 @@ export interface KilocodeNotification {
   showIn?: string[]
 }
 
-// Profile types from kilo-gateway
+// Profile types from VCP-gateway
 export interface KilocodeOrganization {
   id: string
   name: string
@@ -554,3 +554,4 @@ export interface EditorContext {
   /** User's timezone (e.g. "Europe/Amsterdam") */
   timezone?: string
 }
+

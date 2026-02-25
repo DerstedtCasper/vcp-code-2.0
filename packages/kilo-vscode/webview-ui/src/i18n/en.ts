@@ -864,9 +864,9 @@
   "settings.aboutKiloCode.version.label": "Version:",
   "settings.aboutKiloCode.extensionName": "VCP Code Extension",
   "settings.aboutKiloCode.community": "Community & Support",
-  "settings.aboutKiloCode.feedback.prefix": "If you have any questions or feedback, feel free to open an issue on",
+  "settings.aboutKiloCode.feedback.prefix": "If you have any questions or feedback, please check",
   "settings.aboutKiloCode.feedback.or": "or",
-  "settings.aboutKiloCode.support.prefix": "For billing or account questions, contact Customer Support at",
+  "settings.aboutKiloCode.support.prefix": "For support or account questions, please open an issue at",
   "settings.aboutKiloCode.resetSettings.title": "Reset Settings",
   "settings.aboutKiloCode.resetSettings.description":
     "Reset all VCP Code extension settings to their default values. This does not affect CLI or backend configuration.",

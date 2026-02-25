@@ -1,4 +1,4 @@
-import { Component, Show, Switch, Match, createSignal, createEffect, onCleanup } from "solid-js"
+﻿import { Component, Show, Switch, Match, createSignal, createEffect, onCleanup } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { Card } from "@kilocode/kilo-ui/card"
 import { Spinner } from "@kilocode/kilo-ui/spinner"
@@ -314,3 +314,5 @@ const DeviceAuthCard: Component<DeviceAuthCardProps> = (props) => {
 }
 
 export default DeviceAuthCard
+
+

@@ -1,7 +1,7 @@
-/**
+﻿/**
  * ModelSelector component
  * Popover-based selector for choosing a provider/model in the chat prompt area.
- * Uses kilo-ui Popover component (Phase 4.5 of UI implementation plan).
+ * Uses VCP-ui Popover component (Phase 4.5 of UI implementation plan).
  *
  * ModelSelectorBase — reusable core that accepts value/onSelect props.
  * ModelSelector    — thin wrapper wired to session context for chat usage.
@@ -50,7 +50,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   let searchRef: HTMLInputElement | undefined
   let listRef: HTMLDivElement | undefined
 
-  // Only show models from Kilo Gateway or connected providers
+  // Only show models from VCP Gateway or connected providers
   const visibleModels = createMemo(() => {
     const c = connected()
     return models().filter((m) => m.providerID === KILO_GATEWAY_ID || c.includes(m.providerID))
@@ -279,3 +279,5 @@ export const ModelSelector: Component = () => {
     />
   )
 }
+
+

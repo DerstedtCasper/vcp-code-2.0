@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ThinkingSelector component
  * Popover-based dropdown for choosing a thinking effort variant.
  * Only rendered when the selected model supports reasoning variants.
@@ -61,3 +61,5 @@ export const ThinkingSelector: Component = () => {
     </Show>
   )
 }
+
+

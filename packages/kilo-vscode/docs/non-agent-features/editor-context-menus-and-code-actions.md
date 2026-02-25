@@ -1,6 +1,6 @@
-# Editor Context Menus & Code Actions
+﻿# Editor Context Menus & Code Actions
 
-Full spec of the VS Code-native menu, command, code action, keyboard shortcut, and prompt template system from the old Kilo Code extension. All of these need to be rebuilt in the new extension.
+Full spec of the VS Code-native menu, command, code action, keyboard shortcut, and prompt template system from the old VCP Code extension. All of these need to be rebuilt in the new extension.
 
 > **Note:** For webview-internal context menus (right-click inside the chat panel), see [Context Menus & Tooltips (Webview)](../chat-ui-features/context-menus-tooltips.md).  
 > For SCM commit message generation, see [Git Commit Message Generation](git-commit-message-generation.md).  
@@ -12,8 +12,8 @@ Full spec of the VS Code-native menu, command, code action, keyboard shortcut, a
 
 The old extension registered a comprehensive set of VS Code contributions:
 
-- A **"Kilo Code" submenu** in the editor right-click context menu
-- A **"Kilo Code" submenu** in the terminal right-click context menu
+- A **"VCP Code" submenu** in the editor right-click context menu
+- A **"VCP Code" submenu** in the terminal right-click context menu
 - A **CodeActionProvider** for lightbulb quick fixes
 - **Keyboard shortcuts** for common actions
 - **Prompt templates** (user-customizable) that turn captured context into agent task instructions
@@ -24,7 +24,7 @@ None of these exist yet in the rebuild.
 
 ## Editor Context Menus
 
-Right-clicking in the editor shows a "Kilo Code" submenu with these commands:
+Right-clicking in the editor shows a "VCP Code" submenu with these commands:
 
 | Command ID     | Label          | Captured Context                                  | Behavior                                                                 |
 | -------------- | -------------- | ------------------------------------------------- | ------------------------------------------------------------------------ |
@@ -39,7 +39,7 @@ All commands use the VS Code editor API to capture the active editor's file path
 
 ## Terminal Context Menus
 
-Right-clicking in the terminal shows a "Kilo Code" submenu:
+Right-clicking in the terminal shows a "VCP Code" submenu:
 
 | Command ID               | Label           | Captured Context                    | Behavior                                              |
 | ------------------------ | --------------- | ----------------------------------- | ----------------------------------------------------- |
@@ -59,10 +59,10 @@ A `CodeActionProvider` is registered for all languages. When the user clicks the
 
 | Condition                      | Actions shown                                       |
 | ------------------------------ | --------------------------------------------------- |
-| Always                         | **Add to Kilo Code** → triggers `addToContext`      |
-| Diagnostics in selection range | **Fix with Kilo Code** → triggers `fixCode`         |
-| No diagnostics                 | **Explain with Kilo Code** → triggers `explainCode` |
-| No diagnostics                 | **Improve with Kilo Code** → triggers `improveCode` |
+| Always                         | **Add to VCP Code** → triggers `addToContext`      |
+| Diagnostics in selection range | **Fix with VCP Code** → triggers `fixCode`         |
+| No diagnostics                 | **Explain with VCP Code** → triggers `explainCode` |
+| No diagnostics                 | **Improve with VCP Code** → triggers `improveCode` |
 
 Controlled by the `enableCodeActions` extension setting (default: `true`).
 
@@ -128,7 +128,7 @@ Commands like `addToContext` and `terminalAddToContext` follow a different flow:
 
 Register in `contributes`:
 
-- `submenus`: Define "Kilo Code" submenus for editor and terminal contexts
+- `submenus`: Define "VCP Code" submenus for editor and terminal contexts
 - `menus`: Register commands under `editor/context` and `terminal/context` menu groups
 - `commands`: Register all command IDs with titles and icons
 - `keybindings`: Register keyboard shortcuts with `key`, `mac`, and `when` clauses
@@ -293,7 +293,7 @@ Please provide:
 3. Expected output and behavior
 ```
 
-### TERMINAL*GENERATE *(Kilo-specific addition)\_
+### TERMINAL*GENERATE *(VCP-specific addition)\_
 
 **Variables:** `userInput`, `operatingSystem`, `currentDirectory`, `shell`
 
@@ -367,7 +367,7 @@ Example summary structure:
 Output only the summary of the conversation so far, without any additional commentary or explanation.
 ```
 
-### COMMIT*MESSAGE *(Kilo-specific addition, tracked separately in [git-commit-message-generation.md](git-commit-message-generation.md))\_
+### COMMIT*MESSAGE *(VCP-specific addition, tracked separately in [git-commit-message-generation.md](git-commit-message-generation.md))\_
 
 **Variables:** `customInstructions`, `gitContext`
 
@@ -457,5 +457,6 @@ ${userInput}
 
 ### Already Done / Tracked Elsewhere
 
-- **View title bar buttons**: ✅ Done ([#181](https://github.com/Kilo-Org/kilocode/issues/181))
+- **View title bar buttons**: ✅ Done ([#181](https://github.com/DerstedtCasper/vcp-code-2.0/issues/181))
 - **SCM commit message generation**: Tracked in [git-commit-message-generation.md](git-commit-message-generation.md)
+

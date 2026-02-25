@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Provider/model context
  * Manages available providers, models, and the global default selection.
  * Selection is now per-session — see session.tsx.
@@ -21,7 +21,7 @@ interface ProviderContextValue {
   findModel: (selection: ModelSelection | null) => EnrichedModel | undefined
 }
 
-const KILO_AUTO: ModelSelection = { providerID: "kilo", modelID: "kilo/auto" }
+const KILO_AUTO: ModelSelection = { providerID: "VCP", modelID: "VCP/auto" }
 
 const ProviderContext = createContext<ProviderContextValue>()
 
@@ -96,3 +96,4 @@ export function useProvider(): ProviderContextValue {
   }
   return context
 }
+

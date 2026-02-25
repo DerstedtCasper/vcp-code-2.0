@@ -1,4 +1,4 @@
-# Git commit message generation
+﻿# Git commit message generation
 
 - **What it is**: Generates commit messages from git context (commonly staged changes; some implementations also consider selected files).
 
@@ -15,7 +15,7 @@
 
 ## Suggested migration
 
-- **Kilo CLI availability**: Not present.
+- **VCP CLI availability**: Not present.
 - **Migration recommendation**:
   - Keep commit message generation in the VS Code extension host (Git integration, UX, and local repo context).
   - Reimplement any agent-loop dependencies as needed, but do not block on server support.
@@ -24,3 +24,4 @@
 ## Primary implementation anchors
 
 - [`src/services/commit-message/`](../../src/services/commit-message/)
+

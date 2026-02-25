@@ -1,4 +1,4 @@
-import { Component } from "solid-js"
+﻿import { Component } from "solid-js"
 import { Select } from "@kilocode/kilo-ui/select"
 import { useLanguage, LOCALES, LOCALE_LABELS, type Locale } from "../../context/language"
 
@@ -32,3 +32,5 @@ const LanguageTab: Component = () => {
 }
 
 export default LanguageTab
+
+
