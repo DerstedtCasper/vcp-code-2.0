@@ -7,12 +7,12 @@ import { UI } from "@/cli/ui"
 import { iife } from "@/util/iife"
 import { Log } from "@/util/log"
 import { withNetworkOptions, resolveNetworkOptions } from "@/cli/network"
-import type { Event } from "@kilocode/sdk/v2"
+import type { Event } from "@novacode/sdk/v2"
 import type { EventSource } from "./context/sdk"
 import { win32DisableProcessedInput, win32InstallCtrlCGuard } from "./win32"
 
 declare global {
-  const KILO_WORKER_PATH: string // kilocode_change
+  const KILO_WORKER_PATH: string // novacode_change
 }
 
 type RpcClient = ReturnType<typeof Rpc.client<typeof rpc>>
@@ -43,12 +43,12 @@ function createEventSource(client: RpcClient): EventSource {
 
 export const TuiThreadCommand = cmd({
   command: "$0 [project]",
-  describe: "start kilo tui", // kilocode_change
+  describe: "start kilo tui", // novacode_change
   builder: (yargs) =>
     withNetworkOptions(yargs)
       .positional("project", {
         type: "string",
-        describe: "path to start kilo in", // kilocode_change
+        describe: "path to start kilo in", // novacode_change
       })
       .option("model", {
         type: "string",
@@ -127,13 +127,13 @@ export const TuiThreadCommand = cmd({
       process.on("SIGUSR2", async () => {
         await client.call("reload", undefined)
       })
-      // kilocode_change start - graceful shutdown on external signals
+      // novacode_change start - graceful shutdown on external signals
       const shutdown = async () => {
         await client.call("shutdown", undefined).catch(() => {})
       }
       process.on("SIGHUP", shutdown)
       process.on("SIGTERM", shutdown)
-      // kilocode_change end
+      // novacode_change end
 
       const prompt = await iife(async () => {
         const piped = !process.stdin.isTTY ? await Bun.stdin.text() : undefined

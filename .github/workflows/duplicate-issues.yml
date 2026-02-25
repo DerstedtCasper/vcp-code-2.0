@@ -18,10 +18,10 @@ jobs:
 
       - uses: ./.github/actions/setup-bun
 
-      # kilocode_change start
+      # novacode_change start
       - name: Setup Kilo
         uses: ./.github/actions/setup-kilo
-      # kilocode_change end
+      # novacode_change end
 
       - name: Check duplicates and compliance
         env:

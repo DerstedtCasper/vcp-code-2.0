@@ -28,7 +28,7 @@ import { createOpenAI } from "@ai-sdk/openai"
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible"
 import { createOpenRouter, type LanguageModelV2 } from "@openrouter/ai-sdk-provider"
 import { createOpenaiCompatible as createGitHubCopilotOpenAICompatible } from "./sdk/copilot"
-import { createKilo } from "@kilocode/kilo-gateway" // kilocode_change
+import { createKilo } from "@novacode/nova-gateway" // novacode_change
 import { createXai } from "@ai-sdk/xai"
 import { createMistral } from "@ai-sdk/mistral"
 import { createGroq } from "@ai-sdk/groq"
@@ -43,7 +43,7 @@ import { createGitLab, VERSION as GITLAB_PROVIDER_VERSION } from "@gitlab/gitlab
 import { ProviderTransform } from "./transform"
 import { Installation } from "../installation"
 
-import { DEFAULT_HEADERS } from "@/kilocode/const" // kilocode_change
+import { DEFAULT_HEADERS } from "@/novacode/const" // novacode_change
 
 export namespace Provider {
   const log = Log.create({ service: "provider" })
@@ -70,7 +70,7 @@ export namespace Provider {
     "@ai-sdk/openai": createOpenAI,
     "@ai-sdk/openai-compatible": createOpenAICompatible,
     "@openrouter/ai-sdk-provider": createOpenRouter,
-    "@kilocode/kilo-gateway": createKilo, // kilocode_change
+    "@novacode/nova-gateway": createKilo, // novacode_change
     "@ai-sdk/xai": createXai,
     "@ai-sdk/mistral": createMistral,
     "@ai-sdk/groq": createGroq,
@@ -99,7 +99,7 @@ export namespace Provider {
         autoload: false,
         options: {
           headers: {
-            // kilocode_change
+            // novacode_change
             // TODO: Add adaptive thinking headers when @ai-sdk/anthropic supports it:
             // adaptive-thinking-2026-01-28,effort-2025-11-24,max-effort-2026-01-24
             "anthropic-beta":
@@ -320,7 +320,7 @@ export namespace Provider {
       return {
         autoload: false,
         options: {
-          headers: DEFAULT_HEADERS, // kilocode_change
+          headers: DEFAULT_HEADERS, // novacode_change
         },
       }
     },
@@ -328,7 +328,7 @@ export namespace Provider {
       return {
         autoload: false,
         options: {
-          headers: DEFAULT_HEADERS, // kilocode_change
+          headers: DEFAULT_HEADERS, // novacode_change
         },
       }
     },
@@ -394,11 +394,11 @@ export namespace Provider {
       return {
         autoload: false,
         options: {
-          headers: DEFAULT_HEADERS, // kilocode_change
+          headers: DEFAULT_HEADERS, // novacode_change
         },
       }
     },
-    // kilocode_change start - prevent opencode zen from auto-connecting without credentials
+    // novacode_change start - prevent opencode zen from auto-connecting without credentials
     opencode: async () => {
       return {
         autoload: false,
@@ -407,7 +407,7 @@ export namespace Provider {
         },
       }
     },
-    // kilocode_change end
+    // novacode_change end
     gitlab: async (input) => {
       const instanceUrl = Env.get("GITLAB_INSTANCE_URL") || "https://gitlab.com"
 
@@ -422,7 +422,7 @@ export namespace Provider {
       const providerConfig = config.provider?.["gitlab"]
 
       const aiGatewayHeaders = {
-        "User-Agent": `kilo/${Installation.VERSION} gitlab-ai-provider/${GITLAB_PROVIDER_VERSION} (${os.platform()} ${os.release()}; ${os.arch()})`, // kilocode_change
+        "User-Agent": `kilo/${Installation.VERSION} gitlab-ai-provider/${GITLAB_PROVIDER_VERSION} (${os.platform()} ${os.release()}; ${os.arch()})`, // novacode_change
         ...(providerConfig?.options?.aiGatewayHeaders || {}),
       }
 
@@ -521,7 +521,7 @@ export namespace Provider {
         },
       }
     },
-    // kilocode_change start
+    // novacode_change start
     kilo: async (input) => {
       const env = Env.all()
       const hasKey = await (async () => {
@@ -542,7 +542,7 @@ export namespace Provider {
       // Build options from KILO_* env vars
       const options: Record<string, string> = {}
       if (env.KILO_ORG_ID) {
-        options.kilocodeOrganizationId = env.KILO_ORG_ID
+        options.novacodeOrganizationId = env.KILO_ORG_ID
       }
       if (!hasKey) {
         options.apiKey = "anonymous"
@@ -553,7 +553,7 @@ export namespace Provider {
         options,
       }
     },
-    // kilocode_change end
+    // novacode_change end
   }
 
   export const Model = z
@@ -621,8 +621,8 @@ export namespace Provider {
       headers: z.record(z.string(), z.string()),
       release_date: z.string(),
       variants: z.record(z.string(), z.record(z.string(), z.any())).optional(),
-      recommended: z.boolean().optional(), // kilocode_change
-      recommendedIndex: z.number().optional(), // kilocode_change
+      recommended: z.boolean().optional(), // novacode_change
+      recommendedIndex: z.number().optional(), // novacode_change
     })
     .meta({
       ref: "Model",
@@ -704,8 +704,8 @@ export namespace Provider {
       },
       release_date: model.release_date,
       variants: {},
-      recommended: model.recommended, // kilocode_change
-      recommendedIndex: model.recommendedIndex, // kilocode_change
+      recommended: model.recommended, // novacode_change
+      recommendedIndex: model.recommendedIndex, // novacode_change
     }
 
     m.variants = mapValues(ProviderTransform.variants(m), (v) => v)
@@ -849,8 +849,8 @@ export namespace Provider {
           family: model.family ?? existingModel?.family ?? "",
           release_date: model.release_date ?? existingModel?.release_date ?? "",
           variants: {},
-          recommended: model.recommended ?? existingModel?.recommended, // kilocode_change
-          recommendedIndex: model.recommendedIndex ?? existingModel?.recommendedIndex, // kilocode_change
+          recommended: model.recommended ?? existingModel?.recommended, // novacode_change
+          recommendedIndex: model.recommendedIndex ?? existingModel?.recommendedIndex, // novacode_change
         }
         const merged = mergeDeep(ProviderTransform.variants(parsedModel), model.variants ?? {})
         parsedModel.variants = mapValues(
@@ -1195,11 +1195,11 @@ export namespace Provider {
         "gemini-2.5-flash",
         "gpt-5-nano",
       ]
-      // kilocode_change start
+      // novacode_change start
       if (providerID.startsWith("kilo")) {
         priority = ["gpt-5-nano"]
       }
-      // kilocode_change end
+      // novacode_change end
       if (providerID.startsWith("github-copilot")) {
         // prioritize free models for github copilot
         priority = ["gpt-5-mini", "claude-haiku-4.5", ...priority]
@@ -1235,13 +1235,13 @@ export namespace Provider {
       }
     }
 
-    // kilocode_change start
+    // novacode_change start
     // Check if kilo provider is available before using it
     const kiloProvider = await state().then((state) => state.providers["kilo"])
     if (kiloProvider && kiloProvider.models["gpt-5-nano"]) {
       return getModel("kilo", "gpt-5-nano")
     }
-    // kilocode_change end
+    // novacode_change end
 
     return undefined
   }

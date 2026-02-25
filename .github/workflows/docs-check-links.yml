@@ -19,7 +19,7 @@ jobs:
         uses: lycheeverse/lychee-action@v2
         with:
           args: "**/*.md"
-          workingDirectory: packages/kilo-docs
+          workingDirectory: packages/nova-docs
           fail: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

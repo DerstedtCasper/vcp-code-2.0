@@ -7,7 +7,7 @@ import { Log } from "../util/log"
 import { iife } from "@/util/iife"
 import { Flag } from "../flag/flag"
 
-// kilocode_change - renamed build-time globals
+// novacode_change - renamed build-time globals
 declare global {
   const KILO_VERSION: string
   const KILO_CHANNEL: string
@@ -63,7 +63,7 @@ export namespace Installation {
     if (process.execPath.includes(path.join(".local", "bin"))) return "curl"
     const exec = process.execPath.toLowerCase()
 
-    // kilocode_change start - removed yarn check since upgrade() doesn't support it
+    // novacode_change start - removed yarn check since upgrade() doesn't support it
     const checks = [
       {
         name: "npm" as const,
@@ -90,7 +90,7 @@ export namespace Installation {
         command: () => $`choco list --limit-output opencode`.throws(false).quiet().text(),
       },
     ]
-    // kilocode_change end
+    // novacode_change end
 
     checks.sort((a, b) => {
       const aMatches = exec.includes(a.name)
@@ -102,10 +102,10 @@ export namespace Installation {
 
     for (const check of checks) {
       const output = await check.command()
-      // kilocode_change start - check for @kilocode/cli instead of opencode-ai for JS package managers
+      // novacode_change start - check for @novacode/cli instead of opencode-ai for JS package managers
       const installedName =
-        check.name === "brew" || check.name === "choco" || check.name === "scoop" ? "opencode" : "@kilocode/cli"
-      // kilocode_change end
+        check.name === "brew" || check.name === "choco" || check.name === "scoop" ? "opencode" : "@novacode/cli"
+      // novacode_change end
       if (output.includes(installedName)) {
         return check.name
       }
@@ -139,13 +139,13 @@ export namespace Installation {
         })
         break
       case "npm":
-        cmd = $`npm install -g @kilocode/cli@${target}` // kilocode_change
+        cmd = $`npm install -g @novacode/cli@${target}` // novacode_change
         break
       case "pnpm":
-        cmd = $`pnpm install -g @kilocode/cli@${target}` // kilocode_change
+        cmd = $`pnpm install -g @novacode/cli@${target}` // novacode_change
         break
       case "bun":
-        cmd = $`bun install -g @kilocode/cli@${target}` // kilocode_change
+        cmd = $`bun install -g @novacode/cli@${target}` // novacode_change
         break
       case "brew": {
         const formula = await getBrewFormula()
@@ -192,7 +192,7 @@ export namespace Installation {
 
   export const VERSION = typeof KILO_VERSION === "string" ? KILO_VERSION : "local"
   export const CHANNEL = typeof KILO_CHANNEL === "string" ? KILO_CHANNEL : "local"
-  export const USER_AGENT = `kilo/${CHANNEL}/${VERSION}/${Flag.KILO_CLIENT}` // kilocode_change
+  export const USER_AGENT = `kilo/${CHANNEL}/${VERSION}/${Flag.KILO_CLIENT}` // novacode_change
 
   export async function latest(installMethod?: Method) {
     const detectedMethod = installMethod || (await method())
@@ -214,7 +214,7 @@ export namespace Installation {
         .then((data: any) => data.versions.stable)
     }
 
-    // kilocode_change start - support npm/pnpm/bun for kilocode, fetch from @kilocode/cli on npm registry
+    // novacode_change start - support npm/pnpm/bun for novacode, fetch from @novacode/cli on npm registry
     if (detectedMethod === "npm" || detectedMethod === "pnpm" || detectedMethod === "bun") {
       const registry = await iife(async () => {
         const r = (await $`npm config get registry`.quiet().nothrow().text()).trim()
@@ -222,14 +222,14 @@ export namespace Installation {
         return reg.endsWith("/") ? reg.slice(0, -1) : reg
       })
       const channel = CHANNEL
-      return fetch(`${registry}/@kilocode/cli/${channel}`)
+      return fetch(`${registry}/@novacode/cli/${channel}`)
         .then((res) => {
           if (!res.ok) throw new Error(res.statusText)
           return res.json()
         })
         .then((data: any) => data.version)
     }
-    // kilocode_change end
+    // novacode_change end
 
     if (detectedMethod === "choco") {
       return fetch(
@@ -254,7 +254,7 @@ export namespace Installation {
         .then((data: any) => data.version)
     }
 
-    return fetch("https://api.github.com/repos/Kilo-Org/kilocode/releases/latest")
+    return fetch("https://api.github.com/repos/Kilo-Org/novacode/releases/latest")
       .then((res) => {
         if (!res.ok) throw new Error(res.statusText)
         return res.json()

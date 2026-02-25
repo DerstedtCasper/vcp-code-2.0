@@ -147,7 +147,7 @@ export function getRecommendation(
   }
 
   // Kilo directories should always keep ours
-  if (path.includes("kilocode") || path.includes("kilo-gateway") || path.includes("kilo-telemetry")) {
+  if (path.includes("novacode") || path.includes("nova-gateway") || path.includes("nova-telemetry")) {
     return {
       recommendation: "keep-ours",
       reason: "File is in a Kilo-specific directory",
@@ -203,7 +203,7 @@ export function getRecommendation(
     case "code":
       return {
         recommendation: "manual",
-        reason: "Code files need manual review for kilocode_change markers",
+        reason: "Code files need manual review for novacode_change markers",
       }
     case "config":
       return {

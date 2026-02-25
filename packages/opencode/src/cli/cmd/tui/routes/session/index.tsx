@@ -28,7 +28,7 @@ import {
   RGBA,
 } from "@opentui/core"
 import { Prompt, type PromptRef } from "@tui/component/prompt"
-import type { AssistantMessage, Part, ToolPart, UserMessage, TextPart, ReasoningPart } from "@kilocode/sdk/v2"
+import type { AssistantMessage, Part, ToolPart, UserMessage, TextPart, ReasoningPart } from "@novacode/sdk/v2"
 import { useLocal } from "@tui/context/local"
 import { Locale } from "@/util/locale"
 import type { Tool } from "@/tool/tool"
@@ -79,7 +79,7 @@ import { DialogExportOptions } from "../../ui/dialog-export-options"
 import { formatTranscript } from "../../util/transcript"
 import { UI } from "@/cli/ui.ts"
 
-import { formatMarkdownTables } from "../../util/markdown" // kilocode_change
+import { formatMarkdownTables } from "../../util/markdown" // novacode_change
 
 addDefaultParsers(parsers.parsers)
 
@@ -229,7 +229,7 @@ export function Session() {
 
   createEffect(() => {
     const title = Locale.truncate(session()?.title ?? "", 50)
-    // kilocode_change start
+    // novacode_change start
     return exit.message.set(
       [
         ``,
@@ -238,10 +238,10 @@ export function Session() {
         `  ██ ▀█▄ ██ ██████ ▀████▀  `,
       ].join("\n"),
     )
-    // kilocode_change end
+    // novacode_change end
   })
 
-  // kilocode_change start - double ctrl+c to exit for child sessions
+  // novacode_change start - double ctrl+c to exit for child sessions
   const [exitPress, setExitPress] = createSignal(0)
   useKeyboard((evt) => {
     if (!session()?.parentID) return
@@ -256,7 +256,7 @@ export function Session() {
       exit()
     }
   })
-  // kilocode_change end
+  // novacode_change end
 
   // Helper: Find next visible message boundary in direction
   const findNextVisibleMessage = (direction: "next" | "prev"): string | null => {
@@ -1384,9 +1384,9 @@ function ReasoningPart(props: { last: boolean; part: ReasoningPart; message: Ass
 function TextPart(props: { last: boolean; part: TextPart; message: AssistantMessage }) {
   const ctx = use()
   const { theme, syntax } = useTheme()
-  // kilocode_change start - format markdown tables with fixed-width columns
+  // novacode_change start - format markdown tables with fixed-width columns
   const content = createMemo(() => formatMarkdownTables(props.part.text.trim()))
-  // kilocode_change end
+  // novacode_change end
   return (
     <Show when={props.part.text.trim()}>
       <box id={"text-" + props.part.id} paddingLeft={3} marginTop={1} flexShrink={0}>

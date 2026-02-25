@@ -39,7 +39,7 @@ export namespace ProviderTransform {
       case "@ai-sdk/gateway":
         return "gateway"
       case "@openrouter/ai-sdk-provider":
-      case "@kilocode/kilo-gateway": // kilocode_change
+      case "@novacode/nova-gateway": // novacode_change
         return "openrouter"
     }
     return undefined
@@ -234,7 +234,7 @@ export namespace ProviderTransform {
     })
   }
 
-  // kilocode_change - function added
+  // novacode_change - function added
   function fixDuplicateReasoning(msgs: ModelMessage[]) {
     for (const msg of msgs) {
       if (!Array.isArray(msg.content)) {
@@ -262,9 +262,9 @@ export namespace ProviderTransform {
     msgs = unsupportedParts(msgs, model)
     msgs = normalizeMessages(msgs, model, options)
 
-    // kilocode_change - workaround for @openrouter/ai-sdk-provider v1 duplicating reasoning
+    // novacode_change - workaround for @openrouter/ai-sdk-provider v1 duplicating reasoning
     // fixed in https://github.com/OpenRouterTeam/ai-sdk-provider/pull/344/
-    if (model.api.npm === "@kilocode/kilo-gateway") {
+    if (model.api.npm === "@novacode/nova-gateway") {
       fixDuplicateReasoning(msgs)
     }
 
@@ -362,8 +362,8 @@ export namespace ProviderTransform {
 
     // see: https://docs.x.ai/docs/guides/reasoning#control-how-hard-the-model-thinks
     if (id.includes("grok") && id.includes("grok-3-mini")) {
-      if (model.api.npm === "@openrouter/ai-sdk-provider" || model.api.npm === "@kilocode/kilo-gateway") {
-        // kilocode_change - add Kilo Gateway support
+      if (model.api.npm === "@openrouter/ai-sdk-provider" || model.api.npm === "@novacode/nova-gateway") {
+        // novacode_change - add Nova Gateway support
         return {
           low: { reasoning: { effort: "low" } },
           high: { reasoning: { effort: "high" } },
@@ -381,8 +381,8 @@ export namespace ProviderTransform {
         if (!model.id.includes("gpt") && !model.id.includes("gemini-3") && !model.id.includes("claude")) return {}
         return Object.fromEntries(OPENAI_EFFORTS.map((effort) => [effort, { reasoning: { effort } }]))
 
-      // kilocode_change start
-      case "@kilocode/kilo-gateway":
+      // novacode_change start
+      case "@novacode/nova-gateway":
         if (model.id.includes("claude")) {
           // for models that support adaptive thinking, effort is ignored
           // for models that don't support adaptive thinking, effort is translated into a token budget
@@ -396,7 +396,7 @@ export namespace ProviderTransform {
         }
         if (!model.id.includes("gpt") && !model.id.includes("gemini-3")) return {}
         return Object.fromEntries(OPENAI_EFFORTS.map((effort) => [effort, { reasoning: { effort } }]))
-      // kilocode_change end
+      // novacode_change end
 
       // TODO: YOU CANNOT SET max_tokens if this is set!!!
       case "@ai-sdk/gateway":
@@ -708,8 +708,8 @@ export namespace ProviderTransform {
       result["store"] = false
     }
 
-    if (input.model.api.npm === "@openrouter/ai-sdk-provider" || input.model.api.npm === "@kilocode/kilo-gateway") {
-      // kilocode_change
+    if (input.model.api.npm === "@openrouter/ai-sdk-provider" || input.model.api.npm === "@novacode/nova-gateway") {
+      // novacode_change
       result["usage"] = {
         include: true,
       }
@@ -832,8 +832,8 @@ export namespace ProviderTransform {
       }
       return { thinkingConfig: { thinkingBudget: 0 } }
     }
-    if (model.providerID === "openrouter" || model.api.npm === "@kilocode/kilo-gateway") {
-      // kilocode_change - add Kilo Gateway support
+    if (model.providerID === "openrouter" || model.api.npm === "@novacode/nova-gateway") {
+      // novacode_change - add Nova Gateway support
       if (model.api.id.includes("google")) {
         return { reasoning: { enabled: false } }
       }

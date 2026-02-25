@@ -1,5 +1,5 @@
 import { For, Show } from "solid-js"
-import type { QuestionRequest } from "@kilocode/sdk/v2"
+import type { QuestionRequest } from "@novacode/sdk/v2"
 import { Button } from "@opencode-ai/ui/button"
 import { BasicTool } from "@opencode-ai/ui/basic-tool"
 import { PromptInput } from "@/components/prompt-input"
@@ -21,7 +21,7 @@ export function SessionPromptDock(props: {
   onNewSessionWorktreeReset: () => void
   onSubmit: () => void
   setPromptDockRef: (el: HTMLDivElement) => void
-  onModeAction?: (input: { mode: string; text: string; description?: string }) => void // kilocode_change
+  onModeAction?: (input: { mode: string; text: string; description?: string }) => void // novacode_change
 }) {
   return (
     <div
@@ -48,7 +48,7 @@ export function SessionPromptDock(props: {
                     subtitle,
                   }}
                 />
-                {/* kilocode_change: add onModeAction */}
+                {/* novacode_change: add onModeAction */}
                 <QuestionDock request={req} onModeAction={props.onModeAction} />
               </div>
             )

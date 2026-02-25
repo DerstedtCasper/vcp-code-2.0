@@ -10,8 +10,8 @@ import { zodToJsonSchema } from "zod-to-json-schema"
 import { errors } from "../error"
 import { lazy } from "../../util/lazy"
 import { Config } from "../../config/config"
-import { VcpPromptQueue } from "../../kilocode/prompt-queue"
-import { VcpMemoryRuntime } from "../../kilocode/memory-runtime"
+import { VcpPromptQueue } from "../../novacode/prompt-queue"
+import { VcpMemoryRuntime } from "../../novacode/memory-runtime"
 import { SessionStatus } from "../../session/status"
 
 export const ExperimentalRoutes = lazy(() =>

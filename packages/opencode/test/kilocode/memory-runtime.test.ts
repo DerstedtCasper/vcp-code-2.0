@@ -1,6 +1,6 @@
 import { beforeEach, expect, test } from "bun:test"
 import { Storage } from "../../src/storage/storage"
-import { VcpMemoryRuntime } from "../../src/kilocode/memory-runtime"
+import { VcpMemoryRuntime } from "../../src/novacode/memory-runtime"
 
 const MEMORY_ATOMIC_KEY = ["vcp_memory", "atomic"] as string[]
 const MEMORY_PROFILE_KEY = ["vcp_memory", "profile"] as string[]

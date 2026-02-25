@@ -5,7 +5,7 @@ import { $ } from "bun"
 
 export const PrCommand = cmd({
   command: "pr <number>",
-  describe: "fetch and checkout a GitHub PR branch, then run kilo", // kilocode_change
+  describe: "fetch and checkout a GitHub PR branch, then run kilo", // novacode_change
   builder: (yargs) =>
     yargs.positional("number", {
       type: "number",

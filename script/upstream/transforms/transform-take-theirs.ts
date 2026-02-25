@@ -8,7 +8,7 @@
  * Use this for:
  * - UI components with OpenCode -> Kilo branding
  * - Config files with predictable patterns
- * - Files without kilocode_change logic blocks
+ * - Files without novacode_change logic blocks
  */
 
 import { $ } from "bun"
@@ -39,7 +39,7 @@ const BRANDING_REPLACEMENTS: BrandingReplacement[] = [
   // GitHub repo references
   {
     pattern: /github\.com\/anomalyco\/opencode/g,
-    replacement: "github.com/Kilo-Org/kilocode",
+    replacement: "github.com/Kilo-Org/novacode",
     description: "GitHub URL",
   },
   {
@@ -139,7 +139,7 @@ const PRESERVE_PATTERNS = [
   /\.opencode`/g, // Directory name in template strings
   /"\.opencode"/g, // Directory name in quotes
   /'\.opencode'/g, // Directory name in single quotes
-  /\/\/\s*kilocode_change/g, // Already has marker
+  /\/\/\s*novacode_change/g, // Already has marker
 ]
 
 /**
@@ -162,8 +162,8 @@ export function applyBrandingTransforms(content: string, verbose = false): { res
   let total = 0
 
   for (const line of lines) {
-    // Skip lines with kilocode_change marker (already customized)
-    if (line.includes("// kilocode_change")) {
+    // Skip lines with novacode_change marker (already customized)
+    if (line.includes("// novacode_change")) {
       transformed.push(line)
       continue
     }

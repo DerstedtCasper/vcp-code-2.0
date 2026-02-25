@@ -95,7 +95,7 @@ if (!(root instanceof HTMLElement) && import.meta.env.DEV) {
   throw new Error(getRootNotFoundError())
 }
 
-// kilocode_change start
+// novacode_change start
 // Floating UI can call getComputedStyle with non-elements (e.g., null refs, virtual elements).
 // This happens on all platforms (WebView2 on Windows, WKWebView on macOS), not just Windows.
 const originalGetComputedStyle = window.getComputedStyle
@@ -106,7 +106,7 @@ window.getComputedStyle = ((elt: Element, pseudoElt?: string | null) => {
   }
   return originalGetComputedStyle(elt, pseudoElt ?? undefined)
 }) as typeof window.getComputedStyle
-// kilocode_change end
+// novacode_change end
 
 const platform: Platform = {
   platform: "web",

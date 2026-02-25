@@ -24,7 +24,7 @@ import path from "path"
 import { Plugin } from "@/plugin"
 import { Skill } from "../skill"
 
-import { Telemetry } from "@kilocode/kilo-telemetry" // kilocode_change
+import { Telemetry } from "@novacode/nova-telemetry" // novacode_change
 
 export namespace Agent {
   export const Info = z
@@ -80,11 +80,11 @@ export namespace Agent {
     const user = PermissionNext.fromConfig(cfg.permission ?? {})
 
     const result: Record<string, Info> = {
-      // kilocode_change start
+      // novacode_change start
       code: {
         name: "code",
         description: "The default agent. Executes tools based on configured permissions.",
-        // kilocode_change end
+        // novacode_change end
         options: {},
         permission: PermissionNext.merge(
           defaults,
@@ -120,7 +120,7 @@ export namespace Agent {
         mode: "primary",
         native: true,
       },
-      // kilocode_change start - add debug, orchestrator, and ask agents
+      // novacode_change start - add debug, orchestrator, and ask agents
       debug: {
         name: "debug",
         description: "Diagnose and fix software issues with systematic debugging methodology.",
@@ -228,7 +228,7 @@ export namespace Agent {
         mode: "primary",
         native: true,
       },
-      // kilocode_change end
+      // novacode_change end
       general: {
         name: "general",
         description: `General-purpose agent for researching complex questions and executing multi-step tasks. Use this agent to execute multiple units of work in parallel.`,
@@ -319,7 +319,7 @@ export namespace Agent {
     }
 
     for (const [key, value] of Object.entries(cfg.agent ?? {})) {
-      // kilocode_change start
+      // novacode_change start
       // Treat "build" config as "code" for backward compatibility
       const effectiveKey = key === "build" ? "code" : key
       if (value.disable) {
@@ -335,7 +335,7 @@ export namespace Agent {
           options: {},
           native: false,
         }
-      // kilocode_change end
+      // novacode_change end
       if (value.model) item.model = Provider.parseModel(value.model)
       item.variant = value.variant ?? item.variant
       item.prompt = value.prompt ?? item.prompt
@@ -371,10 +371,10 @@ export namespace Agent {
   })
 
   export async function get(agent: string) {
-    // kilocode_change start -  Treat "build" as "code" for backward compatibility
+    // novacode_change start -  Treat "build" as "code" for backward compatibility
     const effectiveAgent = agent === "build" ? "code" : agent
     return state().then((x) => x[effectiveAgent])
-    // kilocode_change end
+    // novacode_change end
   }
 
   export async function list() {
@@ -382,7 +382,7 @@ export namespace Agent {
     return pipe(
       await state(),
       values(),
-      sortBy([(x) => (cfg.default_agent ? x.name === cfg.default_agent : x.name === "code"), "desc"]), // kilocode_change - renamed from "build" to "code"
+      sortBy([(x) => (cfg.default_agent ? x.name === cfg.default_agent : x.name === "code"), "desc"]), // novacode_change - renamed from "build" to "code"
     )
   }
 
@@ -391,11 +391,11 @@ export namespace Agent {
     const agents = await state()
 
     if (cfg.default_agent) {
-      // kilocode_change start -  Treat "build" as "code" for backward compatibility
+      // novacode_change start -  Treat "build" as "code" for backward compatibility
       const effectiveDefault = cfg.default_agent === "build" ? "code" : cfg.default_agent
       const agent = agents[effectiveDefault]
       if (!agent) throw new Error(`default agent "${cfg.default_agent}" not found`)
-      // kilocode_change end
+      // novacode_change end
       if (agent.mode === "subagent") throw new Error(`default agent "${cfg.default_agent}" is a subagent`)
       if (agent.hidden === true) throw new Error(`default agent "${cfg.default_agent}" is hidden`)
       return agent.name
@@ -417,7 +417,7 @@ export namespace Agent {
     const existing = await list()
 
     const params = {
-      // kilocode_change start - enable telemetry by default with custom PostHog tracer
+      // novacode_change start - enable telemetry by default with custom PostHog tracer
       experimental_telemetry: {
         isEnabled: cfg.experimental?.openTelemetry !== false,
         recordInputs: false, // Prevent recording prompts, messages, tool args
@@ -427,7 +427,7 @@ export namespace Agent {
           userId: cfg.username ?? "unknown",
         },
       },
-      // kilocode_change end
+      // novacode_change end
       temperature: 0.3,
       messages: [
         ...system.map(

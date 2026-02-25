@@ -1,0 +1,45 @@
+// ko runtime translations for autocomplete
+
+export const dict = {
+  "novacode:autocomplete.statusBar.enabled": "$(nova-logo) Autocomplete",
+  "novacode:autocomplete.statusBar.snoozed": "일시 중지됨",
+  "novacode:autocomplete.statusBar.warning": "$(warning) Autocomplete",
+  "novacode:autocomplete.statusBar.tooltip.basic": "Nova Code Autocomplete",
+  "novacode:autocomplete.statusBar.tooltip.disabled": "Nova Code Autocomplete (비활성화됨)",
+  "novacode:autocomplete.statusBar.tooltip.noCredits":
+    "**계정에 크레딧이 없습니다**\n\nNova Code 계정에 크레딧이 없습니다. 자동완성을 사용하려면 계정에 크레딧을 추가해 주세요.\n\n[설정 열기](command:vcp-code.new.settingsButtonClicked)",
+  "novacode:autocomplete.statusBar.tooltip.noUsableProvider":
+    "**자동완성 모델이 구성되지 않았습니다**\n\n자동완성을 활성화하려면 다음 지원되는 제공업체 중 하나로 프로필을 추가하세요: {{providers}}.\n\n[설정 열기](command:vcp-code.new.settingsButtonClicked)",
+  "novacode:autocomplete.statusBar.tooltip.sessionTotal": "세션 총 비용:",
+  "novacode:autocomplete.statusBar.tooltip.provider": "제공업체:",
+  "novacode:autocomplete.statusBar.tooltip.model": "모델:",
+  "novacode:autocomplete.statusBar.tooltip.profile": "프로필: ",
+  "novacode:autocomplete.statusBar.tooltip.defaultProfile": "기본값",
+  "novacode:autocomplete.statusBar.tooltip.completionSummary":
+    "{{startTime}}부터 {{endTime}}까지 {{count}}회 완성을 수행했으며, 총 비용은 {{cost}}입니다.",
+  "novacode:autocomplete.statusBar.tooltip.providerInfo": "자동완성은 {{provider}}를 통해 {{model}}에서 제공됩니다.",
+  "novacode:autocomplete.statusBar.cost.zero": "$0.00",
+  "novacode:autocomplete.statusBar.cost.lessThanCent": "<$0.01",
+  "novacode:autocomplete.toggleMessage": "Nova Code Autocomplete {{status}}",
+  "novacode:autocomplete.progress.title": "Nova Code",
+  "novacode:autocomplete.progress.analyzing": "코드 분석 중...",
+  "novacode:autocomplete.progress.generating": "제안된 편집 생성 중...",
+  "novacode:autocomplete.progress.processing": "제안된 편집 처리 중...",
+  "novacode:autocomplete.progress.showing": "제안된 편집 표시 중...",
+  "novacode:autocomplete.input.title": "Nova Code: 빠른 작업",
+  "novacode:autocomplete.input.placeholder": "예: '이 함수를 더 효율적으로 리팩토링해줘'",
+  "novacode:autocomplete.commands.generateSuggestions": "Nova Code: 제안된 편집 생성",
+  "novacode:autocomplete.commands.displaySuggestions": "제안된 편집 표시",
+  "novacode:autocomplete.commands.cancelSuggestions": "제안된 편집 취소",
+  "novacode:autocomplete.commands.applyCurrentSuggestion": "현재 제안된 편집 적용",
+  "novacode:autocomplete.commands.applyAllSuggestions": "모든 제안된 편집 적용",
+  "novacode:autocomplete.commands.category": "Nova Code",
+  "novacode:autocomplete.codeAction.title": "Nova Code: 제안된 편집",
+  "novacode:autocomplete.chatParticipant.fullName": "Nova Code Agent",
+  "novacode:autocomplete.chatParticipant.name": "Agent",
+  "novacode:autocomplete.chatParticipant.description": "빠른 작업과 제안된 편집으로 도움을 드릴 수 있습니다.",
+  "novacode:autocomplete.incompatibilityExtensionPopup.message":
+    "Nova Code Autocomplete가 GitHub Copilot과의 충돌로 인해 차단되고 있습니다. 이를 해결하려면 Copilot의 인라인 제안을 비활성화해야 합니다.",
+  "novacode:autocomplete.incompatibilityExtensionPopup.disableCopilot": "Copilot 비활성화",
+  "novacode:autocomplete.incompatibilityExtensionPopup.disableInlineAssist": "Autocomplete 비활성화",
+}

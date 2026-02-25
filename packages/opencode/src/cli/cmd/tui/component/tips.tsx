@@ -1,5 +1,5 @@
-// kilocode_change - use Kilo-specific tips component
-export { Tips } from "@/kilocode/components/tips"
+// novacode_change - use Kilo-specific tips component
+export { Tips } from "@/novacode/components/tips"
 
 import { For } from "solid-js"
 import { DEFAULT_THEMES, useTheme } from "@tui/context/theme"

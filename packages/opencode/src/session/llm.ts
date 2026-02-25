@@ -22,13 +22,13 @@ import { SystemPrompt } from "./system"
 import { Flag } from "@/flag/flag"
 import { PermissionNext } from "@/permission/next"
 import { Auth } from "@/auth"
-import { DEFAULT_HEADERS } from "@/kilocode/const" // kilocode_change
-import { Telemetry } from "@kilocode/kilo-telemetry" // kilocode_change
-// kilocode_change start
-import { getKiloProjectId } from "@/kilocode/project-id"
-import { HEADER_PROJECTID, HEADER_MACHINEID, HEADER_TASKID } from "@kilocode/kilo-gateway"
-import { Identity } from "@kilocode/kilo-telemetry"
-// kilocode_change end
+import { DEFAULT_HEADERS } from "@/novacode/const" // novacode_change
+import { Telemetry } from "@novacode/nova-telemetry" // novacode_change
+// novacode_change start
+import { getKiloProjectId } from "@/novacode/project-id"
+import { HEADER_PROJECTID, HEADER_MACHINEID, HEADER_TASKID } from "@novacode/nova-gateway"
+import { Identity } from "@novacode/nova-telemetry"
+// novacode_change end
 
 export namespace LLM {
   const log = Log.create({ service: "llm" })
@@ -74,9 +74,9 @@ export namespace LLM {
     const system = []
     system.push(
       [
-        // kilocode_change start - soul defines core identity and personality
+        // novacode_change start - soul defines core identity and personality
         ...(isCodex ? [] : [SystemPrompt.soul()]),
-        // kilocode_change end
+        // novacode_change end
         // use agent prompt otherwise provider prompt
         // For Codex sessions, skip SystemPrompt.provider() since it's sent via options.instructions
         ...(input.agent.prompt ? [input.agent.prompt] : isCodex ? [] : SystemPrompt.provider(input.model)),
@@ -122,9 +122,9 @@ export namespace LLM {
       mergeDeep(variant),
     )
     if (isCodex) {
-      // kilocode_change start - prepend soul to codex instructions
+      // novacode_change start - prepend soul to codex instructions
       options.instructions = SystemPrompt.soul() + "\n" + SystemPrompt.instructions()
-      // kilocode_change end
+      // novacode_change end
     }
 
     const params = await Plugin.trigger(
@@ -160,11 +160,11 @@ export namespace LLM {
       },
     )
 
-    // kilocode_change start - resolve project ID and machine ID for kilo provider
-    const isKilo = input.model.api.npm === "@kilocode/kilo-gateway"
+    // novacode_change start - resolve project ID and machine ID for kilo provider
+    const isKilo = input.model.api.npm === "@novacode/nova-gateway"
     const kiloProjectId = isKilo ? await getKiloProjectId().catch(() => undefined) : undefined
     const machineId = isKilo ? await Identity.getMachineId().catch(() => undefined) : undefined
-    // kilocode_change end
+    // novacode_change end
 
     const maxOutputTokens =
       isCodex || provider.id.includes("github-copilot") ? undefined : ProviderTransform.maxOutputTokens(input.model)
@@ -236,14 +236,14 @@ export namespace LLM {
               "x-kilo-client": Flag.KILO_CLIENT,
             }
           : input.model.providerID !== "anthropic"
-            ? DEFAULT_HEADERS // kilocode_change
+            ? DEFAULT_HEADERS // novacode_change
             : undefined),
-        ...(isKilo && input.agent.name ? { "x-kilocode-mode": input.agent.name.toLowerCase() } : {}),
-        // kilocode_change start - add project ID, machine ID, and task ID headers for kilo provider
+        ...(isKilo && input.agent.name ? { "x-novacode-mode": input.agent.name.toLowerCase() } : {}),
+        // novacode_change start - add project ID, machine ID, and task ID headers for kilo provider
         ...(isKilo && kiloProjectId ? { [HEADER_PROJECTID]: kiloProjectId } : {}),
         ...(isKilo && machineId ? { [HEADER_MACHINEID]: machineId } : {}),
         ...(isKilo ? { [HEADER_TASKID]: input.sessionID } : {}),
-        // kilocode_change end
+        // novacode_change end
         ...input.model.headers,
         ...headers,
       },
@@ -271,14 +271,14 @@ export namespace LLM {
           },
         ],
       }),
-      // kilocode_change start - enable telemetry by default with custom PostHog tracer
+      // novacode_change start - enable telemetry by default with custom PostHog tracer
       experimental_telemetry: {
         isEnabled: cfg.experimental?.openTelemetry !== false,
         recordInputs: false, // Prevent recording prompts, messages, tool args
         recordOutputs: false, // Prevent recording completions, tool results
         tracer: Telemetry.getTracer() ?? undefined,
       },
-      // kilocode_change end
+      // novacode_change end
     })
   }
 

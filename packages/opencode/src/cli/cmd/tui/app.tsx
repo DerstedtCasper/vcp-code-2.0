@@ -40,8 +40,8 @@ import { ArgsProvider, useArgs, type Args } from "./context/args"
 import open from "open"
 import { writeHeapSnapshot } from "v8"
 import { PromptRefProvider, usePromptRef } from "./context/prompt"
-import { registerKiloCommands } from "@/kilocode/kilo-commands" // kilocode_change
-import { initializeTUIDependencies } from "@kilocode/kilo-gateway/tui" // kilocode_change
+import { registerKiloCommands } from "@/novacode/kilo-commands" // novacode_change
+import { initializeTUIDependencies } from "@novacode/nova-gateway/tui" // novacode_change
 
 async function getTerminalBackgroundColor(): Promise<"dark" | "light"> {
   // can't set raw mode if not a TTY
@@ -264,23 +264,23 @@ function App() {
   createEffect(() => {
     if (!terminalTitleEnabled() || Flag.KILO_DISABLE_TERMINAL_TITLE) return
 
-    const titleDefault = "Kilo CLI" // kilocode_change
+    const titleDefault = "Kilo CLI" // novacode_change
 
     if (route.data.type === "home") {
-      renderer.setTerminalTitle(titleDefault) // kilocode_change
+      renderer.setTerminalTitle(titleDefault) // novacode_change
       return
     }
 
     if (route.data.type === "session") {
       const session = sync.session.get(route.data.sessionID)
       if (!session || SessionApi.isDefaultTitle(session.title)) {
-        renderer.setTerminalTitle(titleDefault) // kilocode_change
+        renderer.setTerminalTitle(titleDefault) // novacode_change
         return
       }
 
       // Truncate title to 40 chars max
       const title = session.title.length > 40 ? session.title.slice(0, 37) + "..." : session.title
-      renderer.setTerminalTitle(`${titleDefault} | ${title}`) // kilocode_change
+      renderer.setTerminalTitle(`${titleDefault} | ${title}`) // novacode_change
     }
   })
 
@@ -561,7 +561,7 @@ function App() {
       title: "Open docs",
       value: "docs.open",
       onSelect: () => {
-        open("https://kilo.ai/docs").catch(() => {}) // kilocode_change
+        open("https://kilo.ai/docs").catch(() => {}) // novacode_change
         dialog.clear()
       },
       category: "System",
@@ -660,7 +660,7 @@ function App() {
     },
   ])
 
-  // kilocode_change start - Initialize TUI dependencies for kilo-gateway
+  // novacode_change start - Initialize TUI dependencies for nova-gateway
   initializeTUIDependencies({
     useCommandDialog: useCommandDialog,
     useSync: useSync,
@@ -676,9 +676,9 @@ function App() {
     TextAttributes: TextAttributes,
   })
   registerKiloCommands(useSDK)
-  // kilocode_change end
+  // novacode_change end
 
-  // kilocode_change - Delete OpenRouter Alert
+  // novacode_change - Delete OpenRouter Alert
   sdk.event.on(TuiEvent.CommandExecute.type, (evt) => {
     command.trigger(evt.properties.command)
   })
@@ -735,7 +735,7 @@ function App() {
     toast.show({
       variant: "info",
       title: "Update Available",
-      message: `Kilo v${evt.properties.version} is available. Run 'kilo upgrade' to update manually.`, // kilocode_change
+      message: `Kilo v${evt.properties.version} is available. Run 'kilo upgrade' to update manually.`, // novacode_change
       duration: 10000,
     })
   })
@@ -790,7 +790,7 @@ function ErrorComponent(props: {
   })
   const [copied, setCopied] = createSignal(false)
 
-  const issueURL = new URL("https://github.com/Kilo-Org/kilocode/issues/new?template=bug-report.yml")
+  const issueURL = new URL("https://github.com/Kilo-Org/novacode/issues/new?template=bug-report.yml")
 
   // Choose safe fallback colors per mode since theme context may not be available
   const isLight = props.mode === "light"

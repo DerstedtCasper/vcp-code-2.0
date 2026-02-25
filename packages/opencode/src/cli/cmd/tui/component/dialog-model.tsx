@@ -84,13 +84,13 @@ export function DialogModel(props: { providerID?: string }) {
             description: favorites.some((item) => item.providerID === provider.id && item.modelID === model)
               ? "(Favorite)"
               : undefined,
-            // kilocode_change start
+            // novacode_change start
             category: connected()
               ? provider.id === "kilo" && info.recommended
                 ? "Recommended"
                 : provider.name
               : undefined,
-            // kilocode_change end
+            // novacode_change end
             disabled: provider.id === "opencode" && model.includes("-nano"),
             footer: info.cost?.input === 0 && provider.id === "opencode" ? "Free" : undefined,
             onSelect() {
@@ -107,7 +107,7 @@ export function DialogModel(props: { providerID?: string }) {
             return true
           }),
           sortBy(
-            // kilocode_change start - Sort recommended models first for Kilo Gateway
+            // novacode_change start - Sort recommended models first for Nova Gateway
             (x) => {
               if (x.value.providerID !== "kilo") return 0
               const provider = sync.data.provider.find((p) => p.id === "kilo")
@@ -115,7 +115,7 @@ export function DialogModel(props: { providerID?: string }) {
               if (model?.recommendedIndex !== undefined) return model.recommendedIndex
               return Object.keys(provider?.models ?? {}).length
             },
-            // kilocode_change end
+            // novacode_change end
             (x) => x.footer !== "Free",
             (x) => x.title,
           ),
@@ -137,11 +137,11 @@ export function DialogModel(props: { providerID?: string }) {
     if (needle) {
       const filteredProviders = fuzzysort.go(needle, providerOptions, { keys: ["title", "category"] }).map((x) => x.obj)
       const filteredPopular = fuzzysort.go(needle, popularProviders, { keys: ["title"] }).map((x) => x.obj)
-      // kilocode_change start - Partition Kilo Gateway results first (preserves fuzzysort order)
+      // novacode_change start - Partition Nova Gateway results first (preserves fuzzysort order)
       const kilo = filteredProviders.filter((x) => x.value.providerID === "kilo")
       const rest = filteredProviders.filter((x) => x.value.providerID !== "kilo")
       return [...kilo, ...rest, ...filteredPopular]
-      // kilocode_change end
+      // novacode_change end
     }
 
     return [...favoriteOptions, ...recentOptions, ...providerOptions, ...popularProviders]

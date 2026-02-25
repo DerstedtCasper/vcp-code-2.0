@@ -3,16 +3,16 @@ import { createStore } from "solid-js/store"
 import { Button } from "@opencode-ai/ui/button"
 import { Icon } from "@opencode-ai/ui/icon"
 import { showToast } from "@opencode-ai/ui/toast"
-import type { QuestionAnswer, QuestionRequest } from "@kilocode/sdk/v2"
+import type { QuestionAnswer, QuestionRequest } from "@novacode/sdk/v2"
 import { useLanguage } from "@/context/language"
 import { useSDK } from "@/context/sdk"
 
-// kilocode_change start - add onModeAction prop for mode-switching support
+// novacode_change start - add onModeAction prop for mode-switching support
 export const QuestionDock: Component<{
   request: QuestionRequest
   onModeAction?: (input: { mode: string; text: string; description?: string }) => void
 }> = (props) => {
-  // kilocode_change end
+  // novacode_change end
   const sdk = useSDK()
   const language = useLanguage()
 
@@ -70,14 +70,14 @@ export const QuestionDock: Component<{
   }
 
   const submit = () => {
-    void reply(questions().map((_, i) => store.answers[i] ?? []))?.catch(fail) // kilocode_change
+    void reply(questions().map((_, i) => store.answers[i] ?? []))?.catch(fail) // novacode_change
   }
 
   const pick = (answer: string, custom: boolean = false) => {
-    // kilocode_change start - find option to check for mode
+    // novacode_change start - find option to check for mode
     // Custom answers won't match a predefined option, so mode switching is intentionally skipped
     const option = options().find((o) => o.label === answer)
-    // kilocode_change end
+    // novacode_change end
 
     setStore("answers", store.tab, [answer])
 
@@ -86,7 +86,7 @@ export const QuestionDock: Component<{
     }
 
     if (single()) {
-      // kilocode_change start - trigger mode switch after question reply completes
+      // novacode_change start - trigger mode switch after question reply completes
       const pending = reply([[answer]])
       if (option?.mode && props.onModeAction) {
         const action = props.onModeAction
@@ -96,7 +96,7 @@ export const QuestionDock: Component<{
       } else {
         pending?.catch(fail)
       }
-      // kilocode_change end
+      // novacode_change end
       return
     }
 
@@ -208,13 +208,13 @@ export const QuestionDock: Component<{
                     <Show when={opt.description}>
                       <span data-slot="option-description">{opt.description}</span>
                     </Show>
-                    {/* kilocode_change start - show mode badge */}
+                    {/* novacode_change start - show mode badge */}
                     <Show when={opt.mode}>
                       <span data-slot="option-mode" class="text-text-weakest text-11-regular">
                         → {opt.mode}
                       </span>
                     </Show>
-                    {/* kilocode_change end */}
+                    {/* novacode_change end */}
                     <Show when={picked()}>
                       <Icon name="check-small" size="normal" />
                     </Show>

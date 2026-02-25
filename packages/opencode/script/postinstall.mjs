@@ -49,7 +49,7 @@ function detectPlatformAndArch() {
 
 function findBinary() {
   const { platform, arch } = detectPlatformAndArch()
-  const packageName = `@kilocode/cli-${platform}-${arch}`
+  const packageName = `@novacode/cli-${platform}-${arch}`
   const binaryName = platform === "windows" ? "kilo.exe" : "kilo"
 
   try {

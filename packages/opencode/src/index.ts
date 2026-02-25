@@ -16,7 +16,7 @@ import { ServeCommand } from "./cli/cmd/serve"
 import { DebugCommand } from "./cli/cmd/debug"
 import { StatsCommand } from "./cli/cmd/stats"
 import { McpCommand } from "./cli/cmd/mcp"
-// import { GithubCommand } from "./cli/cmd/github" // kilocode_change
+// import { GithubCommand } from "./cli/cmd/github" // novacode_change
 import { ExportCommand } from "./cli/cmd/export"
 import { ImportCommand } from "./cli/cmd/import"
 import { AttachCommand } from "./cli/cmd/tui/attach"
@@ -26,12 +26,12 @@ import { EOL } from "os"
 import { WebCommand } from "./cli/cmd/web"
 import { PrCommand } from "./cli/cmd/pr"
 import { SessionCommand } from "./cli/cmd/session"
-// kilocode_change start - Import telemetry, instance disposal, and legacy migration
-import { Telemetry } from "@kilocode/kilo-telemetry"
-import { Instance } from "./project/instance" // kilocode_change
-import { migrateLegacyKiloAuth, ENV_FEATURE } from "@kilocode/kilo-gateway"
+// novacode_change start - Import telemetry, instance disposal, and legacy migration
+import { Telemetry } from "@novacode/nova-telemetry"
+import { Instance } from "./project/instance" // novacode_change
+import { migrateLegacyKiloAuth, ENV_FEATURE } from "@novacode/nova-gateway"
 
-// kilocode_change - set feature for tracking. 'serve' is spawned by other services
+// novacode_change - set feature for tracking. 'serve' is spawned by other services
 // (extension, cloud) which set their own KILOCODE_FEATURE env var. Direct CLI use
 // (any command other than 'serve') is tagged as 'cli'. If 'serve' is spawned without
 // the env var, it gets 'unknown' so the misconfiguration is visible in data.
@@ -41,7 +41,7 @@ if (!process.env[ENV_FEATURE]) {
 }
 import { Config } from "./config/config"
 import { Auth } from "./auth"
-// kilocode_change end
+// novacode_change end
 import { DbCommand } from "./cli/cmd/db"
 import path from "path"
 import { Global } from "./global"
@@ -62,7 +62,7 @@ process.on("uncaughtException", (e) => {
 
 const cli = yargs(hideBin(process.argv))
   .parserConfiguration({ "populate--": true })
-  .scriptName("kilo") // kilocode_change
+  .scriptName("kilo") // novacode_change
   .wrap(100)
   .help("help", "show help")
   .alias("help", "h")
@@ -96,7 +96,7 @@ const cli = yargs(hideBin(process.argv))
       args: process.argv.slice(2),
     })
 
-    // kilocode_change start - Initialize telemetry
+    // novacode_change start - Initialize telemetry
     const globalCfg = await Config.getGlobal()
     await Telemetry.init({
       dataPath: Global.Path.data,
@@ -118,7 +118,7 @@ const cli = yargs(hideBin(process.argv))
     }
 
     Telemetry.trackCliStart()
-    // kilocode_change end
+    // novacode_change end
     const marker = path.join(Global.Path.data, "kilo.db")
     if (!(await Bun.file(marker).exists())) {
       console.log("Performing one time database migration, may take a few minutes...")
@@ -175,7 +175,7 @@ const cli = yargs(hideBin(process.argv))
   .command(StatsCommand)
   .command(ExportCommand)
   .command(ImportCommand)
-  // .command(GithubCommand) // kilocode_change (Disabled until backend is ready)
+  // .command(GithubCommand) // novacode_change (Disabled until backend is ready)
   .command(PrCommand)
   .command(SessionCommand)
   .command(DbCommand)
@@ -233,13 +233,13 @@ try {
   }
   process.exitCode = 1
 } finally {
-  // kilocode_change start - Track CLI exit and shutdown telemetry
+  // novacode_change start - Track CLI exit and shutdown telemetry
   const exitCode = typeof process.exitCode === "number" ? process.exitCode : undefined
   Telemetry.trackCliExit(exitCode)
   await Telemetry.shutdown()
-  // kilocode_change end
+  // novacode_change end
 
-  await Instance.disposeAll() // kilocode_change - safety net disposal (no-op if already disposed)
+  await Instance.disposeAll() // novacode_change - safety net disposal (no-op if already disposed)
 
   // Some subprocesses don't react properly to SIGTERM and similar signals.
   // Most notably, some docker-container-based MCP servers don't handle such signals unless

@@ -4,7 +4,7 @@ import { win32DisableProcessedInput, win32InstallCtrlCGuard } from "./win32"
 
 export const AttachCommand = cmd({
   command: "attach <url>",
-  describe: "attach to a running kilo server", // kilocode_change
+  describe: "attach to a running kilo server", // novacode_change
   builder: (yargs) =>
     yargs
       .positional("url", {

@@ -972,7 +972,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
         t={(key) => language.t(key as Parameters<typeof language.t>[0])}
       />
       <form
-        data-component="prompt-input-form" // kilocode_change
+        data-component="prompt-input-form" // novacode_change
         onSubmit={handleSubmit}
         classList={{
           "group/prompt-input": true,
@@ -1008,7 +1008,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
           removeLabel={language.t("prompt.attachment.remove")}
         />
         <div
-          data-slot="prompt-input-scroll" // kilocode_change
+          data-slot="prompt-input-scroll" // novacode_change
           class="relative max-h-[240px] overflow-y-auto"
           ref={(el) => (scrollRef = el)}
         >
@@ -1048,7 +1048,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
           </Show>
         </div>
         <div
-          data-slot="prompt-input-toolbar" // kilocode_change
+          data-slot="prompt-input-toolbar" // novacode_change
           class="relative p-3 flex items-center justify-between gap-2"
         >
           <div class="flex items-center gap-2 min-w-0 flex-1">

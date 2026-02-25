@@ -5,10 +5,10 @@ on:
     branches:
       - dev
     paths:
-      - "packages/kilo-vscode/**"
+      - "packages/nova-vscode/**"
   pull_request:
     paths:
-      - "packages/kilo-vscode/**"
+      - "packages/nova-vscode/**"
   workflow_dispatch:
 
 jobs:
@@ -28,5 +28,5 @@ jobs:
         uses: ./.github/actions/setup-bun
 
       - name: Run unit tests
-        working-directory: packages/kilo-vscode
+        working-directory: packages/nova-vscode
         run: bun run test:unit

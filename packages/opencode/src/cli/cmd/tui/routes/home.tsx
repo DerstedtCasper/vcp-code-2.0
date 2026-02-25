@@ -14,7 +14,7 @@ import { usePromptRef } from "../context/prompt"
 import { Installation } from "@/installation"
 import { useKV } from "../context/kv"
 import { useCommandDialog } from "../component/dialog-command"
-import { KiloNews } from "@/kilocode/components/kilo-news" // kilocode_change
+import { KiloNews } from "@/novacode/components/kilo-news" // novacode_change
 
 // TODO: what is the best way to do this?
 let once = false
@@ -37,7 +37,7 @@ export function Home() {
 
   const isFirstTimeUser = createMemo(() => sync.data.session.length === 0)
   const tipsHidden = createMemo(() => kv.get("tips_hidden", false))
-  const newsHidden = createMemo(() => kv.get("news_hidden", false)) // kilocode_change
+  const newsHidden = createMemo(() => kv.get("news_hidden", false)) // novacode_change
   const showTips = createMemo(() => {
     // Don't show tips for first-time users
     if (isFirstTimeUser()) return false
@@ -55,7 +55,7 @@ export function Home() {
         dialog.clear()
       },
     },
-    // kilocode_change start
+    // novacode_change start
     {
       title: newsHidden() ? "Show news" : "Hide news",
       value: "news.toggle",
@@ -66,7 +66,7 @@ export function Home() {
         dialog.clear()
       },
     },
-    // kilocode_change end
+    // novacode_change end
   ])
 
   const Hint = (
@@ -123,7 +123,7 @@ export function Home() {
             hint={Hint}
           />
         </box>
-        {/* kilocode_change - KiloNews added */}
+        {/* novacode_change - KiloNews added */}
         <box width="100%" maxWidth={75} alignItems="center" paddingTop={2} gap={1}>
           <Show when={!newsHidden()}>
             <KiloNews />

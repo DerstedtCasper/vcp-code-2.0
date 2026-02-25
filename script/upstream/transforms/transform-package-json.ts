@@ -169,32 +169,32 @@ export interface PackageJsonOptions {
 
 // Package name mappings
 const PACKAGE_NAME_MAP: Record<string, string> = {
-  "opencode-ai": "@kilocode/cli",
-  "@opencode-ai/cli": "@kilocode/cli",
-  "@opencode-ai/sdk": "@kilocode/sdk",
-  "@opencode-ai/plugin": "@kilocode/plugin",
+  "opencode-ai": "@novacode/cli",
+  "@opencode-ai/cli": "@novacode/cli",
+  "@opencode-ai/sdk": "@novacode/sdk",
+  "@opencode-ai/plugin": "@novacode/plugin",
 }
 
 // Kilo-specific dependencies to inject into specific packages
-// NOTE: When adding new Kilo-specific workspace dependencies (packages starting with @kilocode/kilo-*),
+// NOTE: When adding new Kilo-specific workspace dependencies (packages starting with @novacode/nova-*),
 // add them here to prevent them from being removed during upstream merges
 const KILO_DEPENDENCIES: Record<string, Record<string, string>> = {
   // packages/opencode/package.json needs these
   "packages/opencode/package.json": {
-    "@kilocode/kilo-gateway": "workspace:*",
-    "@kilocode/kilo-telemetry": "workspace:*",
+    "@novacode/nova-gateway": "workspace:*",
+    "@novacode/nova-telemetry": "workspace:*",
   },
   // packages/app/package.json needs these
   "packages/app/package.json": {
-    "@kilocode/kilo-i18n": "workspace:*",
+    "@novacode/nova-i18n": "workspace:*",
   },
 }
 
 // Packages that should have their name transformed
 const TRANSFORM_PACKAGE_NAMES: Record<string, string> = {
-  "packages/opencode/package.json": "@kilocode/cli",
-  "packages/plugin/package.json": "@kilocode/plugin",
-  "packages/sdk/js/package.json": "@kilocode/sdk",
+  "packages/opencode/package.json": "@novacode/cli",
+  "packages/plugin/package.json": "@novacode/plugin",
+  "packages/sdk/js/package.json": "@novacode/sdk",
 }
 
 /**
@@ -375,10 +375,10 @@ export async function transformPackageJson(file: string, options: PackageJsonOpt
     }
 
     // 8. Inject Kilo-specific dependencies
-    const kiloDeps = KILO_DEPENDENCIES[relativePath]
-    if (kiloDeps) {
+    const novaDeps = KILO_DEPENDENCIES[relativePath]
+    if (novaDeps) {
       pkg.dependencies = pkg.dependencies || {}
-      for (const [name, version] of Object.entries(kiloDeps)) {
+      for (const [name, version] of Object.entries(novaDeps)) {
         if (!pkg.dependencies[name]) {
           pkg.dependencies[name] = version
           changes.push(`injected: ${name}`)
@@ -582,10 +582,10 @@ export async function transformAllPackageJson(options: PackageJsonOptions = {}):
       }
 
       // 8. Inject Kilo-specific dependencies
-      const kiloDeps = KILO_DEPENDENCIES[path]
-      if (kiloDeps) {
+      const novaDeps = KILO_DEPENDENCIES[path]
+      if (novaDeps) {
         pkg.dependencies = pkg.dependencies || {}
-        for (const [name, version] of Object.entries(kiloDeps)) {
+        for (const [name, version] of Object.entries(novaDeps)) {
           if (!pkg.dependencies[name]) {
             pkg.dependencies[name] = version
             changes.push(`injected: ${name}`)

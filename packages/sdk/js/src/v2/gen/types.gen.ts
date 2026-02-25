@@ -4429,7 +4429,7 @@ export type KiloFimResponses = {
   200: unknown
 }
 
-export type KiloNotificationsData = {
+export type NovaNotificationsData = {
   body?: never
   path?: never
   query?: {
@@ -4438,16 +4438,16 @@ export type KiloNotificationsData = {
   url: "/kilo/notifications"
 }
 
-export type KiloNotificationsErrors = {
+export type NovaNotificationsErrors = {
   /**
    * Bad request
    */
   400: BadRequestError
 }
 
-export type KiloNotificationsError = KiloNotificationsErrors[keyof KiloNotificationsErrors]
+export type NovaNotificationsError = NovaNotificationsErrors[keyof NovaNotificationsErrors]
 
-export type KiloNotificationsResponses = {
+export type NovaNotificationsResponses = {
   /**
    * Notifications list
    */
@@ -4463,7 +4463,7 @@ export type KiloNotificationsResponses = {
   }>
 }
 
-export type KiloNotificationsResponse = KiloNotificationsResponses[keyof KiloNotificationsResponses]
+export type NovaNotificationsResponse = NovaNotificationsResponses[keyof NovaNotificationsResponses]
 
 export type FindTextData = {
   body?: never

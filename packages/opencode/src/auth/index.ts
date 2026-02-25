@@ -1,7 +1,7 @@
 import path from "path"
 import { Global } from "../global"
 import z from "zod"
-import { Telemetry } from "@kilocode/kilo-telemetry" // kilocode_change
+import { Telemetry } from "@novacode/nova-telemetry" // novacode_change
 
 export const OAUTH_DUMMY_KEY = "opencode-oauth-dummy-key"
 
@@ -68,11 +68,11 @@ export namespace Auth {
     delete data[key]
     await Bun.write(file, JSON.stringify(data, null, 2), { mode: 0o600 })
 
-    // kilocode_change start - Track logout and reset telemetry identity for Kilo
+    // novacode_change start - Track logout and reset telemetry identity for Kilo
     if (key === "kilo") {
       await Telemetry.updateIdentity(null)
     }
     Telemetry.trackAuthLogout(key)
-    // kilocode_change end
+    // novacode_change end
   }
 }

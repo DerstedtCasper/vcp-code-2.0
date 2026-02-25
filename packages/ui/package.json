@@ -95,7 +95,7 @@
   },
   "dependencies": {
     "@kobalte/core": "catalog:",
-    "@kilocode/sdk": "workspace:*",
+    "@novacode/sdk": "workspace:*",
     "@opencode-ai/util": "workspace:*",
     "@pierre/diffs": "catalog:",
     "@shikijs/transformers": "3.9.2",

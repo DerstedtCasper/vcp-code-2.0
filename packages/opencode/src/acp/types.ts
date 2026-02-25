@@ -1,5 +1,5 @@
 import type { McpServer } from "@agentclientprotocol/sdk"
-import type { OpencodeClient } from "@kilocode/sdk/v2"
+import type { OpencodeClient } from "@novacode/sdk/v2"
 
 export interface ACPSessionState {
   id: string

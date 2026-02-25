@@ -33,12 +33,12 @@ const WEB_REPLACEMENTS: WebReplacement[] = [
   // GitHub references
   {
     pattern: /github\.com\/anomalyco\/opencode/g,
-    replacement: "github.com/Kilo-Org/kilocode",
+    replacement: "github.com/Kilo-Org/novacode",
     description: "GitHub URL",
   },
   {
     pattern: /anomalyco\/opencode/g,
-    replacement: "Kilo-Org/kilocode",
+    replacement: "Kilo-Org/novacode",
     description: "GitHub repo",
   },
 

@@ -179,7 +179,7 @@
 
 ## 📋 数据契约补充清单
 
-- [ ] `VcpStatusUpdateMessage` (Extension → Webview): 状态/Token 推送
+- [x] `VcpStatusUpdateMessage` (Extension → Webview): 状态/Token 推送
 - [x] `EnhancePromptRequest` (Webview → Extension): 增强请求
 - [x] `EnhancePromptResponse` (Extension → Webview): 增强结果
 - [x] 在 `vscode.tsx` 消息处理层注册上述契约

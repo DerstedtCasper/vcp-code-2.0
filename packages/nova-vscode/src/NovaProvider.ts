@@ -67,6 +67,16 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       variant?: string
     }>
   >()
+  /** Session-level token totals for VcpStatusBadge (prompt/completion). */
+  private sessionTokenTotals = new Map<string, { in: number; out: number }>()
+  /** Assistant message token cache to avoid double-counting on message.updated events. */
+  private assistantMessageTokens = new Map<string, { sessionID: string; in: number; out: number }>()
+  /** Last known model selection per session (modelID). */
+  private sessionModelSelection = new Map<string, string>()
+  /** Last known agent selection per session. */
+  private sessionAgentSelection = new Map<string, string>()
+  /** Default selection used before a session has explicit model metadata. */
+  private defaultModelSelection: { providerID: string; modelID: string } = { providerID: "nova", modelID: "kilo/auto" }
 
   /** Lazily initialized ignore controller for .novacodeignore filtering */
   private ignoreController: FileIgnoreController | null = null
@@ -106,6 +116,100 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     } catch {
       return null
     }
+  }
+
+  private sanitizeTokenCount(value: unknown): number {
+    return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : 0
+  }
+
+  private adjustSessionTokenTotals(sessionID: string, deltaIn: number, deltaOut: number): void {
+    const prev = this.sessionTokenTotals.get(sessionID) ?? { in: 0, out: 0 }
+    const next = {
+      in: Math.max(0, prev.in + deltaIn),
+      out: Math.max(0, prev.out + deltaOut),
+    }
+    if (next.in === 0 && next.out === 0) {
+      this.sessionTokenTotals.delete(sessionID)
+      return
+    }
+    this.sessionTokenTotals.set(sessionID, next)
+  }
+
+  private clearSessionTokenCache(sessionID: string): void {
+    for (const [messageID, usage] of this.assistantMessageTokens.entries()) {
+      if (usage.sessionID !== sessionID) continue
+      this.adjustSessionTokenTotals(sessionID, -usage.in, -usage.out)
+      this.assistantMessageTokens.delete(messageID)
+    }
+    this.sessionTokenTotals.delete(sessionID)
+  }
+
+  private upsertAssistantMessageTokens(
+    messageID: string,
+    sessionID: string,
+    tokens: { input?: unknown; output?: unknown } | undefined,
+  ): void {
+    const nextIn = this.sanitizeTokenCount(tokens?.input)
+    const nextOut = this.sanitizeTokenCount(tokens?.output)
+
+    const prev = this.assistantMessageTokens.get(messageID)
+    if (prev) {
+      this.adjustSessionTokenTotals(prev.sessionID, -prev.in, -prev.out)
+    }
+
+    if (nextIn === 0 && nextOut === 0) {
+      this.assistantMessageTokens.delete(messageID)
+      return
+    }
+
+    this.assistantMessageTokens.set(messageID, { sessionID, in: nextIn, out: nextOut })
+    this.adjustSessionTokenTotals(sessionID, nextIn, nextOut)
+  }
+
+  private hydrateSessionTokenCache(
+    sessionID: string,
+    messagesData: Array<{ info: { id: string; role: "user" | "assistant"; tokens?: { input?: number; output?: number } } }>,
+  ): void {
+    this.clearSessionTokenCache(sessionID)
+    for (const message of messagesData) {
+      if (message.info.role !== "assistant") continue
+      this.upsertAssistantMessageTokens(message.info.id, sessionID, message.info.tokens)
+    }
+  }
+
+  private sendVcpStatusUpdate(sessionID?: string): void {
+    const activeSessionID = sessionID ?? this.currentSession?.id
+    const activeStatus = activeSessionID ? this.sessionStatus.get(activeSessionID) : undefined
+    const connected = this.connectionState === "connected"
+
+    const status: "idle" | "busy" | "error" =
+      this.connectionState === "connecting"
+        ? "busy"
+        : !connected || this.connectionState === "error"
+          ? "error"
+          : activeStatus === "busy" || activeStatus === "retry"
+            ? "busy"
+            : "idle"
+
+    const totals = activeSessionID ? (this.sessionTokenTotals.get(activeSessionID) ?? { in: 0, out: 0 }) : { in: 0, out: 0 }
+
+    this.postMessage({
+      type: "vcpStatusUpdate",
+      payload: {
+        status,
+        connected,
+        currentModel: activeSessionID
+          ? (this.sessionModelSelection.get(activeSessionID) ?? this.defaultModelSelection.modelID)
+          : this.defaultModelSelection.modelID,
+        currentAgent: activeSessionID ? this.sessionAgentSelection.get(activeSessionID) : undefined,
+        tokens: {
+          in: totals.in,
+          out: totals.out,
+          total: totals.in + totals.out,
+        },
+        lastRunId: activeSessionID,
+      },
+    })
   }
 
   /**
@@ -328,6 +432,12 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
         case "clearSession":
           this.currentSession = null
           this.trackedSessionIds.clear()
+          this.sessionStatus.clear()
+          this.sessionTokenTotals.clear()
+          this.assistantMessageTokens.clear()
+          this.sessionModelSelection.clear()
+          this.sessionAgentSelection.clear()
+          this.sendVcpStatusUpdate()
           break
         case "loadMessages":
           // Don't await: allow parallel loads so rapid session switching
@@ -568,6 +678,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       this.unsubscribeState = this.connectionService.onStateChange(async (state) => {
         this.connectionState = state
         this.postMessage({ type: "connectionState", state })
+        this.sendVcpStatusUpdate()
 
         if (state === "connected") {
           try {
@@ -608,6 +719,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       }
 
       this.postMessage({ type: "connectionState", state: this.connectionState })
+      this.sendVcpStatusUpdate()
       await this.syncWebviewState("initializeConnection")
 
       // Fetch providers and agents, then send to webview
@@ -627,6 +739,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
         state: "error",
         error: error instanceof Error ? error.message : "Failed to connect to CLI backend",
       })
+      this.sendVcpStatusUpdate()
     }
   }
 
@@ -657,6 +770,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
         type: "sessionCreated",
         session: this.sessionToWebview(session),
       })
+      this.sendVcpStatusUpdate(session.id)
     } catch (error) {
       console.error("[Nova New] NovaProvider: Failed to create session:", error)
       this.postMessage({
@@ -715,15 +829,19 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
         .then((statuses) => {
           for (const [sid, info] of Object.entries(statuses)) {
             if (!this.trackedSessionIds.has(sid)) continue
+            this.sessionStatus.set(sid, info.type)
             this.postMessage({
               type: "sessionStatus",
               sessionID: sid,
               status: info.type,
               ...(info.type === "retry" ? { attempt: info.attempt, message: info.message, next: info.next } : {}),
             })
+            this.sendVcpStatusUpdate(sid)
           }
         })
         .catch((err) => console.error("[Nova New] NovaProvider: Failed to fetch session statuses:", err))
+
+      this.hydrateSessionTokenCache(sessionID, messagesData)
 
       // Convert to webview format, including cost/tokens for assistant messages
       const messages = messagesData.map((m) => ({
@@ -745,6 +863,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
         sessionID,
         messages,
       })
+      this.sendVcpStatusUpdate(sessionID)
     } catch (error) {
       // Silently ignore aborted requests â€?the user switched to a different session
       if (abort.signal.aborted) return
@@ -888,10 +1007,15 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       await this.httpClient.deleteSession(sessionID, workspaceDir)
       this.trackedSessionIds.delete(sessionID)
       this.sessionDirectories.delete(sessionID)
+      this.sessionStatus.delete(sessionID)
+      this.clearSessionTokenCache(sessionID)
+      this.sessionModelSelection.delete(sessionID)
+      this.sessionAgentSelection.delete(sessionID)
       if (this.currentSession?.id === sessionID) {
         this.currentSession = null
       }
       this.postMessage({ type: "sessionDeleted", sessionID })
+      this.sendVcpStatusUpdate()
     } catch (error) {
       console.error("[Nova New] NovaProvider: Failed to delete session:", error)
       this.postMessage({
@@ -952,6 +1076,8 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       const config = vscode.workspace.getConfiguration("vcp-code.new.model")
       const providerID = config.get<string>("providerID", "nova")
       const modelID = config.get<string>("modelID", "kilo/auto")
+
+      this.defaultModelSelection = { providerID, modelID }
 
       const message = {
         type: "providersLoaded",
@@ -1210,6 +1336,14 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       if (!targetSessionID) {
         throw new Error("No session available")
       }
+      if (modelID) {
+        this.sessionModelSelection.set(targetSessionID, modelID)
+      }
+      if (agent) {
+        this.sessionAgentSelection.set(targetSessionID, agent)
+      }
+      this.sendVcpStatusUpdate(targetSessionID)
+
       if (busyMode === "queue" && this.sessionStatus.get(targetSessionID) === "busy") {
         this.enqueuePrompt(targetSessionID, {
           text,
@@ -1632,6 +1766,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       if (event.properties.status.type === "idle") {
         void this.flushPromptQueue(event.properties.sessionID)
       }
+      this.sendVcpStatusUpdate(event.properties.sessionID)
     }
     if (event.type === "permission.asked") {
       this.incrementPending(this.pendingPermission, event.properties.sessionID)
@@ -1657,6 +1792,14 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     }
     if (event.type === "session.updated" && this.currentSession?.id === event.properties.info.id) {
       this.currentSession = event.properties.info
+    }
+    if (event.type === "message.updated" && event.properties.info.role === "assistant") {
+      this.upsertAssistantMessageTokens(
+        event.properties.info.id,
+        event.properties.info.sessionID,
+        event.properties.info.tokens,
+      )
+      this.sendVcpStatusUpdate(event.properties.info.sessionID)
     }
     if (event.type === "session.vcpinfo" && this.shouldNotifyAgentEvents()) {
       void vscode.window.showInformationMessage(`VCPInfo: ${this.summarizeNotificationText(event.properties.content)}`)
@@ -2095,5 +2238,9 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     this.trackedSessionIds.clear()
     this.sessionDirectories.clear()
     this.ignoreController?.dispose()
+    this.sessionTokenTotals.clear()
+    this.assistantMessageTokens.clear()
+    this.sessionModelSelection.clear()
+    this.sessionAgentSelection.clear()
   }
 }

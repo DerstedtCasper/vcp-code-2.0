@@ -45,8 +45,8 @@ import type {
   InstanceDisposeResponses,
   KiloFimErrors,
   KiloFimResponses,
-  KiloNotificationsErrors,
-  KiloNotificationsResponses,
+  NovaNotificationsErrors,
+  NovaNotificationsResponses,
   KiloOrganizationSetErrors,
   KiloOrganizationSetResponses,
   KiloProfileErrors,
@@ -2198,7 +2198,7 @@ export class Telemetry extends HeyApiClient {
   /**
    * Capture telemetry event
    *
-   * Forward a telemetry event to PostHog via kilo-telemetry.
+   * Forward a telemetry event to PostHog via nova-telemetry.
    */
   public capture<ThrowOnError extends boolean = false>(
     parameters?: {
@@ -2282,9 +2282,9 @@ export class CommitMessage extends HeyApiClient {
 
 export class Organization extends HeyApiClient {
   /**
-   * Update Kilo Gateway organization
+   * Update Nova Gateway organization
    *
-   * Switch to a different Kilo Gateway organization
+   * Switch to a different Nova Gateway organization
    */
   public set<ThrowOnError extends boolean = false>(
     parameters?: {
@@ -2321,9 +2321,9 @@ export class Organization extends HeyApiClient {
 
 export class Kilo extends HeyApiClient {
   /**
-   * Get Kilo Gateway profile
+   * Get Nova Gateway profile
    *
-   * Fetch user profile and organizations from Kilo Gateway
+   * Fetch user profile and organizations from Nova Gateway
    */
   public profile<ThrowOnError extends boolean = false>(
     parameters?: {
@@ -2342,7 +2342,7 @@ export class Kilo extends HeyApiClient {
   /**
    * FIM completion
    *
-   * Proxy a Fill-in-the-Middle completion request to the Kilo Gateway
+   * Proxy a Fill-in-the-Middle completion request to the Nova Gateway
    */
   public fim<ThrowOnError extends boolean = false>(
     parameters?: {
@@ -2385,7 +2385,7 @@ export class Kilo extends HeyApiClient {
   /**
    * Get Kilo notifications
    *
-   * Fetch notifications from Kilo Gateway for CLI display
+   * Fetch notifications from Nova Gateway for CLI display
    */
   public notifications<ThrowOnError extends boolean = false>(
     parameters?: {
@@ -2394,7 +2394,7 @@ export class Kilo extends HeyApiClient {
     options?: Options<never, ThrowOnError>,
   ) {
     const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "directory" }] }])
-    return (options?.client ?? this.client).get<KiloNotificationsResponses, KiloNotificationsErrors, ThrowOnError>({
+    return (options?.client ?? this.client).get<NovaNotificationsResponses, NovaNotificationsErrors, ThrowOnError>({
       url: "/kilo/notifications",
       ...options,
       ...params,

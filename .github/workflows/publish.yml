@@ -33,7 +33,7 @@ permissions:
 jobs:
   version:
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    if: github.repository == 'Kilo-Org/kilocode'
+    if: github.repository == 'Kilo-Org/novacode'
     steps:
       - uses: actions/checkout@v3
         with:
@@ -43,7 +43,7 @@ jobs:
 
       - name: Install Kilo
         if: inputs.bump || inputs.version
-        run: bun i -g @kilocode/cli
+        run: bun i -g @novacode/cli
 
       - id: version
         run: |
@@ -62,7 +62,7 @@ jobs:
   build-cli:
     needs: version
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    if: github.repository == 'Kilo-Org/kilocode'
+    if: github.repository == 'Kilo-Org/novacode'
     steps:
       - uses: actions/checkout@v3
         with:
@@ -90,7 +90,7 @@ jobs:
   build-vscode:
     needs: build-cli
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    if: github.repository == 'Kilo-Org/kilocode'
+    if: github.repository == 'Kilo-Org/novacode'
     steps:
       - uses: actions/checkout@v3
 
@@ -111,15 +111,15 @@ jobs:
 
       - name: Build VSIX packages
         run: bun script/build.ts
-        working-directory: ./packages/kilo-vscode
+        working-directory: ./packages/nova-vscode
         env:
           CLI_DIST_DIR: ../../packages/opencode/dist
           KILO_VERSION: ${{ needs.build-cli.outputs.version }}
 
       - uses: actions/upload-artifact@v4
         with:
-          name: kilo-vscode
-          path: packages/kilo-vscode/out
+          name: nova-vscode
+          path: packages/nova-vscode/out
 
   # build-tauri:
   #   needs:
@@ -274,10 +274,10 @@ jobs:
         id: committer
         uses: ./.github/actions/setup-git-committer
         with:
-          # kilocode_change start
+          # novacode_change start
           kilo-maintainer-app-id: ${{ secrets.KILO_MAINTAINER_APP_ID }}
           kilo-maintainer-app-secret: ${{ secrets.KILO_MAINTAINER_APP_SECRET }}
-          # kilocode_change end
+          # novacode_change end
 
       - uses: actions/download-artifact@v4
         with:
@@ -286,8 +286,8 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: kilo-vscode
-          path: packages/kilo-vscode/out
+          name: nova-vscode
+          path: packages/nova-vscode/out
 
       - name: Cache apt packages (AUR)
         uses: actions/cache@v4

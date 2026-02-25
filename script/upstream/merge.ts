@@ -287,7 +287,7 @@ async function main() {
   // This reduces conflicts by transforming upstream code to Kilo conventions BEFORE merging
   logger.step(6, 8, "Applying transformations to opencode branch (pre-merge)...")
 
-  // 6a. Transform package names (opencode-ai -> @kilocode/cli)
+  // 6a. Transform package names (opencode-ai -> @novacode/cli)
   logger.info("Transforming package names...")
   const nameResults = await transformPackageNames({ dryRun: false, verbose: options.verbose })
   logger.success(`Transformed ${nameResults.length} files`)
@@ -379,7 +379,7 @@ async function main() {
     logger.list(mergeResult.conflicts)
 
     // Since we applied all branding transforms pre-merge, remaining conflicts should be minimal.
-    // These are likely files with kilocode_change markers or actual logic differences.
+    // These are likely files with novacode_change markers or actual logic differences.
 
     // Step 7a: Skip files that shouldn't exist in Kilo
     logger.info("Removing files that shouldn't exist in Kilo...")
@@ -509,7 +509,7 @@ async function main() {
       logger.warn(`${remaining.length} conflicts require manual resolution:`)
       logger.list(remaining)
       logger.info("")
-      logger.info("These conflicts likely contain kilocode_change markers or have actual code differences.")
+      logger.info("These conflicts likely contain novacode_change markers or have actual code differences.")
       logger.info("After resolving conflicts, run:")
       logger.info("  git add -A && git commit -m 'resolve merge conflicts'")
 

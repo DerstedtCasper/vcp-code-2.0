@@ -6,9 +6,9 @@ import { Installation } from "@/installation"
 export async function upgrade() {
   const config = await Config.global()
   const method = await Installation.method()
-  // kilocode_change start - only auto-upgrade for npm/pnpm/bun (we only publish @kilocode/cli via npm registry)
+  // novacode_change start - only auto-upgrade for npm/pnpm/bun (we only publish @novacode/cli via npm registry)
   if (method !== "npm" && method !== "pnpm" && method !== "bun") return
-  // kilocode_change end
+  // novacode_change end
   const latest = await Installation.latest(method).catch(() => {})
   if (!latest) return
   if (Installation.VERSION === latest) return

@@ -4,7 +4,7 @@ import { createStore } from "solid-js/store"
 import { useTheme } from "../../context/theme"
 import { Locale } from "@/util/locale"
 import path from "path"
-import type { AssistantMessage } from "@kilocode/sdk/v2"
+import type { AssistantMessage } from "@novacode/sdk/v2"
 import { Global } from "@/global"
 import { Installation } from "@/installation"
 import { useKeybind } from "../../context/keybind"
@@ -284,9 +284,9 @@ export function Sidebar(props: { sessionID: string; overlay?: boolean }) {
                     ✕
                   </text>
                 </box>
-                {/* kilocode_change start */}
+                {/* novacode_change start */}
                 <text fg={theme.textMuted}>Kilo includes free models so you can start immediately.</text>
-                {/* kilocode_change end */}
+                {/* novacode_change end */}
                 <text fg={theme.textMuted}>
                   Connect from 75+ providers to use other models, including Claude, GPT, Gemini etc
                 </text>
@@ -301,7 +301,7 @@ export function Sidebar(props: { sessionID: string; overlay?: boolean }) {
             <span style={{ fg: theme.textMuted }}>{directory().split("/").slice(0, -1).join("/")}/</span>
             <span style={{ fg: theme.text }}>{directory().split("/").at(-1)}</span>
           </text>
-          {/* kilocode_change start */}
+          {/* novacode_change start */}
           <text fg={theme.textMuted}>
             <span style={{ fg: theme.success }}>•</span>{" "}
             <span style={{ fg: theme.text }}>
@@ -309,7 +309,7 @@ export function Sidebar(props: { sessionID: string; overlay?: boolean }) {
             </span>{" "}
             <span>{Installation.VERSION}</span>
           </text>
-          {/* kilocode_change end */}
+          {/* novacode_change end */}
         </box>
       </box>
     </Show>

@@ -23,7 +23,7 @@ interface RemovalTargets {
 
 export const UninstallCommand = {
   command: "uninstall",
-  describe: "uninstall kilo and remove all related files", // kilocode_change
+  describe: "uninstall kilo and remove all related files", // novacode_change
   builder: (yargs: Argv) =>
     yargs
       .option("keep-config", {
@@ -54,7 +54,7 @@ export const UninstallCommand = {
     UI.empty()
     UI.println(UI.logo("  "))
     UI.empty()
-    prompts.intro("Uninstall Kilo") // kilocode_change
+    prompts.intro("Uninstall Kilo") // novacode_change
 
     const method = await Installation.method()
     prompts.log.info(`Installation method: ${method}`)
@@ -128,13 +128,13 @@ async function showRemovalSummary(targets: RemovalTargets, method: Installation.
 
   if (method !== "curl" && method !== "unknown") {
     const cmds: Record<string, string> = {
-      npm: "npm uninstall -g @kilocode/cli", // kilocode_change
-      pnpm: "pnpm uninstall -g @kilocode/cli", // kilocode_change
-      bun: "bun remove -g @kilocode/cli", // kilocode_change
-      yarn: "yarn global remove @kilocode/cli", // kilocode_change
+      npm: "npm uninstall -g @novacode/cli", // novacode_change
+      pnpm: "pnpm uninstall -g @novacode/cli", // novacode_change
+      bun: "bun remove -g @novacode/cli", // novacode_change
+      yarn: "yarn global remove @novacode/cli", // novacode_change
       brew: "brew uninstall opencode",
-      choco: "choco uninstall kilo", // kilocode_change
-      scoop: "scoop uninstall kilo", // kilocode_change
+      choco: "choco uninstall kilo", // novacode_change
+      scoop: "scoop uninstall kilo", // novacode_change
     }
     prompts.log.info(`  ✓ Package: ${cmds[method] || method}`)
   }
@@ -179,13 +179,13 @@ async function executeUninstall(method: Installation.Method, targets: RemovalTar
 
   if (method !== "curl" && method !== "unknown") {
     const cmds: Record<string, string[]> = {
-      npm: ["npm", "uninstall", "-g", "@kilocode/cli"], // kilocode_change
-      pnpm: ["pnpm", "uninstall", "-g", "@kilocode/cli"], // kilocode_change
-      bun: ["bun", "remove", "-g", "@kilocode/cli"], // kilocode_change
-      yarn: ["yarn", "global", "remove", "@kilocode/cli"], // kilocode_change
+      npm: ["npm", "uninstall", "-g", "@novacode/cli"], // novacode_change
+      pnpm: ["pnpm", "uninstall", "-g", "@novacode/cli"], // novacode_change
+      bun: ["bun", "remove", "-g", "@novacode/cli"], // novacode_change
+      yarn: ["yarn", "global", "remove", "@novacode/cli"], // novacode_change
       brew: ["brew", "uninstall", "opencode"],
-      choco: ["choco", "uninstall", "kilo"], // kilocode_change
-      scoop: ["scoop", "uninstall", "kilo"], // kilocode_change
+      choco: ["choco", "uninstall", "kilo"], // novacode_change
+      scoop: ["scoop", "uninstall", "kilo"], // novacode_change
     }
 
     const cmd = cmds[method]
@@ -193,7 +193,7 @@ async function executeUninstall(method: Installation.Method, targets: RemovalTar
       spinner.start(`Running ${cmd.join(" ")}...`)
       const result =
         method === "choco"
-          ? await $`echo Y | choco uninstall kilo -y -r`.quiet().nothrow() // kilocode_change
+          ? await $`echo Y | choco uninstall kilo -y -r`.quiet().nothrow() // novacode_change
           : await $`${cmd}`.quiet().nothrow()
       if (result.exitCode !== 0) {
         spinner.stop(`Package manager uninstall failed: exit code ${result.exitCode}`, 1)
@@ -218,7 +218,7 @@ async function executeUninstall(method: Installation.Method, targets: RemovalTar
 
     const binDir = path.dirname(targets.binary)
     if (binDir.includes(".opencode") || binDir.includes(".kilo")) {
-      // kilocode_change
+      // novacode_change
       prompts.log.info(`  rmdir "${binDir}" 2>/dev/null`)
     }
   }
@@ -232,7 +232,7 @@ async function executeUninstall(method: Installation.Method, targets: RemovalTar
   }
 
   UI.empty()
-  prompts.log.success("Thank you for using Kilo!") // kilocode_change
+  prompts.log.success("Thank you for using Kilo!") // novacode_change
 }
 
 async function getShellConfigFile(): Promise<string | null> {
@@ -271,7 +271,7 @@ async function getShellConfigFile(): Promise<string | null> {
     const content = await Bun.file(file)
       .text()
       .catch(() => "")
-    // kilocode_change start - detect both opencode and kilo markers
+    // novacode_change start - detect both opencode and kilo markers
     if (
       content.includes("# opencode") ||
       content.includes(".opencode/bin") ||
@@ -280,7 +280,7 @@ async function getShellConfigFile(): Promise<string | null> {
     ) {
       return file
     }
-    // kilocode_change end
+    // novacode_change end
   }
 
   return null
@@ -296,7 +296,7 @@ async function cleanShellConfig(file: string) {
   for (const line of lines) {
     const trimmed = line.trim()
 
-    // kilocode_change start - clean both opencode and kilo markers
+    // novacode_change start - clean both opencode and kilo markers
     if (trimmed === "# opencode" || trimmed === "# kilo") {
       skip = true
       continue
@@ -315,7 +315,7 @@ async function cleanShellConfig(file: string) {
     ) {
       continue
     }
-    // kilocode_change end
+    // novacode_change end
 
     filtered.push(line)
   }

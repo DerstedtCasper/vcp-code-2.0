@@ -14,7 +14,7 @@ process.chdir(dir)
 
 import pkg from "../package.json"
 import { Script } from "@opencode-ai/script"
-const modelsUrl = process.env.KILO_MODELS_URL || "https://models.dev" // kilocode_change
+const modelsUrl = process.env.KILO_MODELS_URL || "https://models.dev" // novacode_change
 // Fetch and generate models.dev snapshot
 const modelsData = process.env.MODELS_DEV_API_JSON
   ? await Bun.file(process.env.MODELS_DEV_API_JSON).text()
@@ -187,10 +187,10 @@ for (const item of targets) {
     },
     entrypoints: ["./src/index.ts", parserWorker, workerPath],
     define: {
-      KILO_VERSION: `'${Script.version}'`, // kilocode_change
+      KILO_VERSION: `'${Script.version}'`, // novacode_change
       OTUI_TREE_SITTER_WORKER_PATH: bunfsRoot + workerRelativePath,
       KILO_WORKER_PATH: workerPath,
-      KILO_CHANNEL: `'${Script.channel}'`, // kilocode_change
+      KILO_CHANNEL: `'${Script.channel}'`, // novacode_change
       KILO_LIBC: item.os === "linux" ? `'${item.abi ?? "glibc"}'` : "",
       KILO_MIGRATIONS: JSON.stringify(migrationEntries),
     },
@@ -206,7 +206,7 @@ for (const item of targets) {
         cpu: [item.arch],
         repository: {
           type: "git",
-          url: "https://github.com/Kilo-Org/kilocode",
+          url: "https://github.com/Kilo-Org/novacode",
         },
       },
       null,
@@ -217,20 +217,20 @@ for (const item of targets) {
 }
 
 if (Script.release) {
-  const archives: string[] = [] // kilocode_change
+  const archives: string[] = [] // novacode_change
   for (const key of Object.keys(binaries)) {
-    const archive = key.replace(pkg.name, "kilo") // kilocode_change
+    const archive = key.replace(pkg.name, "nova") // novacode_change
     if (key.includes("linux")) {
-      const out = path.resolve("dist", `${archive}.tar.gz`) // kilocode_change
-      await $`tar -czf ${out} *`.cwd(`dist/${key}/bin`) // kilocode_change
-      archives.push(out) // kilocode_change
+      const out = path.resolve("dist", `${archive}.tar.gz`) // novacode_change
+      await $`tar -czf ${out} *`.cwd(`dist/${key}/bin`) // novacode_change
+      archives.push(out) // novacode_change
     } else {
-      const out = path.resolve("dist", `${archive}.zip`) // kilocode_change
-      await $`zip -r ${out} *`.cwd(`dist/${key}/bin`) // kilocode_change
-      archives.push(out) // kilocode_change
+      const out = path.resolve("dist", `${archive}.zip`) // novacode_change
+      await $`zip -r ${out} *`.cwd(`dist/${key}/bin`) // novacode_change
+      archives.push(out) // novacode_change
     }
   }
-  await $`gh release upload v${Script.version} ${archives} --clobber` // kilocode_change
+  await $`gh release upload v${Script.version} ${archives} --clobber` // novacode_change
 }
 
 export { binaries }

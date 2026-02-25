@@ -5,7 +5,7 @@
  * This script handles i18n files by:
  * 1. Taking upstream's version as the base (to get new translation keys)
  * 2. Applying intelligent string replacements for Kilo branding
- * 3. Preserving lines marked with `// kilocode_change`
+ * 3. Preserving lines marked with `// novacode_change`
  *
  * String replacement rules:
  * - opencode.ai -> kilo.ai (domain)
@@ -14,12 +14,12 @@
  * - OpenCode -> Kilo (product name in user-visible text)
  * - opencode upgrade -> kilo upgrade (CLI commands)
  * - npx opencode -> npx kilo (CLI invocation)
- * - anomalyco/opencode -> Kilo-Org/kilocode (GitHub repo)
+ * - anomalyco/opencode -> Kilo-Org/novacode (GitHub repo)
  *
  * Preserved (not replaced):
  * - opencode.json (actual config filename)
  * - .opencode/ (actual directory name)
- * - Lines with `// kilocode_change`
+ * - Lines with `// novacode_change`
  */
 
 import { $ } from "bun"
@@ -51,12 +51,12 @@ const I18N_REPLACEMENTS: StringReplacement[] = [
   // GitHub repo references
   {
     pattern: /github\.com\/anomalyco\/opencode/g,
-    replacement: "github.com/Kilo-Org/kilocode",
+    replacement: "github.com/Kilo-Org/novacode",
     description: "GitHub URL",
   },
   {
     pattern: /anomalyco\/opencode/g,
-    replacement: "Kilo-Org/kilocode",
+    replacement: "Kilo-Org/novacode",
     description: "GitHub repo reference",
   },
 
@@ -142,14 +142,14 @@ const PRESERVE_PATTERNS = [
 ]
 
 /**
- * Check if a line should be preserved (has kilocode_change marker)
+ * Check if a line should be preserved (has novacode_change marker)
  */
 function shouldPreserveLine(line: string): boolean {
-  return line.includes("// kilocode_change")
+  return line.includes("// novacode_change")
 }
 
 /**
- * Apply string replacements to content, preserving kilocode_change lines
+ * Apply string replacements to content, preserving novacode_change lines
  */
 export function transformI18nContent(
   content: string,
@@ -161,7 +161,7 @@ export function transformI18nContent(
   let preservedCount = 0
 
   for (const line of lines) {
-    // Skip lines marked with kilocode_change
+    // Skip lines marked with novacode_change
     if (shouldPreserveLine(line)) {
       transformedLines.push(line)
       preservedCount++

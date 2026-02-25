@@ -1,4 +1,4 @@
-import type { FileNode } from "@kilocode/sdk/v2"
+import type { FileNode } from "@novacode/sdk/v2"
 
 type WatcherEvent = {
   type: string

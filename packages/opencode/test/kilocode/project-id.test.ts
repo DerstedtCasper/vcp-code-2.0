@@ -3,7 +3,7 @@ import { tmpdir } from "../fixture/fixture"
 import path from "path"
 import fs from "fs/promises"
 import { Instance } from "../../src/project/instance"
-import { getKiloProjectId } from "../../src/kilocode/project-id"
+import { getKiloProjectId } from "../../src/novacode/project-id"
 
 describe("project-id", () => {
   describe("normalization", () => {
@@ -92,14 +92,14 @@ describe("project-id", () => {
   })
 
   describe("config file priority", () => {
-    test("uses project.id from .kilocode/config.json", async () => {
+    test("uses project.id from .novacode/config.json", async () => {
       await using tmp = await tmpdir({
         git: true,
         init: async (dir) => {
           // Create config with project ID
-          await fs.mkdir(path.join(dir, ".kilocode"), { recursive: true })
+          await fs.mkdir(path.join(dir, ".novacode"), { recursive: true })
           await Bun.write(
-            path.join(dir, ".kilocode", "config.json"),
+            path.join(dir, ".novacode", "config.json"),
             JSON.stringify({
               project: {
                 id: "my-custom-project",
@@ -124,9 +124,9 @@ describe("project-id", () => {
       await using tmp = await tmpdir({
         git: true,
         init: async (dir) => {
-          await fs.mkdir(path.join(dir, ".kilocode"), { recursive: true })
+          await fs.mkdir(path.join(dir, ".novacode"), { recursive: true })
           await Bun.write(
-            path.join(dir, ".kilocode", "config.json"),
+            path.join(dir, ".novacode", "config.json"),
             JSON.stringify({
               project: {
                 id: "https://github.com/Kilo-Org/another-repo.git",
@@ -148,9 +148,9 @@ describe("project-id", () => {
       await using tmp = await tmpdir({
         git: true,
         init: async (dir) => {
-          await fs.mkdir(path.join(dir, ".kilocode"), { recursive: true })
+          await fs.mkdir(path.join(dir, ".novacode"), { recursive: true })
           await Bun.write(
-            path.join(dir, ".kilocode", "config.json"),
+            path.join(dir, ".novacode", "config.json"),
             JSON.stringify({
               project: {
                 managedIndexingEnabled: true,
@@ -174,9 +174,9 @@ describe("project-id", () => {
       await using tmp = await tmpdir({
         git: true,
         init: async (dir) => {
-          await fs.mkdir(path.join(dir, ".kilocode"), { recursive: true })
+          await fs.mkdir(path.join(dir, ".novacode"), { recursive: true })
           await Bun.write(
-            path.join(dir, ".kilocode", "config.json"),
+            path.join(dir, ".novacode", "config.json"),
             JSON.stringify({
               project: {
                 id: "",
@@ -200,9 +200,9 @@ describe("project-id", () => {
       await using tmp = await tmpdir({
         git: true,
         init: async (dir) => {
-          await fs.mkdir(path.join(dir, ".kilocode"), { recursive: true })
+          await fs.mkdir(path.join(dir, ".novacode"), { recursive: true })
           await Bun.write(
-            path.join(dir, ".kilocode", "config.json"),
+            path.join(dir, ".novacode", "config.json"),
             JSON.stringify({
               project: {
                 id: "  my-project\n",
@@ -224,9 +224,9 @@ describe("project-id", () => {
       await using tmp = await tmpdir({
         git: true,
         init: async (dir) => {
-          await fs.mkdir(path.join(dir, ".kilocode"), { recursive: true })
+          await fs.mkdir(path.join(dir, ".novacode"), { recursive: true })
           await Bun.write(
-            path.join(dir, ".kilocode", "config.json"),
+            path.join(dir, ".novacode", "config.json"),
             JSON.stringify({
               project: {
                 id: "  \n\t  ",
@@ -274,8 +274,8 @@ describe("project-id", () => {
       await using tmp = await tmpdir({
         git: true,
         init: async (dir) => {
-          await fs.mkdir(path.join(dir, ".kilocode"), { recursive: true })
-          await Bun.write(path.join(dir, ".kilocode", "config.json"), "{ invalid json")
+          await fs.mkdir(path.join(dir, ".novacode"), { recursive: true })
+          await Bun.write(path.join(dir, ".novacode", "config.json"), "{ invalid json")
 
           await Bun.$`git remote add origin https://github.com/Kilo-Org/handbook.git`.cwd(dir).quiet()
         },
@@ -294,9 +294,9 @@ describe("project-id", () => {
       await using tmp = await tmpdir({
         git: true,
         init: async (dir) => {
-          await fs.mkdir(path.join(dir, ".kilocode"), { recursive: true })
+          await fs.mkdir(path.join(dir, ".novacode"), { recursive: true })
           await Bun.write(
-            path.join(dir, ".kilocode", "config.json"),
+            path.join(dir, ".novacode", "config.json"),
             JSON.stringify({
               project: {
                 id: 12345,
@@ -362,9 +362,9 @@ describe("project-id", () => {
     test("handles plain string project IDs from config", async () => {
       await using tmp = await tmpdir({
         init: async (dir) => {
-          await fs.mkdir(path.join(dir, ".kilocode"), { recursive: true })
+          await fs.mkdir(path.join(dir, ".novacode"), { recursive: true })
           await Bun.write(
-            path.join(dir, ".kilocode", "config.json"),
+            path.join(dir, ".novacode", "config.json"),
             JSON.stringify({
               project: {
                 id: "simple-name",
@@ -386,9 +386,9 @@ describe("project-id", () => {
       const longId = "x".repeat(150)
       await using tmp = await tmpdir({
         init: async (dir) => {
-          await fs.mkdir(path.join(dir, ".kilocode"), { recursive: true })
+          await fs.mkdir(path.join(dir, ".novacode"), { recursive: true })
           await Bun.write(
-            path.join(dir, ".kilocode", "config.json"),
+            path.join(dir, ".novacode", "config.json"),
             JSON.stringify({
               project: {
                 id: longId,

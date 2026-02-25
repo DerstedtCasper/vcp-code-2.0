@@ -40,7 +40,7 @@ export namespace UI {
     blank = true
   }
 
-  // kilocode_change start
+  // novacode_change start
   export function logo(pad?: string) {
     const result: string[] = []
     const reset = "\x1b[0m"
@@ -88,7 +88,7 @@ export namespace UI {
     })
     return result.join("").trimEnd()
   }
-  // kilocode_change end
+  // novacode_change end
 
   export async function input(prompt: string): Promise<string> {
     const readline = require("readline")

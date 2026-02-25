@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test"
-import { IgnoreMigrator } from "../../src/kilocode/ignore-migrator"
+import { IgnoreMigrator } from "../../src/novacode/ignore-migrator"
 import { tmpdir } from "../fixture/fixture"
 import path from "path"
 
@@ -154,7 +154,7 @@ pattern2
   })
 
   describe("migrate", () => {
-    test("returns empty permission for project without .kilocodeignore", async () => {
+    test("returns empty permission for project without .novacodeignore", async () => {
       await using tmp = await tmpdir()
 
       const result = await IgnoreMigrator.migrate({
@@ -166,10 +166,10 @@ pattern2
       expect(Object.keys(result.permission)).toHaveLength(0)
     })
 
-    test("loads project .kilocodeignore", async () => {
+    test("loads project .novacodeignore", async () => {
       await using tmp = await tmpdir({
         init: async (dir) => {
-          await Bun.write(path.join(dir, ".kilocodeignore"), "secrets/\n*.env")
+          await Bun.write(path.join(dir, ".novacodeignore"), "secrets/\n*.env")
         },
       })
 
@@ -186,7 +186,7 @@ pattern2
     test("applies patterns to both read and edit", async () => {
       await using tmp = await tmpdir({
         init: async (dir) => {
-          await Bun.write(path.join(dir, ".kilocodeignore"), "secrets/")
+          await Bun.write(path.join(dir, ".novacodeignore"), "secrets/")
         },
       })
 
@@ -205,7 +205,7 @@ pattern2
     test("handles negation patterns correctly", async () => {
       await using tmp = await tmpdir({
         init: async (dir) => {
-          await Bun.write(path.join(dir, ".kilocodeignore"), "*.env\n!.env.example")
+          await Bun.write(path.join(dir, ".novacodeignore"), "*.env\n!.env.example")
         },
       })
 
@@ -220,11 +220,11 @@ pattern2
       expect(readRules[".env.example"]).toBe("allow")
     })
 
-    test("handles complex .kilocodeignore file", async () => {
+    test("handles complex .novacodeignore file", async () => {
       await using tmp = await tmpdir({
         init: async (dir) => {
           await Bun.write(
-            path.join(dir, ".kilocodeignore"),
+            path.join(dir, ".novacodeignore"),
             `# Secrets
 secrets/
 *.env
@@ -263,7 +263,7 @@ secrets/
     test("returns empty warnings array", async () => {
       await using tmp = await tmpdir({
         init: async (dir) => {
-          await Bun.write(path.join(dir, ".kilocodeignore"), "secrets/")
+          await Bun.write(path.join(dir, ".novacodeignore"), "secrets/")
         },
       })
 
@@ -277,7 +277,7 @@ secrets/
   })
 
   describe("loadIgnoreConfig", () => {
-    test("returns empty object for project without .kilocodeignore", async () => {
+    test("returns empty object for project without .novacodeignore", async () => {
       await using tmp = await tmpdir()
 
       const permission = await IgnoreMigrator.loadIgnoreConfig(tmp.path, true)
@@ -285,10 +285,10 @@ secrets/
       expect(Object.keys(permission)).toHaveLength(0)
     })
 
-    test("returns permission config for project with .kilocodeignore", async () => {
+    test("returns permission config for project with .novacodeignore", async () => {
       await using tmp = await tmpdir({
         init: async (dir) => {
-          await Bun.write(path.join(dir, ".kilocodeignore"), "secrets/")
+          await Bun.write(path.join(dir, ".novacodeignore"), "secrets/")
         },
       })
 

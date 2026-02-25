@@ -7,10 +7,10 @@ ENV BUN_RUNTIME_TRANSPILER_CACHE_PATH=${BUN_RUNTIME_TRANSPILER_CACHE_PATH}
 RUN apk add libgcc libstdc++ ripgrep
 
 FROM base AS build-amd64
-COPY dist/@kilocode/cli-linux-x64-baseline-musl/bin/kilo /usr/local/bin/kilo
+COPY dist/@novacode/cli-linux-x64-baseline-musl/bin/kilo /usr/local/bin/kilo
 
 FROM base AS build-arm64
-COPY dist/@kilocode/cli-linux-arm64-musl/bin/kilo /usr/local/bin/kilo
+COPY dist/@novacode/cli-linux-arm64-musl/bin/kilo /usr/local/bin/kilo
 
 ARG TARGETARCH
 FROM build-${TARGETARCH}

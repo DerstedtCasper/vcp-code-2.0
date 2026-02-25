@@ -230,7 +230,7 @@ export namespace Session {
         folderWeight: z.number(),
       }),
     ),
-    // kilocode_change start
+    // novacode_change start
     TurnOpen: BusEvent.define(
       "session.turn.open",
       z.object({
@@ -244,10 +244,10 @@ export namespace Session {
         reason: z.enum(["completed", "error", "interrupted"]),
       }),
     ),
-    // kilocode_change end
+    // novacode_change end
   }
 
-  // kilocode_change
+  // novacode_change
   export type CloseReason = z.infer<typeof Event.TurnClose.properties>["reason"]
 
   export const create = fn(
@@ -356,7 +356,7 @@ export namespace Session {
       )
     })
     const cfg = await Config.get()
-    if (!result.parentID && (Flag.KILO_AUTO_SHARE || cfg.share === "auto"))
+    if (!result.parentID && (Flag.NOVA_AUTO_SHARE || cfg.share === "auto"))
       share(result.id).catch(() => {
         // Silently ignore sharing errors during session creation
       })
@@ -384,8 +384,8 @@ export namespace Session {
     if (cfg.share === "disabled") {
       throw new Error("Sharing is disabled in configuration")
     }
-    const { KiloSessions } = await import("@/kilo-sessions/kilo-sessions")
-    const share = await KiloSessions.share(id) // kilocode_change
+    const { KiloSessions } = await import("@/nova-sessions/nova-sessions")
+    const share = await KiloSessions.share(id) // novacode_change
     Database.use((db) => {
       const row = db.update(SessionTable).set({ share_url: share.url }).where(eq(SessionTable.id, id)).returning().get()
       if (!row) throw new NotFoundError({ message: `Session not found: ${id}` })
@@ -397,8 +397,8 @@ export namespace Session {
 
   export const unshare = fn(Identifier.schema("session"), async (id) => {
     // Use ShareNext to remove the share (same as share function uses ShareNext to create)
-    const { KiloSessions } = await import("@/kilo-sessions/kilo-sessions")
-    await KiloSessions.unshare(id) // kilocode_change
+    const { KiloSessions } = await import("@/nova-sessions/nova-sessions")
+    await KiloSessions.unshare(id) // novacode_change
     Database.use((db) => {
       const row = db.update(SessionTable).set({ share_url: null }).where(eq(SessionTable.id, id)).returning().get()
       if (!row) throw new NotFoundError({ message: `Session not found: ${id}` })
@@ -624,8 +624,8 @@ export namespace Session {
       for (const child of await children(sessionID)) {
         await remove(child.id)
       }
-      const { KiloSessions } = await import("@/kilo-sessions/kilo-sessions")
-      await KiloSessions.remove(sessionID).catch(() => {}) // kilocode_change
+      const { KiloSessions } = await import("@/nova-sessions/nova-sessions")
+      await KiloSessions.remove(sessionID).catch(() => {}) // novacode_change
       // CASCADE delete handles messages and parts automatically
       Database.use((db) => {
         db.delete(SessionTable).where(eq(SessionTable.id, sessionID)).run()
@@ -746,7 +746,7 @@ export namespace Session {
       model: z.custom<Provider.Model>(),
       usage: z.custom<LanguageModelV2Usage>(),
       metadata: z.custom<ProviderMetadata>().optional(),
-      provider: z.custom<Provider.Info>().optional(), // kilocode_change
+      provider: z.custom<Provider.Info>().optional(), // novacode_change
     }),
     (input) => {
       const safe = (value: number) => {
@@ -800,7 +800,7 @@ export namespace Session {
         },
       }
 
-      // kilocode_change start - Use provider-reported cost when available for OpenRouter/Kilo
+      // novacode_change start - Use provider-reported cost when available for OpenRouter/Kilo
       // The OpenRouter AI SDK provider exposes cost at providerMetadata.openrouter.usage
       // Reference: https://openrouter.ai/docs/use-cases/usage-accounting
       // Note: The AI SDK uses camelCase (upstreamInferenceCost), not snake_case
@@ -815,12 +815,12 @@ export namespace Session {
         // For Kilo provider (BYOK), always prefer upstreamInferenceCost when available
         // The 'cost' field from OpenRouter is just their 5% fee for BYOK requests
         // For regular OpenRouter, use the cost field
-        const isKiloProvider = (input.provider?.id ?? input.model.providerID) === "kilo"
+        const isNovaProvider = (input.provider?.id ?? input.model.providerID) === "kilo"
         const upstreamCost = openrouterUsage.costDetails?.upstreamInferenceCost
         const openrouterCost = openrouterUsage.cost
 
         // Kilo is always BYOK, so prefer upstream cost. For OpenRouter, use regular cost.
-        const providerCost = isKiloProvider && upstreamCost !== undefined ? upstreamCost : openrouterCost
+        const providerCost = isNovaProvider && upstreamCost !== undefined ? upstreamCost : openrouterCost
 
         if (providerCost !== undefined && providerCost !== null && Number.isFinite(providerCost)) {
           return {
@@ -829,7 +829,7 @@ export namespace Session {
           }
         }
       }
-      // kilocode_change end
+      // novacode_change end
 
       const costInfo =
         input.model.cost?.experimentalOver200K && tokens.input + tokens.cache.read > 200_000

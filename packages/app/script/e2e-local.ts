@@ -59,8 +59,8 @@ const keepSandbox = process.env.KILO_E2E_KEEP_SANDBOX === "1"
 
 const serverEnv = {
   ...process.env,
-  KILO_DISABLE_SHARE: process.env.KILO_DISABLE_SHARE ?? "true", // kilocode_change
-  KILO_DISABLE_SESSION_INGEST: "true", // kilocode_change
+  KILO_DISABLE_SHARE: process.env.KILO_DISABLE_SHARE ?? "true", // novacode_change
+  KILO_DISABLE_SESSION_INGEST: "true", // novacode_change
   KILO_DISABLE_LSP_DOWNLOAD: "true",
   KILO_DISABLE_DEFAULT_PLUGINS: "true",
   KILO_EXPERIMENTAL_DISABLE_FILEWATCHER: "true",
@@ -72,7 +72,7 @@ const serverEnv = {
   KILO_E2E_PROJECT_DIR: repoDir,
   KILO_E2E_SESSION_TITLE: "E2E Session",
   KILO_E2E_MESSAGE: "Seeded for UI e2e",
-  KILO_E2E_MODEL: "kilo/kilo/auto", // kilocode_change
+  KILO_E2E_MODEL: "kilo/kilo/auto", // novacode_change
   KILO_CLIENT: "app",
 } satisfies Record<string, string>
 
@@ -158,7 +158,7 @@ try {
     const servermod = await import("../../opencode/src/server/server")
     inst = await import("../../opencode/src/project/instance")
     server = servermod.Server.listen({ port: serverPort, hostname: "127.0.0.1" })
-    console.log(`kilo server listening on http://127.0.0.1:${serverPort}`) // kilocode_change
+    console.log(`kilo server listening on http://127.0.0.1:${serverPort}`) // novacode_change
 
     await waitForHealth(`http://127.0.0.1:${serverPort}/global/health`)
     runner = Bun.spawn(["bun", "test:e2e", ...extraArgs], {

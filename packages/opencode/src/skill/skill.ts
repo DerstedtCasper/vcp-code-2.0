@@ -13,7 +13,7 @@ import { Bus } from "@/bus"
 import { Session } from "@/session"
 import { Discovery } from "./discovery"
 
-import { KilocodePaths } from "../kilocode/paths" // kilocode_change
+import { NovacodePaths } from "../novacode/paths" // novacode_change
 
 export namespace Skill {
   const log = Log.create({ service: "skill" })
@@ -123,13 +123,13 @@ export namespace Skill {
       }
     }
 
-    // kilocode_change start - Scan Kilocode skill directories
+    // novacode_change start - Scan Novacode skill directories
     // Scanned before OpenCode so that OpenCode skills take precedence (last one wins)
-    const kilocodeSkillDirs = await KilocodePaths.skillDirectories({
+    const novacodeSkillDirs = await NovacodePaths.skillDirectories({
       projectDir: Instance.directory,
       worktreeRoot: Instance.worktree,
     })
-    for (const dir of kilocodeSkillDirs) {
+    for (const dir of novacodeSkillDirs) {
       const matches = await Array.fromAsync(
         KILO_SKILL_GLOB.scan({
           cwd: dir,
@@ -139,7 +139,7 @@ export namespace Skill {
           dot: true,
         }),
       ).catch((error) => {
-        log.error("failed .kilocode directory scan for skills", { dir, error })
+        log.error("failed .novacode directory scan for skills", { dir, error })
         return []
       })
 
@@ -147,7 +147,7 @@ export namespace Skill {
         await addSkill(match)
       }
     }
-    // kilocode_change end
+    // novacode_change end
 
     // Scan .opencode/skill/ directories
     for (const dir of await Config.directories()) {

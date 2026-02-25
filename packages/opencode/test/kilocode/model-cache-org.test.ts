@@ -1,5 +1,5 @@
-// kilocode_change - new file
-// Regression test: OAuth accountId must flow into model fetch as kilocodeOrganizationId
+// novacode_change - new file
+// Regression test: OAuth accountId must flow into model fetch as novacodeOrganizationId
 // When a user logs in via OAuth and selects an enterprise organization, the model fetch
 // should use the organization-specific endpoint, not the personal endpoint.
 
@@ -9,7 +9,7 @@ import path from "path"
 // Capture the options passed to fetchKiloModels
 let captured: any = undefined
 
-mock.module("@kilocode/kilo-gateway", () => ({
+mock.module("@novacode/nova-gateway", () => ({
   fetchKiloModels: async (options: any) => {
     captured = options
     return {
@@ -49,7 +49,7 @@ import { Instance } from "../../src/project/instance"
 import { Auth } from "../../src/auth"
 import { ModelCache } from "../../src/provider/model-cache"
 
-test("model fetch uses accountId from OAuth auth as kilocodeOrganizationId", async () => {
+test("model fetch uses accountId from OAuth auth as novacodeOrganizationId", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
       await Bun.write(
@@ -82,13 +82,13 @@ test("model fetch uses accountId from OAuth auth as kilocodeOrganizationId", asy
 
       // The fetchKiloModels call should have received the organization ID
       expect(captured).toBeDefined()
-      expect(captured.kilocodeToken).toBe("test-oauth-token")
-      expect(captured.kilocodeOrganizationId).toBe("org-enterprise-123")
+      expect(captured.novacodeToken).toBe("test-oauth-token")
+      expect(captured.novacodeOrganizationId).toBe("org-enterprise-123")
     },
   })
 })
 
-test("model fetch without OAuth accountId does not set kilocodeOrganizationId", async () => {
+test("model fetch without OAuth accountId does not set novacodeOrganizationId", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
       await Bun.write(
@@ -117,8 +117,8 @@ test("model fetch without OAuth accountId does not set kilocodeOrganizationId", 
       await ModelCache.fetch("kilo")
 
       expect(captured).toBeDefined()
-      expect(captured.kilocodeToken).toBe("test-personal-token")
-      expect(captured.kilocodeOrganizationId).toBeUndefined()
+      expect(captured.novacodeToken).toBe("test-personal-token")
+      expect(captured.novacodeOrganizationId).toBeUndefined()
     },
   })
 })

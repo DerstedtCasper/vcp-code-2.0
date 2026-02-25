@@ -3,7 +3,7 @@ import { xdgData, xdgCache, xdgConfig, xdgState } from "xdg-basedir"
 import path from "path"
 import os from "os"
 
-const app = "kilo" // kilocode_change
+const app = "kilo" // novacode_change
 
 const data = path.join(xdgData!, app)
 const cache = path.join(xdgCache!, app)
@@ -14,7 +14,7 @@ export namespace Global {
   export const Path = {
     // Allow override via KILO_TEST_HOME for test isolation
     get home() {
-      return process.env.KILO_TEST_HOME || os.homedir() // kilocode_change
+      return process.env.KILO_TEST_HOME || os.homedir() // novacode_change
     },
     data,
     bin: path.join(data, "bin"),

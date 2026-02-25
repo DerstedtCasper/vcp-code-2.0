@@ -5,16 +5,16 @@ import z from "zod"
 import { Installation } from "../installation"
 import { Flag } from "../flag/flag"
 import { lazy } from "@/util/lazy"
-import { Config } from "../config/config" // kilocode_change
-import { ModelCache } from "./model-cache" // kilocode_change
-import { Auth } from "../auth" // kilocode_change
-import { KILO_OPENROUTER_BASE } from "@kilocode/kilo-gateway" // kilocode_change
+import { Config } from "../config/config" // novacode_change
+import { ModelCache } from "./model-cache" // novacode_change
+import { Auth } from "../auth" // novacode_change
+import { KILO_OPENROUTER_BASE } from "@novacode/nova-gateway" // novacode_change
 
 // Try to import bundled snapshot (generated at build time)
 // Falls back to undefined in dev mode when snapshot doesn't exist
 /* @ts-ignore */
 
-// kilocode_change start
+// novacode_change start
 const normalizeKiloBaseURL = (baseURL: string | undefined, orgId: string | undefined): string | undefined => {
   if (!baseURL) return undefined
   const trimmed = baseURL.replace(/\/+$/, "")
@@ -26,7 +26,7 @@ const normalizeKiloBaseURL = (baseURL: string | undefined, orgId: string | undef
   if (trimmed.includes("/openrouter")) return trimmed
   if (trimmed.endsWith("/api")) return `${trimmed}/openrouter`
   return `${trimmed}/api/openrouter`
-} // kilocode_change end
+} // novacode_change end
 
 const normalizeOptionalBaseURL = (baseURL: string | undefined): string | undefined => {
   const raw = baseURL?.trim()
@@ -86,8 +86,8 @@ export namespace ModelsDev {
         output: z.array(z.enum(["text", "audio", "image", "video", "pdf"])),
       })
       .optional(),
-    recommended: z.boolean().optional(), // kilocode_change
-    recommendedIndex: z.number().optional(), // kilocode_change
+    recommended: z.boolean().optional(), // novacode_change
+    recommendedIndex: z.number().optional(), // novacode_change
     experimental: z.boolean().optional(),
     status: z.enum(["alpha", "beta", "deprecated"]).optional(),
     options: z.record(z.string(), z.any()),
@@ -128,7 +128,7 @@ export namespace ModelsDev {
 
   export async function get() {
     const result = await Data()
-    // kilocode_change start
+    // novacode_change start
     const providers = result as Record<string, Provider>
     const config = await Config.get()
 
@@ -139,15 +139,15 @@ export namespace ModelsDev {
     // Inject kilo provider with dynamic model fetching
     if (!providers["kilo"]) {
       const kiloOptions = config.provider?.kilo?.options
-      // kilocode_change start - resolve org ID from auth (OAuth accountId) not just config
+      // novacode_change start - resolve org ID from auth (OAuth accountId) not just config
       const kiloAuth = await Auth.get("kilo")
       const kiloOrgId =
-        kiloOptions?.kilocodeOrganizationId ?? (kiloAuth?.type === "oauth" ? kiloAuth.accountId : undefined)
-      // kilocode_change end
+        kiloOptions?.novacodeOrganizationId ?? (kiloAuth?.type === "oauth" ? kiloAuth.accountId : undefined)
+      // novacode_change end
       const normalizedBaseURL = normalizeKiloBaseURL(kiloOptions?.baseURL, kiloOrgId)
       const kiloFetchOptions = {
         ...(normalizedBaseURL ? { baseURL: normalizedBaseURL } : {}),
-        ...(kiloOrgId ? { kilocodeOrganizationId: kiloOrgId } : {}),
+        ...(kiloOrgId ? { novacodeOrganizationId: kiloOrgId } : {}),
       }
       const defaultBaseURL = kiloOrgId
         ? `https://api.kilo.ai/api/organizations/${kiloOrgId}`
@@ -155,10 +155,10 @@ export namespace ModelsDev {
       const kiloModels = await ModelCache.fetch("kilo", kiloFetchOptions).catch(() => ({}))
       providers["kilo"] = {
         id: "kilo",
-        name: "Kilo Gateway",
+        name: "Nova Gateway",
         env: ["KILO_API_KEY"],
         api: ensureTrailingSlash(normalizedBaseURL ?? defaultBaseURL ?? KILO_OPENROUTER_BASE),
-        npm: "@kilocode/kilo-gateway",
+        npm: "@novacode/nova-gateway",
         models: kiloModels,
       }
       if (Object.keys(kiloModels).length === 0) {
@@ -198,7 +198,7 @@ export namespace ModelsDev {
     }
 
     return providers
-    // kilocode_change end
+    // novacode_change end
   }
 
   export async function refresh() {

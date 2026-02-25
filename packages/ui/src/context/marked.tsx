@@ -461,7 +461,7 @@ async function highlightCodeBlocks(html: string): Promise<string> {
 
 export type NativeMarkdownParser = (markdown: string) => Promise<string>
 
-// kilocode_change start
+// novacode_change start
 // Matches text that looks like a file path: contains "/" and ends with a file extension,
 // or starts with "./" or "../" or "/". Supports optional :line or :line:col suffix.
 const FILE_PATH_RE =
@@ -479,7 +479,7 @@ function parseFilePath(text: string): { path: string; line?: number; column?: nu
     column: match[3] ? parseInt(match[3], 10) : undefined,
   }
 }
-// kilocode_change end
+// novacode_change end
 
 export const { use: useMarked, provider: MarkedProvider } = createSimpleContext({
   name: "Marked",
@@ -491,7 +491,7 @@ export const { use: useMarked, provider: MarkedProvider } = createSimpleContext(
             const titleAttr = title ? ` title="${title}"` : ""
             return `<a href="${href}"${titleAttr} class="external-link" target="_blank" rel="noopener noreferrer">${text}</a>`
           },
-          // kilocode_change start
+          // novacode_change start
           codespan({ text }) {
             const file = parseFilePath(text)
             if (file) {
@@ -501,7 +501,7 @@ export const { use: useMarked, provider: MarkedProvider } = createSimpleContext(
             }
             return `<code>${text}</code>`
           },
-          // kilocode_change end
+          // novacode_change end
         },
       },
       markedKatex({

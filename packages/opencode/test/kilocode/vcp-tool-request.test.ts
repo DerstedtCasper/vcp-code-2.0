@@ -6,7 +6,7 @@ import {
   limitToolRequests,
   normalizeToolName,
   resolveBridgeMode,
-} from "../../src/kilocode/vcp-tool-request"
+} from "../../src/novacode/vcp-tool-request"
 
 test("normalizeToolName handles prefixes and separators", () => {
   expect(normalizeToolName("TOOL: Search-Memory")).toBe("search_memory")

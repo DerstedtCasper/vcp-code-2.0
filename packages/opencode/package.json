@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "version": "7.0.33",
-  "name": "@kilocode/cli",
+  "name": "@novacode/cli",
   "type": "module",
   "license": "MIT",
   "private": true,
@@ -82,9 +82,9 @@
     "@octokit/graphql": "9.0.2",
     "@octokit/rest": "catalog:",
     "@openauthjs/openauth": "catalog:",
-    "@kilocode/plugin": "workspace:*",
+    "@novacode/plugin": "workspace:*",
     "@opencode-ai/script": "workspace:*",
-    "@kilocode/sdk": "workspace:*",
+    "@novacode/sdk": "workspace:*",
     "@opencode-ai/util": "workspace:*",
     "@openrouter/ai-sdk-provider": "1.5.4",
     "@opentui/core": "0.1.79",
@@ -126,8 +126,8 @@
     "yargs": "18.0.0",
     "zod": "catalog:",
     "zod-to-json-schema": "3.24.5",
-    "@kilocode/kilo-gateway": "workspace:*",
-    "@kilocode/kilo-telemetry": "workspace:*",
+    "@novacode/nova-gateway": "workspace:*",
+    "@novacode/nova-telemetry": "workspace:*",
     "simple-git": "3.31.1"
   },
   "overrides": {

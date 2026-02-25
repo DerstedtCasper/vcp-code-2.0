@@ -39,9 +39,9 @@ beforeAll(async () => {
     useParams: () => ({}),
   }))
 
-  // kilocode_change start
-  mock.module("@kilocode/sdk/v2/client", () => ({
-    // kilocode_change end
+  // novacode_change start
+  mock.module("@novacode/sdk/v2/client", () => ({
+    // novacode_change end
     createOpencodeClient: (input: { directory: string }) => {
       createdClients.push(input.directory)
       return clientFor(input.directory)

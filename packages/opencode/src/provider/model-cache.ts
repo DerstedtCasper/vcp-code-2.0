@@ -1,5 +1,5 @@
-// kilocode_change new file
-import { fetchKiloModels } from "@kilocode/kilo-gateway"
+// novacode_change new file
+import { fetchKiloModels } from "@novacode/nova-gateway"
 import { Config } from "../config/config"
 import { Auth } from "../auth"
 import { Env } from "../env"
@@ -115,7 +115,7 @@ export namespace ModelCache {
 
   /**
    * Get cached models if available and not expired
-   * @param providerID - Provider identifier (e.g., "kilo")
+   * @param providerID - Provider identifier (e.g., "nova")
    * @returns Cached models or undefined if cache miss or expired
    */
   export function get(providerID: string): Record<string, any> | undefined {
@@ -279,43 +279,43 @@ export namespace ModelCache {
       const config = await Config.get()
       const providerConfig = config.provider?.[providerID]
       if (providerConfig?.options?.apiKey) {
-        options.kilocodeToken = providerConfig.options.apiKey
+        options.novacodeToken = providerConfig.options.apiKey
       }
 
-      // kilocode_change start
-      if (providerConfig?.options?.kilocodeOrganizationId) {
-        options.kilocodeOrganizationId = providerConfig.options.kilocodeOrganizationId
+      // novacode_change start
+      if (providerConfig?.options?.novacodeOrganizationId) {
+        options.novacodeOrganizationId = providerConfig.options.novacodeOrganizationId
       }
-      // kilocode_change end
+      // novacode_change end
 
       // Get from Auth
       const auth = await Auth.get(providerID)
       if (auth) {
         if (auth.type === "api") {
-          options.kilocodeToken = auth.key
+          options.novacodeToken = auth.key
         } else if (auth.type === "oauth") {
-          options.kilocodeToken = auth.access
-          // kilocode_change start - read org ID from OAuth accountId for enterprise model filtering
+          options.novacodeToken = auth.access
+          // novacode_change start - read org ID from OAuth accountId for enterprise model filtering
           if (auth.accountId) {
-            options.kilocodeOrganizationId = auth.accountId
+            options.novacodeOrganizationId = auth.accountId
           }
-          // kilocode_change end
+          // novacode_change end
         }
       }
 
       // Get from Env
       const env = Env.all()
       if (env.KILO_API_KEY) {
-        options.kilocodeToken = env.KILO_API_KEY
+        options.novacodeToken = env.KILO_API_KEY
       }
       if (env.KILO_ORG_ID) {
-        options.kilocodeOrganizationId = env.KILO_ORG_ID
+        options.novacodeOrganizationId = env.KILO_ORG_ID
       }
 
       log.debug("auth options resolved", {
         providerID,
-        hasToken: !!options.kilocodeToken,
-        hasOrganizationId: !!options.kilocodeOrganizationId,
+        hasToken: !!options.novacodeToken,
+        hasOrganizationId: !!options.novacodeOrganizationId,
       })
       return options
     }

@@ -36,24 +36,24 @@ import { dict as uiBr } from "@opencode-ai/ui/i18n/br"
 import { dict as uiTh } from "@opencode-ai/ui/i18n/th"
 import { dict as uiBs } from "@opencode-ai/ui/i18n/bs"
 
-// kilocode_change start
-import { dict as kiloEn } from "@kilocode/kilo-i18n/en"
-import { dict as kiloZh } from "@kilocode/kilo-i18n/zh"
-import { dict as kiloZht } from "@kilocode/kilo-i18n/zht"
-import { dict as kiloKo } from "@kilocode/kilo-i18n/ko"
-import { dict as kiloDe } from "@kilocode/kilo-i18n/de"
-import { dict as kiloEs } from "@kilocode/kilo-i18n/es"
-import { dict as kiloFr } from "@kilocode/kilo-i18n/fr"
-import { dict as kiloDa } from "@kilocode/kilo-i18n/da"
-import { dict as kiloJa } from "@kilocode/kilo-i18n/ja"
-import { dict as kiloPl } from "@kilocode/kilo-i18n/pl"
-import { dict as kiloRu } from "@kilocode/kilo-i18n/ru"
-import { dict as kiloAr } from "@kilocode/kilo-i18n/ar"
-import { dict as kiloNo } from "@kilocode/kilo-i18n/no"
-import { dict as kiloBr } from "@kilocode/kilo-i18n/br"
-import { dict as kiloTh } from "@kilocode/kilo-i18n/th"
-import { dict as kiloBs } from "@kilocode/kilo-i18n/bs"
-// kilocode_change end
+// novacode_change start
+import { dict as novaEn } from "@novacode/nova-i18n/en"
+import { dict as novaZh } from "@novacode/nova-i18n/zh"
+import { dict as novaZht } from "@novacode/nova-i18n/zht"
+import { dict as novaKo } from "@novacode/nova-i18n/ko"
+import { dict as novaDe } from "@novacode/nova-i18n/de"
+import { dict as novaEs } from "@novacode/nova-i18n/es"
+import { dict as novaFr } from "@novacode/nova-i18n/fr"
+import { dict as kiloDa } from "@novacode/nova-i18n/da"
+import { dict as novaJa } from "@novacode/nova-i18n/ja"
+import { dict as novaPl } from "@novacode/nova-i18n/pl"
+import { dict as novaRu } from "@novacode/nova-i18n/ru"
+import { dict as novaAr } from "@novacode/nova-i18n/ar"
+import { dict as kiloNo } from "@novacode/nova-i18n/no"
+import { dict as kiloBr } from "@novacode/nova-i18n/br"
+import { dict as kiloTh } from "@novacode/nova-i18n/th"
+import { dict as kiloBs } from "@novacode/nova-i18n/bs"
+// novacode_change end
 
 export type Locale =
   | "en"
@@ -73,7 +73,7 @@ export type Locale =
   | "th"
   | "bs"
 
-type RawDictionary = typeof en & typeof uiEn & typeof kiloEn // kilocode_change
+type RawDictionary = typeof en & typeof uiEn & typeof novaEn // novacode_change
 type Dictionary = i18n.Flatten<RawDictionary>
 
 function cookie(locale: Locale) {
@@ -118,20 +118,20 @@ const LABEL_KEY: Record<Locale, keyof Dictionary> = {
   bs: "language.bs",
 }
 
-const base = i18n.flatten({ ...en, ...uiEn, ...kiloEn })
+const base = i18n.flatten({ ...en, ...uiEn, ...novaEn })
 const DICT: Record<Locale, Dictionary> = {
   en: base,
-  zh: { ...base, ...i18n.flatten({ ...zh, ...uiZh, ...kiloZh }) },
-  zht: { ...base, ...i18n.flatten({ ...zht, ...uiZht, ...kiloZht }) },
-  ko: { ...base, ...i18n.flatten({ ...ko, ...uiKo, ...kiloKo }) },
-  de: { ...base, ...i18n.flatten({ ...de, ...uiDe, ...kiloDe }) },
-  es: { ...base, ...i18n.flatten({ ...es, ...uiEs, ...kiloEs }) },
-  fr: { ...base, ...i18n.flatten({ ...fr, ...uiFr, ...kiloFr }) },
+  zh: { ...base, ...i18n.flatten({ ...zh, ...uiZh, ...novaZh }) },
+  zht: { ...base, ...i18n.flatten({ ...zht, ...uiZht, ...novaZht }) },
+  ko: { ...base, ...i18n.flatten({ ...ko, ...uiKo, ...novaKo }) },
+  de: { ...base, ...i18n.flatten({ ...de, ...uiDe, ...novaDe }) },
+  es: { ...base, ...i18n.flatten({ ...es, ...uiEs, ...novaEs }) },
+  fr: { ...base, ...i18n.flatten({ ...fr, ...uiFr, ...novaFr }) },
   da: { ...base, ...i18n.flatten({ ...da, ...uiDa, ...kiloDa }) },
-  ja: { ...base, ...i18n.flatten({ ...ja, ...uiJa, ...kiloJa }) },
-  pl: { ...base, ...i18n.flatten({ ...pl, ...uiPl, ...kiloPl }) },
-  ru: { ...base, ...i18n.flatten({ ...ru, ...uiRu, ...kiloRu }) },
-  ar: { ...base, ...i18n.flatten({ ...ar, ...uiAr, ...kiloAr }) },
+  ja: { ...base, ...i18n.flatten({ ...ja, ...uiJa, ...novaJa }) },
+  pl: { ...base, ...i18n.flatten({ ...pl, ...uiPl, ...novaPl }) },
+  ru: { ...base, ...i18n.flatten({ ...ru, ...uiRu, ...novaRu }) },
+  ar: { ...base, ...i18n.flatten({ ...ar, ...uiAr, ...novaAr }) },
   no: { ...base, ...i18n.flatten({ ...no, ...uiNo, ...kiloNo }) },
   br: { ...base, ...i18n.flatten({ ...br, ...uiBr, ...kiloBr }) },
   th: { ...base, ...i18n.flatten({ ...th, ...uiTh, ...kiloTh }) },

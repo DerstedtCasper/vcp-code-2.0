@@ -7,7 +7,7 @@ import type {
   PermissionRequest,
   QuestionRequest,
   QuestionAnswer,
-} from "@kilocode/sdk/v2"
+} from "@novacode/sdk/v2"
 import { createSimpleContext } from "./helper"
 import { PreloadMultiFileDiffResult } from "@pierre/diffs/ssr"
 
@@ -52,7 +52,7 @@ export type SessionHrefFn = (sessionID: string) => string
 
 export type SyncSessionFn = (sessionID: string) => void | Promise<void>
 
-export type OpenFileFn = (filePath: string, line?: number, column?: number) => void // kilocode_change
+export type OpenFileFn = (filePath: string, line?: number, column?: number) => void // novacode_change
 
 export const { use: useData, provider: DataProvider } = createSimpleContext({
   name: "Data",
@@ -65,7 +65,7 @@ export const { use: useData, provider: DataProvider } = createSimpleContext({
     onNavigateToSession?: NavigateToSessionFn
     onSessionHref?: SessionHrefFn
     onSyncSession?: SyncSessionFn
-    onOpenFile?: OpenFileFn // kilocode_change
+    onOpenFile?: OpenFileFn // novacode_change
   }) => {
     return {
       get store() {
@@ -80,7 +80,7 @@ export const { use: useData, provider: DataProvider } = createSimpleContext({
       navigateToSession: props.onNavigateToSession,
       sessionHref: props.onSessionHref,
       syncSession: props.onSyncSession,
-      openFile: props.onOpenFile, // kilocode_change
+      openFile: props.onOpenFile, // novacode_change
     }
   },
 })

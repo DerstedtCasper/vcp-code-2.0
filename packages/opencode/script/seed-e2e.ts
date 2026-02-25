@@ -3,8 +3,8 @@ const title = process.env.KILO_E2E_SESSION_TITLE ?? "E2E Session"
 const text = process.env.KILO_E2E_MESSAGE ?? "Seeded for UI e2e"
 const model = process.env.KILO_E2E_MODEL ?? "kilo/kilo/auto"
 const parts = model.split("/")
-const providerID = parts[0] ?? "kilo" // kilocode_change
-const modelID = parts.slice(1).join("/") || "kilo/auto" // kilocode_change
+const providerID = parts[0] ?? "kilo" // novacode_change
+const modelID = parts.slice(1).join("/") || "nova/auto" // novacode_change
 const now = Date.now()
 
 const seed = async () => {
@@ -26,7 +26,7 @@ const seed = async () => {
         sessionID: session.id,
         role: "user" as const,
         time: { created: now },
-        agent: "code", // kilocode_change - renamed from "build" to "code"
+        agent: "code", // novacode_change - renamed from "build" to "code"
         model: {
           providerID,
           modelID,

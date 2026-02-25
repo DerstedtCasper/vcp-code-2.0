@@ -1,0 +1,2 @@
+// novacode_change - new file
+export * from "@opencode-ai/ui/avatar"

@@ -3,10 +3,10 @@
  * Transform package names from opencode to kilo
  *
  * This script transforms:
- * - opencode-ai -> @kilocode/cli
- * - @opencode-ai/cli -> @kilocode/cli
- * - @opencode-ai/sdk -> @kilocode/sdk
- * - @opencode-ai/plugin -> @kilocode/plugin
+ * - opencode-ai -> @novacode/cli
+ * - @opencode-ai/cli -> @novacode/cli
+ * - @opencode-ai/sdk -> @novacode/sdk
+ * - @opencode-ai/plugin -> @novacode/plugin
  */
 
 import { Glob } from "bun"
@@ -26,31 +26,31 @@ export interface TransformOptions {
 
 const PACKAGE_PATTERNS = [
   // In package.json name field
-  { pattern: /"name":\s*"opencode-ai"/, replacement: '"name": "@kilocode/cli"' },
-  { pattern: /"name":\s*"@opencode-ai\/cli"/, replacement: '"name": "@kilocode/cli"' },
+  { pattern: /"name":\s*"opencode-ai"/, replacement: '"name": "@novacode/cli"' },
+  { pattern: /"name":\s*"@opencode-ai\/cli"/, replacement: '"name": "@novacode/cli"' },
 
   // In dependencies/devDependencies
-  { pattern: /"opencode-ai":\s*"/g, replacement: '"@kilocode/cli": "' },
-  { pattern: /"@opencode-ai\/cli":\s*"/g, replacement: '"@kilocode/cli": "' },
-  { pattern: /"@opencode-ai\/sdk":\s*"/g, replacement: '"@kilocode/sdk": "' },
-  { pattern: /"@opencode-ai\/plugin":\s*"/g, replacement: '"@kilocode/plugin": "' },
+  { pattern: /"opencode-ai":\s*"/g, replacement: '"@novacode/cli": "' },
+  { pattern: /"@opencode-ai\/cli":\s*"/g, replacement: '"@novacode/cli": "' },
+  { pattern: /"@opencode-ai\/sdk":\s*"/g, replacement: '"@novacode/sdk": "' },
+  { pattern: /"@opencode-ai\/plugin":\s*"/g, replacement: '"@novacode/plugin": "' },
 
   // In import statements (supports subpaths like @opencode-ai/sdk/v2)
-  { pattern: /from\s+["']opencode-ai["']/g, replacement: 'from "@kilocode/cli"' },
-  { pattern: /from\s+["']@opencode-ai\/cli(\/[^"']*)?["']/g, replacement: 'from "@kilocode/cli$1"' },
-  { pattern: /from\s+["']@opencode-ai\/sdk(\/[^"']*)?["']/g, replacement: 'from "@kilocode/sdk$1"' },
-  { pattern: /from\s+["']@opencode-ai\/plugin(\/[^"']*)?["']/g, replacement: 'from "@kilocode/plugin$1"' },
+  { pattern: /from\s+["']opencode-ai["']/g, replacement: 'from "@novacode/cli"' },
+  { pattern: /from\s+["']@opencode-ai\/cli(\/[^"']*)?["']/g, replacement: 'from "@novacode/cli$1"' },
+  { pattern: /from\s+["']@opencode-ai\/sdk(\/[^"']*)?["']/g, replacement: 'from "@novacode/sdk$1"' },
+  { pattern: /from\s+["']@opencode-ai\/plugin(\/[^"']*)?["']/g, replacement: 'from "@novacode/plugin$1"' },
 
   // In require statements (supports subpaths like @opencode-ai/sdk/v2)
-  { pattern: /require\(["']opencode-ai["']\)/g, replacement: 'require("@kilocode/cli")' },
-  { pattern: /require\(["']@opencode-ai\/cli(\/[^"']*)?["']\)/g, replacement: 'require("@kilocode/cli$1")' },
-  { pattern: /require\(["']@opencode-ai\/sdk(\/[^"']*)?["']\)/g, replacement: 'require("@kilocode/sdk$1")' },
-  { pattern: /require\(["']@opencode-ai\/plugin(\/[^"']*)?["']\)/g, replacement: 'require("@kilocode/plugin$1")' },
+  { pattern: /require\(["']opencode-ai["']\)/g, replacement: 'require("@novacode/cli")' },
+  { pattern: /require\(["']@opencode-ai\/cli(\/[^"']*)?["']\)/g, replacement: 'require("@novacode/cli$1")' },
+  { pattern: /require\(["']@opencode-ai\/sdk(\/[^"']*)?["']\)/g, replacement: 'require("@novacode/sdk$1")' },
+  { pattern: /require\(["']@opencode-ai\/plugin(\/[^"']*)?["']\)/g, replacement: 'require("@novacode/plugin$1")' },
 
   // In npx/npm commands
-  { pattern: /npx opencode-ai/g, replacement: "npx @kilocode/cli" },
-  { pattern: /npm install opencode-ai/g, replacement: "npm install @kilocode/cli" },
-  { pattern: /bun add opencode-ai/g, replacement: "bun add @kilocode/cli" },
+  { pattern: /npx opencode-ai/g, replacement: "npx @novacode/cli" },
+  { pattern: /npm install opencode-ai/g, replacement: "npm install @novacode/cli" },
+  { pattern: /bun add opencode-ai/g, replacement: "bun add @novacode/cli" },
 ]
 
 /**

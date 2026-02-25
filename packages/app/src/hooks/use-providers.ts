@@ -3,7 +3,7 @@ import { decode64 } from "@/utils/base64"
 import { useParams } from "@solidjs/router"
 import { createMemo } from "solid-js"
 
-// kilocode_change start - Preferred providers list (order determines display priority)
+// novacode_change start - Preferred providers list (order determines display priority)
 export const popularProviders = [
   "kilo",
   "opencode",
@@ -14,7 +14,7 @@ export const popularProviders = [
   "openrouter",
   "vercel",
 ]
-// kilocode_change end
+// novacode_change end
 const popularProviderSet = new Set(popularProviders)
 
 export function useProviders() {

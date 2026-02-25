@@ -5,7 +5,7 @@ on:
     types: [opened, edited, synchronize]
 
 jobs:
-  # kilocode_change start
+  # novacode_change start
   check-author:
     uses: ./.github/workflows/check-org-member.yml
     with:
@@ -17,7 +17,7 @@ jobs:
   check-standards:
     needs: check-author
     if: needs.check-author.outputs['is-member'] == 'false'
-    # kilocode_change end
+    # novacode_change end
     runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       pull-requests: write

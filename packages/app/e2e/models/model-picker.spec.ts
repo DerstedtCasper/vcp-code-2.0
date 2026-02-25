@@ -2,9 +2,9 @@ import { test, expect } from "../fixtures"
 import { promptSelector } from "../selectors"
 import { clickListItem } from "../actions"
 
-// kilocode_change start
+// novacode_change start
 test.skip("smoke model selection updates prompt footer", async ({ page, gotoSession }) => {
-  // kilocode_change end
+  // novacode_change end
   await gotoSession()
 
   await page.locator(promptSelector).click()

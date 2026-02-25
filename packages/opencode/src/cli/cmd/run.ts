@@ -6,7 +6,7 @@ import { cmd } from "./cmd"
 import { Flag } from "../../flag/flag"
 import { bootstrap } from "../bootstrap"
 import { EOL } from "os"
-import { createOpencodeClient, type Message, type OpencodeClient, type ToolPart } from "@kilocode/sdk/v2"
+import { createOpencodeClient, type Message, type OpencodeClient, type ToolPart } from "@novacode/sdk/v2"
 import { Server } from "../../server/server"
 import { Provider } from "../../provider/provider"
 import { Agent } from "../../agent/agent"
@@ -214,7 +214,7 @@ function normalizePath(input?: string) {
 
 export const RunCommand = cmd({
   command: "run [message..]",
-  describe: "run kilo with a message", // kilocode_change
+  describe: "run kilo with a message", // novacode_change
   builder: (yargs: Argv) => {
     return (
       yargs
@@ -292,14 +292,14 @@ export const RunCommand = cmd({
           describe: "show thinking blocks",
           default: false,
         })
-        // kilocode_change start - auto approve all permissions
+        // novacode_change start - auto approve all permissions
         .option("auto", {
           type: "boolean",
           describe: "auto-approve all permissions (for autonomous/pipeline usage)",
           default: false,
         })
     )
-    // kilocode_change end
+    // novacode_change end
   },
   handler: async (args) => {
     let message = [...args.message, ...(args["--"] || [])]
@@ -401,7 +401,7 @@ export const RunCommand = cmd({
     async function share(sdk: OpencodeClient, sessionID: string) {
       const cfg = await sdk.config.get()
       if (!cfg.data) return
-      if (cfg.data.share !== "auto" && !Flag.KILO_AUTO_SHARE && !args.share) return
+      if (cfg.data.share !== "auto" && !Flag.NOVA_AUTO_SHARE && !args.share) return
       const res = await sdk.session.share({ sessionID }).catch((error) => {
         if (error instanceof Error && error.message.includes("disabled")) {
           UI.println(UI.Style.TEXT_DANGER_BOLD + "!  " + error.message)
@@ -542,7 +542,7 @@ export const RunCommand = cmd({
             const permission = event.properties
             if (permission.sessionID !== sessionID) continue
 
-            // kilocode_change start - In auto mode, automatically approve all permissions without prompting
+            // novacode_change start - In auto mode, automatically approve all permissions without prompting
             if (args.auto) {
               await sdk.permission.respond({
                 sessionID,
@@ -551,7 +551,7 @@ export const RunCommand = cmd({
               })
               continue
             }
-            // kilocode_change end
+            // novacode_change end
 
             UI.println(
               UI.Style.TEXT_WARNING_BOLD + "!",

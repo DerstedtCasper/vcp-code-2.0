@@ -9,7 +9,7 @@ const baseCtx: Omit<Tool.Context, "ask"> = {
   sessionID: "test",
   messageID: "",
   callID: "",
-  agent: "code", // kilocode_change
+  agent: "code", // novacode_change
   abort: AbortSignal.any([]),
   messages: [],
   metadata: () => {},

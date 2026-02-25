@@ -4,7 +4,7 @@ import { Tool } from "./tool"
 import DESCRIPTION from "./search_memory.txt"
 import { Session } from "@/session"
 import type { MessageV2 } from "@/session/message-v2"
-import { VcpMemoryRuntime } from "@/kilocode/memory-runtime"
+import { VcpMemoryRuntime } from "@/novacode/memory-runtime"
 
 type MemoryScope = "session" | "project" | "user" | "folder" | "both"
 type RoleScope = "user" | "assistant" | "both"

@@ -5,7 +5,7 @@ on:
     types: [opened]
 
 jobs:
-  # kilocode_change start
+  # novacode_change start
   check-author:
     uses: ./.github/workflows/check-org-member.yml
     with:
@@ -17,7 +17,7 @@ jobs:
   check-duplicates:
     needs: check-author
     if: needs.check-author.outputs['is-member'] == 'false'
-    # kilocode_change end
+    # novacode_change end
     runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       contents: read
@@ -34,10 +34,10 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      # kilocode_change start
+      # novacode_change start
       - name: Setup Kilo
         uses: ./.github/actions/setup-kilo
-      # kilocode_change end
+      # novacode_change end
 
       - name: Build prompt
         env:
@@ -57,10 +57,10 @@ jobs:
 
       - name: Check for duplicate PRs
         env:
-          # kilocode_change start
+          # novacode_change start
           KILO_API_KEY: ${{ secrets.KILO_API_KEY }}
           KILO_ORG_ID: ${{ secrets.KILO_ORG_ID }}
-          # kilocode_change end
+          # novacode_change end
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
@@ -73,7 +73,7 @@ jobs:
           fi
 
   add-contributor-label:
-    runs-on: blacksmith-2vcpu-ubuntu-2404 # kilocode_change
+    runs-on: blacksmith-2vcpu-ubuntu-2404 # novacode_change
     permissions:
       pull-requests: write
       issues: write

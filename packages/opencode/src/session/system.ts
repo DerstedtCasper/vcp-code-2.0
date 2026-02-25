@@ -11,21 +11,21 @@ import PROMPT_CODEX from "./prompt/codex_header.txt"
 import PROMPT_TRINITY from "./prompt/trinity.txt"
 import type { Provider } from "@/provider/provider"
 
-// kilocode_change start
-import SOUL from "../kilocode/soul.txt"
-import { editorContextEnvLines, type EditorContext } from "../kilocode/editor-context"
-// kilocode_change end
+// novacode_change start
+import SOUL from "../novacode/soul.txt"
+import { editorContextEnvLines, type EditorContext } from "../novacode/editor-context"
+// novacode_change end
 
 export namespace SystemPrompt {
   export function instructions() {
     return PROMPT_CODEX.trim()
   }
 
-  // kilocode_change start
+  // novacode_change start
   export function soul() {
     return SOUL.trim()
   }
-  // kilocode_change end
+  // novacode_change end
 
   export function provider(model: Provider.Model) {
     if (model.api.id.includes("gpt-5")) return [PROMPT_CODEX]
@@ -37,9 +37,9 @@ export namespace SystemPrompt {
     return [PROMPT_ANTHROPIC_WITHOUT_TODO]
   }
 
-  // kilocode_change start
+  // novacode_change start
   export async function environment(model: Provider.Model, editorContext?: EditorContext) {
-    // kilocode_change end
+    // novacode_change end
     const project = Instance.project
     return [
       [
@@ -49,7 +49,7 @@ export namespace SystemPrompt {
         `  Working directory: ${Instance.directory}`,
         `  Is directory a git repo: ${project.vcs === "git" ? "yes" : "no"}`,
         `  Platform: ${process.platform}`,
-        ...editorContextEnvLines(editorContext), // kilocode_change
+        ...editorContextEnvLines(editorContext), // novacode_change
         `</env>`,
         `<directories>`,
         `  ${

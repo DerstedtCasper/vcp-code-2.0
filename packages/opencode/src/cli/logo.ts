@@ -1,4 +1,4 @@
-// kilocode_change start
+// novacode_change start
 export const logo = {
   left: ["", "", ""],
   right: [
@@ -7,5 +7,5 @@ export const logo = {
     `██ ▀█▄ ██ ██████ ▀████▀   ▀█████ ██████ ██ `,
   ],
 }
-// kilocode_change end
+// novacode_change end
 export const marks = "_^~"

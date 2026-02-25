@@ -60,10 +60,10 @@ export interface MergeConfig {
 
 export const defaultConfig: MergeConfig = {
   packageMappings: [
-    { from: "opencode-ai", to: "@kilocode/cli" },
-    { from: "@opencode-ai/cli", to: "@kilocode/cli" },
-    { from: "@opencode-ai/sdk", to: "@kilocode/sdk" },
-    { from: "@opencode-ai/plugin", to: "@kilocode/plugin" },
+    { from: "opencode-ai", to: "@novacode/cli" },
+    { from: "@opencode-ai/cli", to: "@novacode/cli" },
+    { from: "@opencode-ai/sdk", to: "@novacode/sdk" },
+    { from: "@opencode-ai/plugin", to: "@novacode/plugin" },
   ],
 
   keepOurs: [
@@ -195,10 +195,10 @@ export const defaultConfig: MergeConfig = {
   ],
 
   kiloDirectories: [
-    "packages/opencode/src/kilocode",
-    "packages/opencode/test/kilocode",
-    "packages/kilo-gateway",
-    "packages/kilo-telemetry",
+    "packages/opencode/src/novacode",
+    "packages/opencode/test/novacode",
+    "packages/nova-gateway",
+    "packages/nova-telemetry",
     "script/upstream",
   ],
 

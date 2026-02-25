@@ -1,4 +1,4 @@
-import type { Project, ProviderListResponse } from "@kilocode/sdk/v2/client"
+import type { Project, ProviderListResponse } from "@novacode/sdk/v2/client"
 
 export const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0)
 

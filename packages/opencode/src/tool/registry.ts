@@ -16,7 +16,7 @@ import { Tool } from "./tool"
 import { Instance } from "../project/instance"
 import { Config } from "../config/config"
 import path from "path"
-import { type ToolContext as PluginToolContext, type ToolDefinition } from "@kilocode/plugin"
+import { type ToolContext as PluginToolContext, type ToolDefinition } from "@novacode/plugin"
 import z from "zod"
 import { Plugin } from "../plugin"
 import { WebSearchTool } from "./websearch"
@@ -98,7 +98,7 @@ export namespace ToolRegistry {
 
     return [
       InvalidTool,
-      ...(["app", "cli", "desktop", "vscode"].includes(Flag.KILO_CLIENT) ? [QuestionTool] : []), // kilocode_change
+      ...(["app", "cli", "desktop", "vscode"].includes(Flag.KILO_CLIENT) ? [QuestionTool] : []), // novacode_change
       BashTool,
       ReadTool,
       GlobTool,
@@ -137,11 +137,11 @@ export namespace ToolRegistry {
       tools
         .filter((t) => {
           // Enable websearch/codesearch for zen/kilo users OR via enable flag
-          // kilocode_change start
+          // novacode_change start
           if (t.id === "codesearch" || t.id === "websearch") {
             return model.providerID === "opencode" || model.providerID === "kilo" || Flag.KILO_ENABLE_EXA
           }
-          // kilocode_change end
+          // novacode_change end
 
           // use apply tool in same format as codex
           const usePatch =

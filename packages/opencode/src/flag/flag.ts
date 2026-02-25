@@ -1,11 +1,11 @@
-// kilocode_change - renamed all OPENCODE_ env vars to KILO_
+// novacode_change - renamed all OPENCODE_ env vars to KILO_
 function truthy(key: string) {
   const value = process.env[key]?.toLowerCase()
   return value === "true" || value === "1"
 }
 
 export namespace Flag {
-  export const KILO_AUTO_SHARE = truthy("KILO_AUTO_SHARE")
+  export const NOVA_AUTO_SHARE = truthy("NOVA_AUTO_SHARE")
   export const KILO_GIT_BASH_PATH = process.env["KILO_GIT_BASH_PATH"]
   export const KILO_CONFIG = process.env["KILO_CONFIG"]
   export declare const KILO_CONFIG_DIR: string | undefined

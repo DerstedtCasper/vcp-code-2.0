@@ -33,11 +33,11 @@ import { proxied } from "@/util/proxied"
 import { iife } from "@/util/iife"
 import { Control } from "@/control"
 
-import { ModesMigrator } from "../kilocode/modes-migrator" // kilocode_change
-import { RulesMigrator } from "../kilocode/rules-migrator" // kilocode_change
-import { WorkflowsMigrator } from "../kilocode/workflows-migrator" // kilocode_change
-import { McpMigrator } from "../kilocode/mcp-migrator" // kilocode_change
-import { IgnoreMigrator } from "../kilocode/ignore-migrator" // kilocode_change
+import { ModesMigrator } from "../novacode/modes-migrator" // novacode_change
+import { RulesMigrator } from "../novacode/rules-migrator" // novacode_change
+import { WorkflowsMigrator } from "../novacode/workflows-migrator" // novacode_change
+import { McpMigrator } from "../novacode/mcp-migrator" // novacode_change
+import { IgnoreMigrator } from "../novacode/ignore-migrator" // novacode_change
 
 export namespace Config {
   const ModelId = z.string().meta({ $ref: "https://models.dev/model-schema.json#/$defs/Model" })
@@ -57,7 +57,7 @@ export namespace Config {
     }
   }
 
-  // kilocode_change start: Custom merge function that concatenates array fields instead of replacing them
+  // novacode_change start: Custom merge function that concatenates array fields instead of replacing them
   function mergeConfigConcatArrays(target: Info, source: Info): Info {
     const merged = mergeDeep(target, source)
     if (target.plugin && source.plugin) {
@@ -68,7 +68,7 @@ export namespace Config {
     }
     return merged
   }
-  // kilocode_change end
+  // novacode_change end
 
   const managedConfigDir = process.env.KILO_TEST_MANAGED_CONFIG_DIR || getManagedConfigDir()
 
@@ -87,7 +87,7 @@ export namespace Config {
   export const state = Instance.state(async () => {
     const auth = await Auth.all()
 
-    // This ensures Opencode native configs always take precedence over legacy Kilocode configs
+    // This ensures Opencode native configs always take precedence over legacy Novacode configs
     // Config loading order (low -> high precedence): https://opencode.ai/docs/config#precedence-order
     // 1) Remote .well-known/opencode (org defaults)
     // 2) Global config (~/.config/opencode/opencode.json{,c})
@@ -98,83 +98,83 @@ export namespace Config {
     // Managed config directory is enterprise-only and always overrides everything above.
     let result: Info = {}
 
-    // kilocode_change start - Load Kilocode configs first (lowest precedence)
-    // Load Kilocode custom modes (legacy fallback)
+    // novacode_change start - Load Novacode configs first (lowest precedence)
+    // Load Novacode custom modes (legacy fallback)
     try {
-      const kilocodeMigration = await ModesMigrator.migrate({
+      const novacodeMigration = await ModesMigrator.migrate({
         projectDir: Instance.directory,
       })
-      if (Object.keys(kilocodeMigration.agents).length > 0) {
-        result = mergeConfigConcatArrays(result, { agent: kilocodeMigration.agents })
-        log.debug("loaded kilocode custom modes", {
-          count: Object.keys(kilocodeMigration.agents).length,
-          modes: Object.keys(kilocodeMigration.agents),
+      if (Object.keys(novacodeMigration.agents).length > 0) {
+        result = mergeConfigConcatArrays(result, { agent: novacodeMigration.agents })
+        log.debug("loaded novacode custom modes", {
+          count: Object.keys(novacodeMigration.agents).length,
+          modes: Object.keys(novacodeMigration.agents),
         })
       }
-      for (const skipped of kilocodeMigration.skipped) {
-        log.debug("skipped kilocode mode", { slug: skipped.slug, reason: skipped.reason })
+      for (const skipped of novacodeMigration.skipped) {
+        log.debug("skipped novacode mode", { slug: skipped.slug, reason: skipped.reason })
       }
     } catch (err) {
-      log.warn("failed to load kilocode modes", { error: err })
+      log.warn("failed to load novacode modes", { error: err })
     }
 
-    // Load Kilocode workflows as commands (legacy fallback)
+    // Load Novacode workflows as commands (legacy fallback)
     try {
       const workflowsMigration = await WorkflowsMigrator.migrate({
         projectDir: Instance.directory,
       })
       if (Object.keys(workflowsMigration.commands).length > 0) {
         result = mergeConfigConcatArrays(result, { command: workflowsMigration.commands })
-        log.debug("loaded kilocode workflows as commands", {
+        log.debug("loaded novacode workflows as commands", {
           count: Object.keys(workflowsMigration.commands).length,
           commands: Object.keys(workflowsMigration.commands),
         })
       }
     } catch (err) {
-      log.warn("failed to load kilocode workflows", { error: err })
+      log.warn("failed to load novacode workflows", { error: err })
     }
 
-    // Load Kilocode rules (legacy fallback)
+    // Load Novacode rules (legacy fallback)
     try {
-      const kilocodeRules = await RulesMigrator.migrate({
+      const novacodeRules = await RulesMigrator.migrate({
         projectDir: Instance.directory,
       })
-      if (kilocodeRules.instructions.length > 0) {
-        result = mergeConfigConcatArrays(result, { instructions: kilocodeRules.instructions })
-        log.debug("loaded kilocode rules", {
-          count: kilocodeRules.instructions.length,
-          files: kilocodeRules.instructions,
+      if (novacodeRules.instructions.length > 0) {
+        result = mergeConfigConcatArrays(result, { instructions: novacodeRules.instructions })
+        log.debug("loaded novacode rules", {
+          count: novacodeRules.instructions.length,
+          files: novacodeRules.instructions,
         })
       }
-      for (const warning of kilocodeRules.warnings) {
-        log.debug("kilocode rules warning", { warning })
+      for (const warning of novacodeRules.warnings) {
+        log.debug("novacode rules warning", { warning })
       }
     } catch (err) {
-      log.warn("failed to load kilocode rules", { error: err })
+      log.warn("failed to load novacode rules", { error: err })
     }
 
-    // Load Kilocode MCP servers (legacy fallback)
-    const kilocodeMcp = await McpMigrator.loadMcpConfig(Instance.directory)
-    if (Object.keys(kilocodeMcp).length > 0) {
-      result = mergeConfigConcatArrays(result, { mcp: kilocodeMcp })
+    // Load Novacode MCP servers (legacy fallback)
+    const novacodeMcp = await McpMigrator.loadMcpConfig(Instance.directory)
+    if (Object.keys(novacodeMcp).length > 0) {
+      result = mergeConfigConcatArrays(result, { mcp: novacodeMcp })
     }
 
-    // Load Kilocode .kilocodeignore patterns (legacy fallback)
+    // Load Novacode .novacodeignore patterns (legacy fallback)
     try {
       const ignorePermission = await IgnoreMigrator.loadIgnoreConfig(Instance.directory)
       if (Object.keys(ignorePermission).length > 0) {
         result = mergeConfigConcatArrays(result, { permission: ignorePermission })
-        log.debug("loaded kilocode ignore patterns", {
+        log.debug("loaded novacode ignore patterns", {
           hasRead: !!ignorePermission.read,
           hasEdit: !!ignorePermission.edit,
         })
       }
     } catch (err) {
-      log.warn("failed to load kilocode ignore patterns", { error: err })
+      log.warn("failed to load novacode ignore patterns", { error: err })
     }
-    // kilocode_change end
+    // novacode_change end
 
-    // Load remote/well-known config (overrides Kilocode legacy configs)
+    // Load remote/well-known config (overrides Novacode legacy configs)
     // This allows organizations to provide default configs that users can override
     for (const [key, value] of Object.entries(auth)) {
       if (value.type === "wellknown") {
@@ -187,7 +187,7 @@ export namespace Config {
         const wellknown = (await response.json()) as any
         const remoteConfig = wellknown.config ?? {}
         // Add $schema to prevent load() from trying to write back to a non-existent file
-        if (!remoteConfig.$schema) remoteConfig.$schema = "https://kilo.ai/config.json" // kilocode_change
+        if (!remoteConfig.$schema) remoteConfig.$schema = "https://kilo.ai/config.json" // novacode_change
         result = merge(result, await load(JSON.stringify(remoteConfig), `${key}/.well-known/opencode`))
         log.debug("loaded remote config from well-known", { url: key })
       }
@@ -1010,7 +1010,7 @@ export namespace Config {
       terminal_suspend: z.string().optional().default("ctrl+z").describe("Suspend terminal"),
       terminal_title_toggle: z.string().optional().default("none").describe("Toggle terminal title"),
       tips_toggle: z.string().optional().default("<leader>h").describe("Toggle tips on home screen"),
-      news_toggle: z.string().optional().default("none").describe("Toggle news on home screen"), // kilocode_change
+      news_toggle: z.string().optional().default("none").describe("Toggle news on home screen"), // novacode_change
       display_thinking: z.string().optional().default("none").describe("Toggle thinking blocks visibility"),
     })
     .strict()
@@ -1345,14 +1345,14 @@ export namespace Config {
       small_model: ModelId.describe(
         "Small model to use for tasks like title generation in the format of provider/model",
       ).optional(),
-      // kilocode_change start - renamed from "build" to "code"
+      // novacode_change start - renamed from "build" to "code"
       default_agent: z
         .string()
         .optional()
         .describe(
           "Default agent to use when none is specified. Must be a primary agent. Falls back to 'code' if not set or if the specified agent is invalid.",
         ),
-      // kilocode_change end
+      // novacode_change end
       username: z
         .string()
         .optional()
@@ -1370,10 +1370,10 @@ export namespace Config {
           // primary
           plan: Agent.optional(),
           build: Agent.optional(),
-          debug: Agent.optional(), // kilocode_change
-          orchestrator: Agent.optional(), // kilocode_change
+          debug: Agent.optional(), // novacode_change
+          orchestrator: Agent.optional(), // novacode_change
           agent_team: Agent.optional(),
-          ask: Agent.optional(), // kilocode_change
+          ask: Agent.optional(), // novacode_change
           // subagent
           general: Agent.optional(),
           explore: Agent.optional(),
@@ -1479,9 +1479,9 @@ export namespace Config {
         .object({
           disable_paste_summary: z.boolean().optional(),
           batch_tool: z.boolean().optional().describe("Enable the batch tool"),
-          // kilocode_change start - enable telemetry by default
+          // novacode_change start - enable telemetry by default
           openTelemetry: z.boolean().default(true).describe("Enable telemetry. Set to false to opt-out."),
-          // kilocode_change end
+          // novacode_change end
           primary_tools: z
             .array(z.string())
             .optional()
@@ -1521,7 +1521,7 @@ export namespace Config {
         .then(async (mod) => {
           const { provider, model, ...rest } = mod.default
           if (provider && model) result.model = `${provider}/${model}`
-          result["$schema"] = "https://kilo.ai/config.json" // kilocode_change
+          result["$schema"] = "https://kilo.ai/config.json" // novacode_change
           result = mergeDeep(result, rest)
           await Bun.write(path.join(Global.Path.config, "config.json"), JSON.stringify(result, null, 2))
           await fs.unlink(legacy)
@@ -1614,9 +1614,9 @@ export namespace Config {
     const parsed = Info.safeParse(data)
     if (parsed.success) {
       if (!parsed.data.$schema) {
-        parsed.data.$schema = "https://kilo.ai/config.json" // kilocode_change
+        parsed.data.$schema = "https://kilo.ai/config.json" // novacode_change
         // Write the $schema to the original text to preserve variables like {env:VAR}
-        const updated = original.replace(/^\s*\{/, '{\n  "$schema": "https://kilo.ai/config.json",') // kilocode_change
+        const updated = original.replace(/^\s*\{/, '{\n  "$schema": "https://kilo.ai/config.json",') // novacode_change
         await Bun.write(configFilepath, updated).catch(() => {})
       }
       const data = parsed.data

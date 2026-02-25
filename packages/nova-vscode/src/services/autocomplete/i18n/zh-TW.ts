@@ -1,0 +1,45 @@
+// zh-TW runtime translations for autocomplete
+
+export const dict = {
+  "novacode:autocomplete.statusBar.enabled": "$(nova-logo) Autocomplete",
+  "novacode:autocomplete.statusBar.snoozed": "已暫停",
+  "novacode:autocomplete.statusBar.warning": "$(warning) Autocomplete",
+  "novacode:autocomplete.statusBar.tooltip.basic": "Nova Code Autocomplete",
+  "novacode:autocomplete.statusBar.tooltip.disabled": "Nova Code Autocomplete（已停用）",
+  "novacode:autocomplete.statusBar.tooltip.noCredits":
+    "**帳戶中沒有額度**\n\nNova Code 帳戶沒有額度。若要使用 Autocomplete，請為帳戶儲值。\n\n[開啟設定](command:vcp-code.new.settingsButtonClicked)",
+  "novacode:autocomplete.statusBar.tooltip.noUsableProvider":
+    "**未設定 Autocomplete 模型**\n\n若要啟用 Autocomplete，請新增一個使用以下支援供應商的設定檔：{{providers}}。\n\n[開啟設定](command:vcp-code.new.settingsButtonClicked)",
+  "novacode:autocomplete.statusBar.tooltip.sessionTotal": "工作階段總費用：",
+  "novacode:autocomplete.statusBar.tooltip.provider": "供應商：",
+  "novacode:autocomplete.statusBar.tooltip.model": "模型：",
+  "novacode:autocomplete.statusBar.tooltip.profile": "設定檔：",
+  "novacode:autocomplete.statusBar.tooltip.defaultProfile": "預設",
+  "novacode:autocomplete.statusBar.tooltip.completionSummary":
+    "在 {{startTime}} 至 {{endTime}} 之間完成了 {{count}} 次補齊，總費用為 {{cost}}。",
+  "novacode:autocomplete.statusBar.tooltip.providerInfo": "Autocomplete 由 {{provider}} 的 {{model}} 提供。",
+  "novacode:autocomplete.statusBar.cost.zero": "$0.00",
+  "novacode:autocomplete.statusBar.cost.lessThanCent": "<$0.01",
+  "novacode:autocomplete.toggleMessage": "Nova Code Autocomplete {{status}}",
+  "novacode:autocomplete.progress.title": "Nova Code",
+  "novacode:autocomplete.progress.analyzing": "正在分析程式碼...",
+  "novacode:autocomplete.progress.generating": "正在產生建議編輯...",
+  "novacode:autocomplete.progress.processing": "正在處理建議編輯...",
+  "novacode:autocomplete.progress.showing": "正在顯示建議編輯...",
+  "novacode:autocomplete.input.title": "Nova Code：快速任務",
+  "novacode:autocomplete.input.placeholder": "例如「重構此函式以提升效率」",
+  "novacode:autocomplete.commands.generateSuggestions": "Nova Code：產生建議編輯",
+  "novacode:autocomplete.commands.displaySuggestions": "顯示建議編輯",
+  "novacode:autocomplete.commands.cancelSuggestions": "取消建議編輯",
+  "novacode:autocomplete.commands.applyCurrentSuggestion": "套用目前的建議編輯",
+  "novacode:autocomplete.commands.applyAllSuggestions": "套用所有建議編輯",
+  "novacode:autocomplete.commands.category": "Nova Code",
+  "novacode:autocomplete.codeAction.title": "Nova Code：建議編輯",
+  "novacode:autocomplete.chatParticipant.fullName": "Nova Code Agent",
+  "novacode:autocomplete.chatParticipant.name": "Agent",
+  "novacode:autocomplete.chatParticipant.description": "可以協助處理快速任務和建議編輯。",
+  "novacode:autocomplete.incompatibilityExtensionPopup.message":
+    "Nova Code Autocomplete 因與 GitHub Copilot 衝突而被封鎖。若要修正此問題，必須停用 Copilot 的行內建議。",
+  "novacode:autocomplete.incompatibilityExtensionPopup.disableCopilot": "停用 Copilot",
+  "novacode:autocomplete.incompatibilityExtensionPopup.disableInlineAssist": "停用 Autocomplete",
+}

@@ -26,7 +26,7 @@ import {
   QuestionRequest,
   QuestionAnswer,
   QuestionInfo,
-} from "@kilocode/sdk/v2"
+} from "@novacode/sdk/v2"
 import { createStore } from "solid-js/store"
 import { useData } from "../context"
 import { useDiffComponent } from "../context/diff"
@@ -683,7 +683,7 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // kilocode_change start
+  // novacode_change start
   const handleMarkdownClick = (e: MouseEvent) => {
     if (!data.openFile) return
     const target = e.target
@@ -698,13 +698,13 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
     const column = colAttr ? parseInt(colAttr, 10) : undefined
     data.openFile(path, line, column)
   }
-  // kilocode_change end
+  // novacode_change end
 
   return (
     <Show when={throttledText()}>
       <div data-component="text-part">
         <div data-slot="text-part-body">
-          <Markdown text={throttledText()} cacheKey={part.id} onClick={handleMarkdownClick} /> {/* kilocode_change */}
+          <Markdown text={throttledText()} cacheKey={part.id} onClick={handleMarkdownClick} /> {/* novacode_change */}
           <div data-slot="text-part-copy-wrapper">
             <Tooltip
               value={copied() ? i18n.t("ui.message.copied") : i18n.t("ui.message.copy")}
@@ -729,11 +729,11 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
 
 PART_MAPPING["reasoning"] = function ReasoningPartDisplay(props) {
   const part = props.part as ReasoningPart
-  // kilocode_change start
+  // novacode_change start
   // Filter out redacted reasoning chunks from OpenRouter
   // OpenRouter sends encrypted reasoning data that appears as [REDACTED]
   const text = () => part.text.replace("[REDACTED]", "").trim()
-  // kilocode_change end
+  // novacode_change end
   const throttledText = createThrottledValue(text)
 
   return (
@@ -769,18 +769,18 @@ ToolRegistry.register({
             subtitle: props.input.filePath ? getFilename(props.input.filePath) : "",
             args,
           }}
-          // kilocode_change start
+          // novacode_change start
           onSubtitleClick={
             data.openFile && props.input.filePath ? () => data.openFile!(props.input.filePath) : undefined
           }
-          // kilocode_change end
+          // novacode_change end
         />
         <For each={loaded()}>
           {(filepath) => (
             <div
               data-component="tool-loaded-file"
-              classList={{ clickable: !!data.openFile }} // kilocode_change
-              onClick={() => data.openFile?.(filepath)} // kilocode_change
+              classList={{ clickable: !!data.openFile }} // novacode_change
+              onClick={() => data.openFile?.(filepath)} // novacode_change
             >
               <Icon name="enter" size="small" />
               <span>
@@ -1134,18 +1134,18 @@ ToolRegistry.register({
 ToolRegistry.register({
   name: "edit",
   render(props) {
-    const data = useData() // kilocode_change
+    const data = useData() // novacode_change
     const i18n = useI18n()
     const diffComponent = useDiffComponent()
     const diagnostics = createMemo(() => getDiagnostics(props.metadata.diagnostics, props.input.filePath))
     const filename = () => getFilename(props.input.filePath ?? "")
-    // kilocode_change start
+    // novacode_change start
     const handleFileClick = (e: MouseEvent) => {
       if (!data.openFile || !props.input.filePath) return
       e.stopPropagation()
       data.openFile(props.input.filePath)
     }
-    // kilocode_change end
+    // novacode_change end
     return (
       <BasicTool
         {...props}
@@ -1155,7 +1155,7 @@ ToolRegistry.register({
             <div data-slot="message-part-title-area">
               <div data-slot="message-part-title">
                 <span data-slot="message-part-title-text">{i18n.t("ui.messagePart.title.edit")}</span>
-                {/* kilocode_change start */}
+                {/* novacode_change start */}
                 <span
                   data-slot="message-part-title-filename"
                   classList={{ clickable: !!data.openFile }}
@@ -1163,11 +1163,11 @@ ToolRegistry.register({
                 >
                   {filename()}
                 </span>
-                {/* kilocode_change end */}
+                {/* novacode_change end */}
               </div>
               <Show when={props.input.filePath?.includes("/")}>
                 <div data-slot="message-part-path">
-                  {/* kilocode_change start */}
+                  {/* novacode_change start */}
                   <span
                     data-slot="message-part-directory"
                     classList={{ clickable: !!data.openFile }}
@@ -1175,7 +1175,7 @@ ToolRegistry.register({
                   >
                     {getDirectory(props.input.filePath!)}
                   </span>
-                  {/* kilocode_change end */}
+                  {/* novacode_change end */}
                 </div>
               </Show>
             </div>
@@ -1211,18 +1211,18 @@ ToolRegistry.register({
 ToolRegistry.register({
   name: "write",
   render(props) {
-    const data = useData() // kilocode_change
+    const data = useData() // novacode_change
     const i18n = useI18n()
     const codeComponent = useCodeComponent()
     const diagnostics = createMemo(() => getDiagnostics(props.metadata.diagnostics, props.input.filePath))
     const filename = () => getFilename(props.input.filePath ?? "")
-    // kilocode_change start
+    // novacode_change start
     const handleFileClick = (e: MouseEvent) => {
       if (!data.openFile || !props.input.filePath) return
       e.stopPropagation()
       data.openFile(props.input.filePath)
     }
-    // kilocode_change end
+    // novacode_change end
     return (
       <BasicTool
         {...props}
@@ -1232,7 +1232,7 @@ ToolRegistry.register({
             <div data-slot="message-part-title-area">
               <div data-slot="message-part-title">
                 <span data-slot="message-part-title-text">{i18n.t("ui.messagePart.title.write")}</span>
-                {/* kilocode_change start */}
+                {/* novacode_change start */}
                 <span
                   data-slot="message-part-title-filename"
                   classList={{ clickable: !!data.openFile }}
@@ -1240,11 +1240,11 @@ ToolRegistry.register({
                 >
                   {filename()}
                 </span>
-                {/* kilocode_change end */}
+                {/* novacode_change end */}
               </div>
               <Show when={props.input.filePath?.includes("/")}>
                 <div data-slot="message-part-path">
-                  {/* kilocode_change start */}
+                  {/* novacode_change start */}
                   <span
                     data-slot="message-part-directory"
                     classList={{ clickable: !!data.openFile }}
@@ -1252,7 +1252,7 @@ ToolRegistry.register({
                   >
                     {getDirectory(props.input.filePath!)}
                   </span>
-                  {/* kilocode_change end */}
+                  {/* novacode_change end */}
                 </div>
               </Show>
             </div>
@@ -1294,7 +1294,7 @@ interface ApplyPatchFile {
 ToolRegistry.register({
   name: "apply_patch",
   render(props) {
-    const data = useData() // kilocode_change
+    const data = useData() // novacode_change
     const i18n = useI18n()
     const diffComponent = useDiffComponent()
     const files = createMemo(() => (props.metadata.files ?? []) as ApplyPatchFile[])
@@ -1342,7 +1342,7 @@ ToolRegistry.register({
                         </span>
                       </Match>
                     </Switch>
-                    {/* kilocode_change start */}
+                    {/* novacode_change start */}
                     <span
                       data-slot="apply-patch-file-path"
                       classList={{ clickable: !!data.openFile }}
@@ -1354,7 +1354,7 @@ ToolRegistry.register({
                     >
                       {file.relativePath}
                     </span>
-                    {/* kilocode_change end */}
+                    {/* novacode_change end */}
                     <Show when={file.type !== "delete"}>
                       <DiffChanges changes={{ additions: file.additions, deletions: file.deletions }} />
                     </Show>

@@ -8,16 +8,16 @@ import { DialogPrompt } from "../ui/dialog-prompt"
 import { Link } from "../ui/link"
 import { useTheme } from "../context/theme"
 import { TextAttributes } from "@opentui/core"
-import type { ProviderAuthAuthorization } from "@kilocode/sdk/v2"
+import type { ProviderAuthAuthorization } from "@novacode/sdk/v2"
 import { DialogModel } from "./dialog-model"
 import { useKeyboard } from "@opentui/solid"
 import { Clipboard } from "@tui/util/clipboard"
 import { useToast } from "../ui/toast"
-import { KiloAutoMethod } from "@/kilocode/components/dialog-kilo-auto-method" // kilocode_change
+import { KiloAutoMethod } from "@/novacode/components/dialog-kilo-auto-method" // novacode_change
 
 const PROVIDER_PRIORITY: Record<string, number> = {
-  kilo: -1, // kilocode_change - Kilo Gateway at top
-  // kilocode_change - removed opencode from popular providers
+  kilo: -1, // novacode_change - Nova Gateway at top
+  // novacode_change - removed opencode from popular providers
   anthropic: 0,
   "github-copilot": 1,
   openai: 2,
@@ -36,7 +36,7 @@ export function createDialogProviderOptions() {
         title: provider.name,
         value: provider.id,
         description: {
-          kilo: "(Recommended)", // kilocode_change
+          kilo: "(Recommended)", // novacode_change
           anthropic: "(Claude Max or API key)",
           openai: "(ChatGPT Plus/Pro or API key)",
         }[provider.id],
@@ -79,7 +79,7 @@ export function createDialogProviderOptions() {
               ))
             }
             if (result.data?.method === "auto") {
-              // kilocode_change start - Use custom handler for Kilo Gateway
+              // novacode_change start - Use custom handler for Nova Gateway
               if (provider.id === "kilo") {
                 dialog.replace(() => (
                   <KiloAutoMethod
@@ -102,7 +102,7 @@ export function createDialogProviderOptions() {
                   />
                 ))
               }
-              // kilocode_change end
+              // novacode_change end
             }
           }
           if (method.type === "api") {
@@ -239,14 +239,14 @@ function ApiMethod(props: ApiMethodProps) {
       description={
         props.providerID === "opencode" ? (
           <box gap={1}>
-            {/* kilocode_change start */}
+            {/* novacode_change start */}
             <text fg={theme.textMuted}>
-              Kilo Gateway gives you access to all the best coding models at the cheapest prices with a single API key.
+              Nova Gateway gives you access to all the best coding models at the cheapest prices with a single API key.
             </text>
             <text fg={theme.text}>
               Go to <span style={{ fg: theme.primary }}>https://kilo.ai/gateway</span> to get a key
             </text>
-            {/* kilocode_change end */}
+            {/* novacode_change end */}
           </box>
         ) : undefined
       }

@@ -1022,14 +1022,14 @@ describe("ProviderTransform.message - anthropic empty content filtering", () => 
   })
 })
 
-describe("ProviderTransform.message - OpenRouter/Kilo Gateway thinking stripping", () => {
+describe("ProviderTransform.message - OpenRouter/Nova Gateway thinking stripping", () => {
   const claudeViaGateway = {
     id: "openrouter/anthropic/claude-3-5-sonnet",
     providerID: "openrouter",
     api: {
       id: "anthropic/claude-3-5-sonnet",
       url: "https://openrouter.ai",
-      npm: "@kilocode/kilo-gateway",
+      npm: "@novacode/nova-gateway",
     },
     name: "Claude 3.5 Sonnet (Gateway)",
     capabilities: {
@@ -1778,16 +1778,16 @@ describe("ProviderTransform.variants", () => {
       })
     })
 
-    // kilocode_change start
-    describe("@kilocode/kilo-gateway", () => {
+    // novacode_change start
+    describe("@novacode/nova-gateway", () => {
       test("claude models return empty variants (reasoning disabled)", () => {
         const model = createMockModel({
           id: "kilo/anthropic/claude-sonnet-4",
-          providerID: "kilo",
+          providerID: "nova",
           api: {
             id: "anthropic/claude-sonnet-4",
             url: "https://gateway.kilo.ai",
-            npm: "@kilocode/kilo-gateway",
+            npm: "@novacode/nova-gateway",
           },
         })
         const result = ProviderTransform.variants(model)
@@ -1797,11 +1797,11 @@ describe("ProviderTransform.variants", () => {
       test("anthropic models in api.id return empty variants (reasoning disabled)", () => {
         const model = createMockModel({
           id: "kilo/anthropic/claude-opus-4",
-          providerID: "kilo",
+          providerID: "nova",
           api: {
             id: "anthropic/claude-opus-4",
             url: "https://gateway.kilo.ai",
-            npm: "@kilocode/kilo-gateway",
+            npm: "@novacode/nova-gateway",
           },
         })
         const result = ProviderTransform.variants(model)
@@ -1811,11 +1811,11 @@ describe("ProviderTransform.variants", () => {
       test("gpt models return OPENAI_EFFORTS with reasoning and encrypted content", () => {
         const model = createMockModel({
           id: "kilo/openai/gpt-5",
-          providerID: "kilo",
+          providerID: "nova",
           api: {
             id: "openai/gpt-5",
             url: "https://gateway.kilo.ai",
-            npm: "@kilocode/kilo-gateway",
+            npm: "@novacode/nova-gateway",
           },
         })
         const result = ProviderTransform.variants(model)
@@ -1830,11 +1830,11 @@ describe("ProviderTransform.variants", () => {
       test("gemini-3 models return OPENAI_EFFORTS with reasoning and encrypted content", () => {
         const model = createMockModel({
           id: "kilo/google/gemini-3-pro",
-          providerID: "kilo",
+          providerID: "nova",
           api: {
             id: "google/gemini-3-pro",
             url: "https://gateway.kilo.ai",
-            npm: "@kilocode/kilo-gateway",
+            npm: "@novacode/nova-gateway",
           },
         })
         const result = ProviderTransform.variants(model)
@@ -1844,11 +1844,11 @@ describe("ProviderTransform.variants", () => {
       test("non-qualifying models return empty object", () => {
         const model = createMockModel({
           id: "kilo/meta/llama-4",
-          providerID: "kilo",
+          providerID: "nova",
           api: {
             id: "meta/llama-4",
             url: "https://gateway.kilo.ai",
-            npm: "@kilocode/kilo-gateway",
+            npm: "@novacode/nova-gateway",
           },
         })
         const result = ProviderTransform.variants(model)
@@ -1858,11 +1858,11 @@ describe("ProviderTransform.variants", () => {
       test("grok-3-mini returns low and high with reasoning", () => {
         const model = createMockModel({
           id: "kilo/x-ai/grok-3-mini",
-          providerID: "kilo",
+          providerID: "nova",
           api: {
             id: "x-ai/grok-3-mini",
             url: "https://gateway.kilo.ai",
-            npm: "@kilocode/kilo-gateway",
+            npm: "@novacode/nova-gateway",
           },
         })
         const result = ProviderTransform.variants(model)
@@ -1874,11 +1874,11 @@ describe("ProviderTransform.variants", () => {
       test("codex models return OPENAI_EFFORTS with object-based reasoning format", () => {
         const model = createMockModel({
           id: "kilo/openai/gpt-5.2-codex",
-          providerID: "kilo",
+          providerID: "nova",
           api: {
             id: "openai/gpt-5.2-codex",
             url: "https://gateway.kilo.ai",
-            npm: "@kilocode/kilo-gateway",
+            npm: "@novacode/nova-gateway",
           },
         })
         const result = ProviderTransform.variants(model)
@@ -1888,7 +1888,7 @@ describe("ProviderTransform.variants", () => {
         expect(result.xhigh).toEqual({ reasoning: { effort: "xhigh" } })
       })
     })
-    // kilocode_change end
+    // novacode_change end
 
     describe("@ai-sdk/gateway", () => {
       test("anthropic models return anthropic thinking options", () => {
@@ -2436,17 +2436,17 @@ describe("ProviderTransform.variants", () => {
     })
   })
 
-  // kilocode_change start
+  // novacode_change start
   describe("ProviderTransform.smallOptions", () => {
-    describe("@kilocode/kilo-gateway", () => {
+    describe("@novacode/nova-gateway", () => {
       test("claude models return reasoningEffort minimal", () => {
         const model = createMockModel({
           id: "kilo/anthropic/claude-sonnet-4",
-          providerID: "kilo",
+          providerID: "nova",
           api: {
             id: "anthropic/claude-sonnet-4",
             url: "https://gateway.kilo.ai",
-            npm: "@kilocode/kilo-gateway",
+            npm: "@novacode/nova-gateway",
           },
         })
         const result = ProviderTransform.smallOptions(model)
@@ -2456,11 +2456,11 @@ describe("ProviderTransform.variants", () => {
       test("non-claude models use reasoningEffort format", () => {
         const model = createMockModel({
           id: "kilo/openai/gpt-4",
-          providerID: "kilo",
+          providerID: "nova",
           api: {
             id: "openai/gpt-4",
             url: "https://gateway.kilo.ai",
-            npm: "@kilocode/kilo-gateway",
+            npm: "@novacode/nova-gateway",
           },
         })
         const result = ProviderTransform.smallOptions(model)
@@ -2470,11 +2470,11 @@ describe("ProviderTransform.variants", () => {
       test("google models disable reasoning", () => {
         const model = createMockModel({
           id: "kilo/google/gemini-2.0-flash",
-          providerID: "kilo",
+          providerID: "nova",
           api: {
             id: "google/gemini-2.0-flash",
             url: "https://gateway.kilo.ai",
-            npm: "@kilocode/kilo-gateway",
+            npm: "@novacode/nova-gateway",
           },
         })
         const result = ProviderTransform.smallOptions(model)
@@ -2483,4 +2483,4 @@ describe("ProviderTransform.variants", () => {
     })
   })
 })
-// kilocode_change end
+// novacode_change end

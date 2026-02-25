@@ -12,14 +12,14 @@ function check(name: string, pass: boolean, detail: string): CheckResult {
 
 const results: CheckResult[] = []
 
-const agentBehaviour = read("packages/kilo-vscode/webview-ui/src/components/settings/AgentBehaviourTab.tsx")
-const contextTab = read("packages/kilo-vscode/webview-ui/src/components/settings/ContextTab.tsx")
-const messages = read("packages/kilo-vscode/webview-ui/src/types/messages.ts")
-const extension = read("packages/kilo-vscode/src/extension.ts")
+const agentBehaviour = read("packages/nova-vscode/webview-ui/src/components/settings/AgentBehaviourTab.tsx")
+const contextTab = read("packages/nova-vscode/webview-ui/src/components/settings/ContextTab.tsx")
+const messages = read("packages/nova-vscode/webview-ui/src/types/messages.ts")
+const extension = read("packages/nova-vscode/src/extension.ts")
 const routes = read("packages/opencode/src/server/routes/experimental.ts")
 const sessionProcessor = read("packages/opencode/src/session/processor.ts")
 const sessionIndex = read("packages/opencode/src/session/index.ts")
-const parityReportPath = "packages/opencode/src/kilocode/docs/parity-e2e-baseline.md"
+const parityReportPath = "packages/opencode/src/novacode/docs/parity-e2e-baseline.md"
 const parityReport = existsSync(join(root, parityReportPath)) ? read(parityReportPath) : ""
 
 results.push(
@@ -90,7 +90,7 @@ const report = [
   "",
 ]
 
-const outputPath = join(root, "packages/opencode/src/kilocode/docs/vcp-regression-smoke-report.md")
+const outputPath = join(root, "packages/opencode/src/novacode/docs/vcp-regression-smoke-report.md")
 mkdirSync(dirname(outputPath), { recursive: true })
 writeFileSync(outputPath, report.join("\n"), "utf8")
 

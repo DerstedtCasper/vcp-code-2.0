@@ -41,7 +41,7 @@ let arch = archMap[os.arch()]
 if (!arch) {
   arch = os.arch()
 }
-const base = "@kilocode/cli-" + platform + "-" + arch
+const base = "@novacode/cli-" + platform + "-" + arch
 const binary = platform === "windows" ? "kilo.exe" : "kilo"
 
 function supportsAvx2() {

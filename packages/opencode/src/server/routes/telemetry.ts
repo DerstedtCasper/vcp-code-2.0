@@ -1,8 +1,8 @@
-// kilocode_change - new file
+// novacode_change - new file
 import { Hono } from "hono"
 import { describeRoute, validator, resolver } from "hono-openapi"
 import z from "zod"
-import { Telemetry } from "@kilocode/kilo-telemetry"
+import { Telemetry } from "@novacode/nova-telemetry"
 import { lazy } from "../../util/lazy"
 import { errors } from "../error"
 
@@ -11,7 +11,7 @@ export const TelemetryRoutes = lazy(() =>
     "/capture",
     describeRoute({
       summary: "Capture telemetry event",
-      description: "Forward a telemetry event to PostHog via kilo-telemetry.",
+      description: "Forward a telemetry event to PostHog via nova-telemetry.",
       operationId: "telemetry.capture",
       responses: {
         200: {

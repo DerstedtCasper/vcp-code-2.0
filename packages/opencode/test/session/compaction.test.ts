@@ -372,7 +372,7 @@ describe("session.getUsage", () => {
     expect(result.cost).toBe(3 + 1.5)
   })
 
-  // kilocode_change start - Test for OpenRouter provider cost
+  // novacode_change start - Test for OpenRouter provider cost
   test("uses openrouter provider cost when available", () => {
     const model = createModel({
       context: 100_000,
@@ -594,7 +594,7 @@ describe("session.getUsage", () => {
     // When upstream cost is missing for Kilo, fall back to regular cost field
     expect(result.cost).toBe(0.01)
   })
-  // kilocode_change end
+  // novacode_change end
 
   test.each(["@ai-sdk/anthropic", "@ai-sdk/amazon-bedrock", "@ai-sdk/google-vertex/anthropic"])(
     "computes total from components for %s models",

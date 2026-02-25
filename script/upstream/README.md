@@ -76,7 +76,7 @@ The merge automation follows this process, applying **all transformations BEFORE
    - `<author>/opencode-<version>` - Transformed upstream branch
 
 5. **Apply ALL transformations to upstream branch (PRE-MERGE)**:
-   - Transform package names (opencode-ai -> @kilocode/cli)
+   - Transform package names (opencode-ai -> @novacode/cli)
    - Preserve Kilo's versions
    - Transform i18n files with Kilo branding
    - Transform branding-only files (UI components, configs)
@@ -89,7 +89,7 @@ The merge automation follows this process, applying **all transformations BEFORE
 
 6. **Merge** transformed upstream into Kilo branch
    - Since all branding transforms are applied pre-merge, conflicts should be minimal
-   - Remaining conflicts are files with actual code differences (kilocode_change markers)
+   - Remaining conflicts are files with actual code differences (novacode_change markers)
 
 7. **Auto-resolve** any remaining conflicts
    - Skip files that shouldn't exist in Kilo
@@ -106,8 +106,8 @@ Configuration is defined in `utils/config.ts`:
 {
   // Package name mappings
   packageMappings: [
-    { from: "opencode-ai", to: "@kilocode/cli" },
-    { from: "@opencode-ai/cli", to: "@kilocode/cli" },
+    { from: "opencode-ai", to: "@novacode/cli" },
+    { from: "@opencode-ai/cli", to: "@novacode/cli" },
     // ...
   ],
 
@@ -145,9 +145,9 @@ Configuration is defined in `utils/config.ts`:
 
   // Kilo-specific directories (preserved)
   kiloDirectories: [
-    "packages/opencode/src/kilocode",
-    "packages/kilo-gateway",
-    "packages/kilo-telemetry",
+    "packages/opencode/src/novacode",
+    "packages/nova-gateway",
+    "packages/nova-telemetry",
     // ...
   ],
 }
@@ -161,7 +161,7 @@ Configuration is defined in `utils/config.ts`:
 
 The following transforms are applied to the opencode branch before merging:
 
-1. **Package names** - `opencode-ai` -> `@kilocode/cli`, etc.
+1. **Package names** - `opencode-ai` -> `@novacode/cli`, etc.
 2. **Versions** - Preserve Kilo's version numbers
 3. **i18n files** - OpenCode -> Kilo in user-visible strings
 4. **Branding files** - UI components, configs with branding only
@@ -186,7 +186,7 @@ After merging, any remaining conflicts are handled based on file type:
 | Web/docs          | `web-transform`         | Take upstream, apply branding                    |
 | README/docs       | `keep-ours`             | Keep Kilo's version                              |
 | GitHub workflows  | `keep-ours`             | Keep Kilo's version (manual review)              |
-| Code with markers | `manual`                | Has `kilocode_change` markers, needs review      |
+| Code with markers | `manual`                | Has `novacode_change` markers, needs review      |
 
 ### Why This Reduces Conflicts
 
@@ -202,7 +202,7 @@ Now:
 - Both branches have the same branding
 - Git sees no conflict for branding-only files
 
-The only remaining conflicts are files with **actual code differences** - files with `kilocode_change` markers that contain Kilo-specific logic.
+The only remaining conflicts are files with **actual code differences** - files with `novacode_change` markers that contain Kilo-specific logic.
 
 ## CLI Options
 
@@ -277,7 +277,7 @@ bun run merge.ts --version v1.1.50 --base-branch catrielmuller/kilo-opencode-v1.
 After running the merge script, you may have remaining conflicts. To resolve:
 
 1. Open each conflicted file
-2. Look for `kilocode_change` markers to identify Kilo-specific code
+2. Look for `novacode_change` markers to identify Kilo-specific code
 3. Resolve conflicts, keeping Kilo-specific changes
 4. Stage and commit:
    ```bash

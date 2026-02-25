@@ -1,8 +1,8 @@
-import type { Hooks, PluginInput, Plugin as PluginInstance } from "@kilocode/plugin"
+import type { Hooks, PluginInput, Plugin as PluginInstance } from "@novacode/plugin"
 import { Config } from "../config/config"
 import { Bus } from "../bus"
 import { Log } from "../util/log"
-import { createOpencodeClient } from "@kilocode/sdk"
+import { createOpencodeClient } from "@novacode/sdk"
 import { Server } from "../server/server"
 import { BunProc } from "../bun"
 import { Instance } from "../project/instance"
@@ -13,7 +13,7 @@ import { NamedError } from "@opencode-ai/util/error"
 import { CopilotAuthPlugin } from "./copilot"
 import * as GitlabAuthModule from "@gitlab/opencode-gitlab-auth"
 
-import { KiloAuthPlugin } from "@kilocode/kilo-gateway" // kilocode_change
+import { KiloAuthPlugin } from "@novacode/nova-gateway" // novacode_change
 
 export namespace Plugin {
   const log = Log.create({ service: "plugin" })
@@ -24,11 +24,11 @@ export namespace Plugin {
     (GitlabAuthModule as unknown as { default?: PluginInstance }).default
 
   // Built-in plugins that are directly imported (not installed from npm)
-  // kilocode_change start
+  // novacode_change start
   const INTERNAL_PLUGINS: PluginInstance[] = [KiloAuthPlugin, CodexAuthPlugin, CopilotAuthPlugin]
   if (GitlabAuthPlugin) {
     INTERNAL_PLUGINS.push(GitlabAuthPlugin)
-  } // kilocode_change end
+  } // novacode_change end
 
   const state = Instance.state(async () => {
     const client = createOpencodeClient({

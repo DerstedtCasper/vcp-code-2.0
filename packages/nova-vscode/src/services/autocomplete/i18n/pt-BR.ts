@@ -1,0 +1,45 @@
+// pt-BR runtime translations for autocomplete
+
+export const dict = {
+  "novacode:autocomplete.statusBar.enabled": "$(nova-logo) Autocomplete",
+  "novacode:autocomplete.statusBar.snoozed": "pausado",
+  "novacode:autocomplete.statusBar.warning": "$(warning) Autocomplete",
+  "novacode:autocomplete.statusBar.tooltip.basic": "Nova Code Autocomplete",
+  "novacode:autocomplete.statusBar.tooltip.disabled": "Nova Code Autocomplete (desabilitado)",
+  "novacode:autocomplete.statusBar.tooltip.noCredits":
+    "**Sem créditos na sua conta**\n\nSua conta Nova Code não tem créditos. Para usar o autocompletar, adicione créditos à sua conta.\n\n[Abrir Configurações](command:vcp-code.new.settingsButtonClicked)",
+  "novacode:autocomplete.statusBar.tooltip.noUsableProvider":
+    "**Nenhum modelo de autocompletar configurado**\n\nPara habilitar o autocompletar, adicione um perfil com um destes provedores suportados: {{providers}}.\n\n[Abrir Configurações](command:vcp-code.new.settingsButtonClicked)",
+  "novacode:autocomplete.statusBar.tooltip.sessionTotal": "Custo total da sessão:",
+  "novacode:autocomplete.statusBar.tooltip.provider": "Provedor:",
+  "novacode:autocomplete.statusBar.tooltip.model": "Modelo:",
+  "novacode:autocomplete.statusBar.tooltip.profile": "Perfil: ",
+  "novacode:autocomplete.statusBar.tooltip.defaultProfile": "Padrão",
+  "novacode:autocomplete.statusBar.tooltip.completionSummary":
+    "Realizadas {{count}} conclusões entre {{startTime}} e {{endTime}}, por um custo total de {{cost}}.",
+  "novacode:autocomplete.statusBar.tooltip.providerInfo": "Autocompletações fornecidas por {{model}} via {{provider}}.",
+  "novacode:autocomplete.statusBar.cost.zero": "$0.00",
+  "novacode:autocomplete.statusBar.cost.lessThanCent": "<$0.01",
+  "novacode:autocomplete.toggleMessage": "Nova Code Autocomplete {{status}}",
+  "novacode:autocomplete.progress.title": "Nova Code",
+  "novacode:autocomplete.progress.analyzing": "Analisando seu código...",
+  "novacode:autocomplete.progress.generating": "Gerando edições sugeridas...",
+  "novacode:autocomplete.progress.processing": "Processando edições sugeridas...",
+  "novacode:autocomplete.progress.showing": "Exibindo edições sugeridas...",
+  "novacode:autocomplete.input.title": "Nova Code: Tarefa Rápida",
+  "novacode:autocomplete.input.placeholder": "ex., 'refatore esta função para ser mais eficiente'",
+  "novacode:autocomplete.commands.generateSuggestions": "Nova Code: Gerar Edições Sugeridas",
+  "novacode:autocomplete.commands.displaySuggestions": "Exibir Edições Sugeridas",
+  "novacode:autocomplete.commands.cancelSuggestions": "Cancelar Edições Sugeridas",
+  "novacode:autocomplete.commands.applyCurrentSuggestion": "Aplicar Edição Sugerida Atual",
+  "novacode:autocomplete.commands.applyAllSuggestions": "Aplicar Todas as Edições Sugeridas",
+  "novacode:autocomplete.commands.category": "Nova Code",
+  "novacode:autocomplete.codeAction.title": "Nova Code: Edições Sugeridas",
+  "novacode:autocomplete.chatParticipant.fullName": "Nova Code Agent",
+  "novacode:autocomplete.chatParticipant.name": "Agent",
+  "novacode:autocomplete.chatParticipant.description": "Posso te ajudar com tarefas rápidas e edições sugeridas.",
+  "novacode:autocomplete.incompatibilityExtensionPopup.message":
+    "O Nova Code Autocomplete está sendo bloqueado por um conflito com o GitHub Copilot. Para corrigir isso, você deve desabilitar as sugestões inline do Copilot.",
+  "novacode:autocomplete.incompatibilityExtensionPopup.disableCopilot": "Desabilitar Copilot",
+  "novacode:autocomplete.incompatibilityExtensionPopup.disableInlineAssist": "Desabilitar Autocomplete",
+}

@@ -28,9 +28,9 @@ import { McpRoutes } from "./routes/mcp"
 import { FileRoutes } from "./routes/file"
 import { ConfigRoutes } from "./routes/config"
 import { ExperimentalRoutes } from "./routes/experimental"
-import { TelemetryRoutes } from "./routes/telemetry" // kilocode_change
+import { TelemetryRoutes } from "./routes/telemetry" // novacode_change
 import { ProviderRoutes } from "./routes/provider"
-import { createKiloRoutes } from "@kilocode/kilo-gateway" // kilocode_change
+import { createKiloRoutes } from "@novacode/nova-gateway" // novacode_change
 import { lazy } from "../util/lazy"
 import { InstanceBootstrap } from "../project/bootstrap"
 import { NotFoundError } from "../storage/db"
@@ -86,7 +86,7 @@ export namespace Server {
           if (c.req.method === "OPTIONS") return next()
           const password = Flag.KILO_SERVER_PASSWORD
           if (!password) return next()
-          const username = Flag.KILO_SERVER_USERNAME ?? "kilo" // kilocode_change
+          const username = Flag.KILO_SERVER_USERNAME ?? "kilo" // novacode_change
           return basicAuth({ username, password })(c, next)
         })
         .use(async (c, next) => {
@@ -235,9 +235,9 @@ export namespace Server {
         .route("/permission", PermissionRoutes())
         .route("/question", QuestionRoutes())
         .route("/provider", ProviderRoutes())
-        .route("/telemetry", TelemetryRoutes()) // kilocode_change
-        .route("/commit-message", CommitMessageRoutes()) // kilocode_change
-        // kilocode_change start - Kilo Gateway routes
+        .route("/telemetry", TelemetryRoutes()) // novacode_change
+        .route("/commit-message", CommitMessageRoutes()) // novacode_change
+        // novacode_change start - Nova Gateway routes
         .route(
           "/kilo",
           createKiloRoutes({
@@ -250,7 +250,7 @@ export namespace Server {
             z,
           }),
         )
-        // kilocode_change end
+        // novacode_change end
         .route("/", FileRoutes())
         .route("/mcp", McpRoutes())
         .route("/tui", TuiRoutes())

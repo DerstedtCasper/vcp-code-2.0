@@ -46,8 +46,8 @@ import { LLM } from "./llm"
 import { iife } from "@/util/iife"
 import { Shell } from "@/shell/shell"
 import { Truncate } from "@/tool/truncation"
-import { PlanFollowup } from "@/kilocode/plan-followup" // kilocode_change
-import { VcpMemoryRuntime } from "@/kilocode/memory-runtime"
+import { PlanFollowup } from "@/novacode/plan-followup" // novacode_change
+import { VcpMemoryRuntime } from "@/novacode/memory-runtime"
 
 // @ts-ignore
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -111,7 +111,7 @@ export namespace SessionPrompt {
     format: MessageV2.Format.optional(),
     system: z.string().optional(),
     variant: z.string().optional(),
-    // kilocode_change start
+    // novacode_change start
     editorContext: z
       .object({
         visibleFiles: z.array(z.string()).optional(),
@@ -121,7 +121,7 @@ export namespace SessionPrompt {
         timezone: z.string().optional(),
       })
       .optional(),
-    // kilocode_change end
+    // novacode_change end
     parts: z.array(
       z.discriminatedUnion("type", [
         MessageV2.TextPart.omit({
@@ -309,7 +309,7 @@ export namespace SessionPrompt {
       })
     }
 
-    // kilocode_change start
+    // novacode_change start
     void Bus.publish(Session.Event.TurnOpen, { sessionID })
     let closeReason: Session.CloseReason = "completed"
     let finished = false
@@ -318,7 +318,7 @@ export namespace SessionPrompt {
       if (!finished) closeReason = abort.aborted ? "interrupted" : "error"
       await Bus.publish(Session.Event.TurnClose, { sessionID, reason: closeReason })
     })
-    // kilocode_change end
+    // novacode_change end
 
     // Structured output state
     // Note: On session resumption, state is reset but outputFormat is preserved
@@ -330,12 +330,12 @@ export namespace SessionPrompt {
     while (true) {
       SessionStatus.set(sessionID, { type: "busy" })
       log.info("loop", { step, sessionID })
-      // kilocode_change start
+      // novacode_change start
       if (abort.aborted) {
         closeReason = "interrupted"
         break
       }
-      // kilocode_change end
+      // novacode_change end
       let msgs = await MessageV2.filterCompacted(MessageV2.stream(sessionID))
 
       let lastUser: MessageV2.User | undefined
@@ -361,12 +361,12 @@ export namespace SessionPrompt {
         !["tool-calls", "unknown"].includes(lastAssistant.finish) &&
         lastUser.id < lastAssistant.id
       ) {
-        // kilocode_change start - ask follow-up after plan agent completes
+        // novacode_change start - ask follow-up after plan agent completes
         if (lastUser.agent === "plan" && !abort.aborted && ["cli", "vscode"].includes(Flag.KILO_CLIENT)) {
           const action = await PlanFollowup.ask({ sessionID, messages: msgs, abort })
           if (action === "continue") continue
         }
-        // kilocode_change end
+        // novacode_change end
         log.info("exiting loop", { sessionID })
         break
       }
@@ -692,7 +692,7 @@ export namespace SessionPrompt {
 
       // Build system prompt, adding structured output instruction if needed
       const config = await Config.get()
-      const system = [...(await SystemPrompt.environment(model, lastUser.editorContext)), ...(await InstructionPrompt.system())] // kilocode_change
+      const system = [...(await SystemPrompt.environment(model, lastUser.editorContext)), ...(await InstructionPrompt.system())] // novacode_change
       const passiveMemoryPrompt = await VcpMemoryRuntime.buildPassiveSystemPrompt({
         config,
         sessionID,
@@ -757,13 +757,13 @@ export namespace SessionPrompt {
         }
       }
 
-      // kilocode_change start
+      // novacode_change start
       if (result === "stop") {
         if (abort.aborted || processor.message.error?.name === "MessageAbortedError") closeReason = "interrupted"
         else if (processor.message.error) closeReason = "error"
         break
       }
-      // kilocode_change end
+      // novacode_change end
       if (result === "compact") {
         await SessionCompaction.create({
           sessionID,
@@ -775,9 +775,9 @@ export namespace SessionPrompt {
       continue
     }
     SessionCompaction.prune({ sessionID })
-    // kilocode_change start
+    // novacode_change start
     finished = true
-    // kilocode_change end
+    // novacode_change end
     for await (const item of MessageV2.stream(sessionID)) {
       if (item.info.role === "user") continue
       const queued = state()[sessionID]?.callbacks ?? []
@@ -1055,7 +1055,7 @@ export namespace SessionPrompt {
       system: input.system,
       format: input.format,
       variant,
-      editorContext: input.editorContext, // kilocode_change
+      editorContext: input.editorContext, // novacode_change
     }
     using _ = defer(() => InstructionPrompt.clear(info.id))
 
@@ -1469,9 +1469,9 @@ Execution contract:
         })
       }
       const wasPlan = input.messages.some((msg) => msg.info.role === "assistant" && msg.info.agent === "plan")
-      // kilocode_change start - renamed from "build" to "code"
+      // novacode_change start - renamed from "build" to "code"
       if (wasPlan && input.agent.name === "code") {
-        // kilocode_change end
+        // novacode_change end
         userMessage.parts.push({
           id: Identifier.ascending("part"),
           messageID: userMessage.info.id,

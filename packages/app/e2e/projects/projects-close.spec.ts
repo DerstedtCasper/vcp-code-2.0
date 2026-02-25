@@ -32,7 +32,7 @@ test("can close a project via hover card close button", async ({ page, withProje
 })
 
 test("closing active project navigates to another open project", async ({ page, withProject }) => {
-  test.skip(process.platform === "win32", "Skipping on Windows due to workspace interaction issues") // kilocode_change
+  test.skip(process.platform === "win32", "Skipping on Windows due to workspace interaction issues") // novacode_change
   await page.setViewportSize({ width: 1400, height: 800 })
 
   const other = await createTestProject()

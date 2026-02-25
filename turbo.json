@@ -16,7 +16,7 @@
       "dependsOn": ["^build"],
       "outputs": []
     },
-    "@kilocode/kilo-docs#build": {
+    "@novacode/nova-docs#build": {
       "dependsOn": ["^build"],
       "outputs": [".next/**"],
       "env": ["POSTHOG_API_KEY", "FREE_TIER_AMOUNT", "NEXT_PUBLIC_POSTHOG_KEY", "NEXT_PUBLIC_POSTHOG_HOST"]

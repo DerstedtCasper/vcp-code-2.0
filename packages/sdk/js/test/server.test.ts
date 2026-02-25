@@ -1,4 +1,4 @@
-// kilocode_change start - Tests for KILO_CONFIG_CONTENT merging
+// novacode_change start - Tests for KILO_CONFIG_CONTENT merging
 import { describe, test, expect, beforeEach, afterEach } from "bun:test"
 import { buildConfigEnv } from "../src/server"
 
@@ -41,12 +41,12 @@ describe("buildConfigEnv", () => {
   })
 
   test("preserves existing KILO_CONFIG_CONTENT when spawning with new config", () => {
-    // Simulate Kilocode having injected modes via KILO_CONFIG_CONTENT
+    // Simulate Novacode having injected modes via KILO_CONFIG_CONTENT
     process.env.KILO_CONFIG_CONTENT = JSON.stringify({
       agent: {
         translate: { mode: "primary", prompt: "You are a translator" },
       },
-      instructions: [".kilocode/rules/main.md"],
+      instructions: [".novacode/rules/main.md"],
     })
 
     // Now spawn with additional config
@@ -61,7 +61,7 @@ describe("buildConfigEnv", () => {
     expect(parsed.agent.review).toEqual({ mode: "primary", prompt: "You are a reviewer" })
 
     // Both instructions should be present
-    expect(parsed.instructions).toContain(".kilocode/rules/main.md")
+    expect(parsed.instructions).toContain(".novacode/rules/main.md")
     expect(parsed.instructions).toContain("additional-rule.md")
   })
 
@@ -108,4 +108,4 @@ describe("buildConfigEnv", () => {
     expect(parsed.plugin).toEqual(["plugin-a", "plugin-b", "plugin-c"])
   })
 })
-// kilocode_change end
+// novacode_change end

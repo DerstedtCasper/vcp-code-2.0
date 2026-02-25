@@ -7,7 +7,7 @@ import {
   type QuestionRequest,
   TextPart,
   ToolPart,
-} from "@kilocode/sdk/v2/client"
+} from "@novacode/sdk/v2/client"
 import { useData } from "../context"
 import { type UiI18nKey, type UiI18nParams, useI18n } from "../context/i18n"
 

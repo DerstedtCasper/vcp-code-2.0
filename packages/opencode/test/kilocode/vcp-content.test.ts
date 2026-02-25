@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test"
-import { VcpContentCompatibility } from "../../src/kilocode/vcp-content"
+import { VcpContentCompatibility } from "../../src/novacode/vcp-content"
 
 test("renders VCP context fold block as details when enabled", () => {
   const input = [

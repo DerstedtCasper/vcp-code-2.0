@@ -30,7 +30,7 @@ import FileTree from "@/components/file-tree"
 import { useCommand } from "@/context/command"
 import { useLanguage } from "@/context/language"
 import { useNavigate, useParams } from "@solidjs/router"
-import { UserMessage } from "@kilocode/sdk/v2"
+import { UserMessage } from "@novacode/sdk/v2"
 import { useSDK } from "@/context/sdk"
 import { usePrompt } from "@/context/prompt"
 import { useComments } from "@/context/comments"
@@ -39,7 +39,7 @@ import { usePermission } from "@/context/permission"
 import { showToast } from "@opencode-ai/ui/toast"
 import { SessionHeader, SessionContextTab, SortableTab, FileVisual, NewSessionView } from "@/components/session"
 import { navMark, navParams } from "@/utils/perf"
-import { Identifier } from "@/utils/id" // kilocode_change
+import { Identifier } from "@/utils/id" // novacode_change
 import { same } from "@/utils/same"
 import { createOpenReviewFile, focusTerminalById, getTabReorderIndex } from "@/pages/session/helpers"
 import { createScrollSpy } from "@/pages/session/scroll-spy"
@@ -152,7 +152,7 @@ export default function Page() {
       .finally(() => setUi("responding", false))
   }
 
-  // kilocode_change start - handle mode switch from question options
+  // novacode_change start - handle mode switch from question options
   let modeActionAbort: AbortController | undefined
 
   const waitForIdle = (sessionID: string, signal: AbortSignal) =>
@@ -249,7 +249,7 @@ export default function Page() {
         showToast({ title: language.t("common.requestFailed"), description: message })
       })
   }
-  // kilocode_change end
+  // novacode_change end
 
   const sessionKey = createMemo(() => `${params.dir}${params.id ? "/" + params.id : ""}`)
   const workspaceKey = createMemo(() => params.dir ?? "")
@@ -1802,7 +1802,7 @@ export default function Page() {
               resumeScroll()
             }}
             setPromptDockRef={(el) => (promptDock = el)}
-            onModeAction={handleModeAction} // kilocode_change
+            onModeAction={handleModeAction} // novacode_change
           />
 
           <Show when={desktopReviewOpen()}>

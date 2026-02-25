@@ -1,8 +1,8 @@
 import { spawn } from "node:child_process"
 import { type Config } from "./gen/types.gen.js"
 
-// kilocode_change start - Merge existing KILO_CONFIG_CONTENT with new config
-// This preserves Kilocode-injected modes when spawning nested CLI instances
+// novacode_change start - Merge existing KILO_CONFIG_CONTENT with new config
+// This preserves Novacode-injected modes when spawning nested CLI instances
 function mergeConfig(existing: Config | undefined, incoming: Config | undefined): Config {
   const base = existing ?? {}
   const override = incoming ?? {}
@@ -32,7 +32,7 @@ export function buildConfigEnv(config?: Config): string {
   const merged = mergeConfig(parseExistingConfig(), config)
   return JSON.stringify(merged)
 }
-// kilocode_change end
+// novacode_change end
 
 export type ServerOptions = {
   hostname?: string
@@ -64,13 +64,13 @@ export async function createOpencodeServer(options?: ServerOptions) {
   const args = [`serve`, `--hostname=${options.hostname}`, `--port=${options.port}`]
   if (options.config?.logLevel) args.push(`--log-level=${options.config.logLevel}`)
 
-  // kilocode_change start
+  // novacode_change start
   const proc = spawn(`kilo`, args, {
-    // kilocode_change end
+    // novacode_change end
     signal: options.signal,
     env: {
       ...process.env,
-      KILO_CONFIG_CONTENT: buildConfigEnv(options.config), // kilocode_change
+      KILO_CONFIG_CONTENT: buildConfigEnv(options.config), // novacode_change
     },
   })
 
@@ -83,9 +83,9 @@ export async function createOpencodeServer(options?: ServerOptions) {
       output += chunk.toString()
       const lines = output.split("\n")
       for (const line of lines) {
-        // kilocode_change start
+        // novacode_change start
         if (line.startsWith("kilo server listening")) {
-          // kilocode_change end
+          // novacode_change end
           const match = line.match(/on\s+(https?:\/\/[^\s]+)/)
           if (!match) {
             throw new Error(`Failed to parse server url from output: ${line}`)
@@ -143,14 +143,14 @@ export function createOpencodeTui(options?: TuiOptions) {
     args.push(`--agent=${options.agent}`)
   }
 
-  // kilocode_change start
+  // novacode_change start
   const proc = spawn(`kilo`, args, {
-    // kilocode_change end
+    // novacode_change end
     signal: options?.signal,
     stdio: "inherit",
     env: {
       ...process.env,
-      KILO_CONFIG_CONTENT: buildConfigEnv(options?.config), // kilocode_change
+      KILO_CONFIG_CONTENT: buildConfigEnv(options?.config), // novacode_change
     },
   })
 
