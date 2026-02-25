@@ -230,6 +230,7 @@ export const dict = {
   "prompt.attachment.remove": "Ukloni prilog",
   "prompt.action.send": "Pošalji",
   "prompt.action.stop": "Zaustavi",
+  "prompt.action.enhance": "Enhance prompt with AI ✨",
 
   // Slash commands (added in VCP 2.0)
   "prompt.slash.header": "Commands",

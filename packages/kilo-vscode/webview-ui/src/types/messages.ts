@@ -875,6 +875,20 @@ export interface AgentManagerSendInitialMessage {
   files?: Array<{ mime: string; url: string }>
 }
 
+// Prompt enhance result (extension → webview)
+export interface EnhancePromptResultMessage {
+  type: "enhancePromptResult"
+  text: string
+  requestId: string
+}
+
+// Prompt enhance error (extension → webview)
+export interface EnhancePromptErrorMessage {
+  type: "enhancePromptError"
+  error: string
+  requestId: string
+}
+
 export type ExtensionMessage =
   | ReadyMessage
   | ConnectionStateMessage
@@ -932,6 +946,8 @@ export type ExtensionMessage =
   | SetChatBoxMessage
   | TriggerTaskMessage
   | VariantsLoadedMessage
+  | EnhancePromptResultMessage
+  | EnhancePromptErrorMessage
 
 // ============================================
 // Messages FROM webview TO extension
@@ -1055,7 +1071,8 @@ export interface CompactContextRequest {
 export interface EnhancePromptRequest {
   type: "enhancePrompt"
   text: string
-  contextItems?: unknown[]
+  contextItems?: Array<{ type: string; label: string; path?: string }>
+  requestId?: string
 }
 
 export interface RequestAgentsMessage {

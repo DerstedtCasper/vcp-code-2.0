@@ -230,6 +230,7 @@ export const dict = {
   "prompt.attachment.remove": "Remove attachment",
   "prompt.action.send": "Send",
   "prompt.action.stop": "Stop",
+  "prompt.action.enhance": "Enhance prompt with AI ✨",
 
   // Slash commands
   "prompt.slash.header": "Commands",

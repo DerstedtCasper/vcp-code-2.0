@@ -226,6 +226,7 @@ export const dict = {
   "prompt.attachment.remove": "移除附件",
   "prompt.action.send": "发送",
   "prompt.action.stop": "停止",
+  "prompt.action.enhance": "AI 增强 Prompt ✨",
 
   // Slash 命令
   "prompt.slash.header": "命令",

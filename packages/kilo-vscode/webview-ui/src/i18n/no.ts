@@ -225,6 +225,7 @@ export const dict = {
   "prompt.attachment.remove": "Fjern vedlegg",
   "prompt.action.send": "Send",
   "prompt.action.stop": "Stopp",
+  "prompt.action.enhance": "Enhance prompt with AI ✨",
 
   // Slash commands (added in VCP 2.0)
   "prompt.slash.header": "Commands",

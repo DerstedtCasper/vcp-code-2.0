@@ -225,6 +225,7 @@ export const dict = {
   "prompt.attachment.remove": "첨부 파일 제거",
   "prompt.action.send": "전송",
   "prompt.action.stop": "중지",
+  "prompt.action.enhance": "Enhance prompt with AI ✨",
 
   // Slash commands (added in VCP 2.0)
   "prompt.slash.header": "Commands",

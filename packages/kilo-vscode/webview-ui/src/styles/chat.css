@@ -479,6 +479,32 @@
   text-align: center;
 }
 
+/* ── @ 提及多类型徽章 ── */
+.file-mention-type-badge {
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.file-mention-type-dir {
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+}
+
+.file-mention-type-agent {
+  background: #3a7d44;
+  color: #fff;
+}
+
+.file-mention-type-special {
+  background: var(--vscode-activityBarBadge-background, #0078d4);
+  color: var(--vscode-activityBarBadge-foreground, #fff);
+}
+
 /* ============================================
    Model Selector (uses kilo-ui Popover)
    ============================================ */
@@ -585,6 +611,122 @@
   letter-spacing: 0.03em;
 }
 
+.model-selector-tag--reasoning {
+  background: #6a3ebc;
+  color: #fff;
+}
+
+/* ── model-selector 斜体 not-set 条目 ── */
+.model-selector-item-name--italic {
+  font-style: italic;
+  opacity: 0.7;
+}
+
+/* ── Recent group label ── */
+.model-selector-group-label--recent {
+  color: var(--vscode-charts-yellow, #e2b714);
+}
+
+/* ── ModelSelector inner layout (list + info card side-by-side) ── */
+.model-selector-inner {
+  display: flex;
+  flex-direction: column;
+}
+
+.model-selector-body {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+/* ── ModelInfoCard ── */
+.model-info-card {
+  width: 180px;
+  flex-shrink: 0;
+  padding: 10px 12px;
+  border-left: 1px solid var(--vscode-editorWidget-border, rgba(255,255,255,0.1));
+  font-size: 11px;
+  color: var(--vscode-foreground);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: model-info-fade-in 120ms ease;
+}
+
+@keyframes model-info-fade-in {
+  from { opacity: 0; transform: translateX(4px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.model-info-card--left {
+  border-left: none;
+  border-right: 1px solid var(--vscode-editorWidget-border, rgba(255,255,255,0.1));
+  order: -1;
+}
+
+.model-info-card-name {
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.model-info-card-id {
+  font-size: 10px;
+  opacity: 0.55;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.model-info-card-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.model-info-card-label {
+  opacity: 0.6;
+}
+
+.model-info-card-value {
+  font-weight: 500;
+}
+
+.model-info-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.model-info-card-tag {
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+}
+
+.model-info-card-tag--reasoning {
+  background: #6a3ebc;
+  color: #fff;
+}
+
+.model-info-card-tag--latest {
+  background: #1a7f37;
+  color: #fff;
+}
+
+.model-info-card-tag--long-ctx {
+  background: #0969da;
+  color: #fff;
+}
+
 /* ============================================
    Thinking Selector (uses kilo-ui Popover)
    ============================================ */
@@ -667,6 +809,43 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ── ModeSwitcher 增强样式 ── */
+.mode-switcher-item-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mode-switcher-trigger-dot,
+.mode-switcher-item-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.mode-switcher-chevron {
+  flex-shrink: 0;
+}
+
+.mode-switcher-item-tag {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+}
+
+.mode-switcher-item-tag--native {
+  background: #1a7f37;
+  color: #fff;
 }
 
 /* ============================================
@@ -1211,3 +1390,133 @@
   border-color: rgba(220, 50, 50, 0.2);
 }
 
+/* ============================================
+   SettingsRow (enhanced)
+   ============================================ */
+
+.settings-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-weak-base, var(--vscode-editorWidget-border, rgba(128,128,128,0.2)));
+}
+
+.settings-row--last {
+  border-bottom: none;
+}
+
+.settings-row--dirty .settings-row-title {
+  color: var(--vscode-inputValidation-warningForeground, #e2b714);
+}
+
+.settings-row-label {
+  min-width: 150px;
+  flex: 1 1 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.settings-row-title {
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.settings-row-dirty-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--vscode-inputValidation-warningBorder, #e2b714);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.settings-row-help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  font-size: 9px;
+  font-weight: 700;
+  cursor: help;
+  flex-shrink: 0;
+}
+
+.settings-row-description {
+  font-size: 11px;
+  color: var(--text-weak-base, var(--vscode-descriptionForeground));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-row-example {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+/* ============================================
+   StickySaveBar
+   ============================================ */
+
+.sticky-save-bar {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 16px;
+  background: var(--vscode-notifications-background, var(--vscode-editor-background));
+  border-top: 1px solid var(--vscode-notifications-border, var(--vscode-editorWidget-border, rgba(128,128,128,0.25)));
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  animation: sticky-save-bar-slide-up 180ms ease;
+}
+
+@keyframes sticky-save-bar-slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.sticky-save-bar-hint {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.sticky-save-bar-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* ============================================
+   Prompt Enhance Button
+   ============================================ */
+
+.prompt-enhance-btn--loading {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.prompt-enhance-spin {
+  animation: prompt-enhance-spin 0.8s linear infinite;
+  display: block;
+}
+
+@keyframes prompt-enhance-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}

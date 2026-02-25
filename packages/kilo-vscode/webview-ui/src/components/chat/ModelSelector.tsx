@@ -15,6 +15,34 @@ import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
 import type { ModelSelection } from "../../types/messages"
 import { KILO_GATEWAY_ID, providerSortKey, isFree, buildTriggerLabel } from "./model-selector-utils"
+import { ModelInfoCard } from "./ModelInfoCard"
+
+// ── Recent model localStorage helpers ─────────────────────────────────────
+
+const RECENT_KEY = "vcp:recent-models"
+const MAX_RECENT = 5
+
+function loadRecent(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]") as string[]
+  } catch {
+    return []
+  }
+}
+
+function saveRecent(modelIds: string[]): void {
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(modelIds.slice(0, MAX_RECENT)))
+  } catch {
+    // ignore
+  }
+}
+
+function pushRecent(modelId: string): void {
+  const list = loadRecent().filter((id) => id !== modelId)
+  list.unshift(modelId)
+  saveRecent(list)
+}
 
 interface ModelGroup {
   providerName: string
@@ -46,6 +74,8 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   const [open, setOpen] = createSignal(false)
   const [search, setSearch] = createSignal("")
   const [activeIndex, setActiveIndex] = createSignal(0)
+  const [hoveredModel, setHoveredModel] = createSignal<EnrichedModel | null>(null)
+  const [recentIds, setRecentIds] = createSignal<string[]>(loadRecent())
 
   let searchRef: HTMLInputElement | undefined
   let listRef: HTMLDivElement | undefined
@@ -85,8 +115,30 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
     return [...map.entries()].sort(([a], [b]) => providerSortKey(a) - providerSortKey(b)).map(([, g]) => g)
   })
 
+  // Recent models group (only shown when search is empty)
+  const recentGroup = createMemo<ModelGroup | null>(() => {
+    if (search()) return null
+    const ids = recentIds()
+    if (ids.length === 0) return null
+    const all = visibleModels()
+    const recentModels = ids
+      .map((key) => {
+        const [pid, ...rest] = key.split("/")
+        const mid = rest.join("/")
+        return all.find((m) => m.providerID === pid && m.id === mid)
+      })
+      .filter((m): m is EnrichedModel => m !== undefined)
+    if (recentModels.length === 0) return null
+    return { providerName: "Recent", models: recentModels }
+  })
+
   // Flat list for keyboard indexing (mirrors render order)
-  const flatFiltered = createMemo(() => groups().flatMap((g) => g.models))
+  const flatFiltered = createMemo(() => {
+    const recent = recentGroup()
+    const regularFlat = groups().flatMap((g) => g.models)
+    if (!recent) return regularFlat
+    return [...recent.models, ...regularFlat]
+  })
 
   // Offset for "clear" option at the top of the list
   const clearOffset = () => (props.allowClear ? 1 : 0)
@@ -107,6 +159,8 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   })
 
   function pick(model: EnrichedModel) {
+    pushRecent(`${model.providerID}/${model.id}`)
+    setRecentIds(loadRecent())
     props.onSelect(model.providerID, model.id)
     setOpen(false)
   }
@@ -205,7 +259,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
       }
       class="model-selector-popover"
     >
-      <div onKeyDown={handleKeyDown}>
+      <div onKeyDown={handleKeyDown} class="model-selector-inner">
         <div class="model-selector-search-wrapper">
           <input
             ref={searchRef}
@@ -217,48 +271,87 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
           />
         </div>
 
-        <div class="model-selector-list" role="listbox" ref={listRef}>
-          <Show when={flatFiltered().length === 0 && !props.allowClear}>
-            <div class="model-selector-empty">{language.t("dialog.model.empty")}</div>
-          </Show>
+        <div class="model-selector-body">
+          <div class="model-selector-list" role="listbox" ref={listRef}>
+            <Show when={flatFiltered().length === 0 && !props.allowClear}>
+              <div class="model-selector-empty">{language.t("dialog.model.empty")}</div>
+            </Show>
 
-          <Show when={props.allowClear}>
-            <div
-              class={`model-selector-item${activeIndex() === 0 ? " active" : ""}${!props.value?.providerID ? " selected" : ""}`}
-              role="option"
-              aria-selected={!props.value?.providerID}
-              onClick={() => pickClear()}
-              onMouseEnter={() => setActiveIndex(0)}
-            >
-              <span class="model-selector-item-name" style={{ "font-style": "italic", opacity: 0.7 }}>
-                {props.clearLabel ?? language.t("dialog.model.notSet")}
-              </span>
-            </div>
-          </Show>
+            <Show when={props.allowClear}>
+              <div
+                class={`model-selector-item${activeIndex() === 0 ? " active" : ""}${!props.value?.providerID ? " selected" : ""}`}
+                role="option"
+                aria-selected={!props.value?.providerID}
+                onClick={() => pickClear()}
+                onMouseEnter={() => { setActiveIndex(0); setHoveredModel(null) }}
+              >
+                <span class="model-selector-item-name model-selector-item-name--italic">
+                  {props.clearLabel ?? language.t("dialog.model.notSet")}
+                </span>
+              </div>
+            </Show>
 
-          <For each={groups()}>
-            {(group) => (
-              <>
-                <div class="model-selector-group-label">{group.providerName}</div>
-                <For each={group.models}>
-                  {(model) => (
-                    <div
-                      class={`model-selector-item${flatIndex(model) === activeIndex() ? " active" : ""}${isSelected(model) ? " selected" : ""}`}
-                      role="option"
-                      aria-selected={isSelected(model)}
-                      onClick={() => pick(model)}
-                      onMouseEnter={() => setActiveIndex(flatIndex(model))}
-                    >
-                      <span class="model-selector-item-name">{model.name}</span>
-                      <Show when={isFree(model)}>
-                        <span class="model-selector-tag">{language.t("model.tag.free")}</span>
-                      </Show>
-                    </div>
-                  )}
-                </For>
-              </>
-            )}
-          </For>
+            {/* Recent models group */}
+            <Show when={recentGroup()}>
+              {(rg) => (
+                <>
+                  <div class="model-selector-group-label model-selector-group-label--recent">
+                    ★ {rg().providerName}
+                  </div>
+                  <For each={rg().models}>
+                    {(model) => (
+                      <div
+                        class={`model-selector-item${flatIndex(model) === activeIndex() ? " active" : ""}${isSelected(model) ? " selected" : ""}`}
+                        role="option"
+                        aria-selected={isSelected(model)}
+                        onClick={() => pick(model)}
+                        onMouseEnter={() => { setActiveIndex(flatIndex(model)); setHoveredModel(model) }}
+                        onMouseLeave={() => setHoveredModel(null)}
+                      >
+                        <span class="model-selector-item-name">{model.name}</span>
+                        <Show when={isFree(model)}>
+                          <span class="model-selector-tag">{language.t("model.tag.free")}</span>
+                        </Show>
+                      </div>
+                    )}
+                  </For>
+                </>
+              )}
+            </Show>
+
+            <For each={groups()}>
+              {(group) => (
+                <>
+                  <div class="model-selector-group-label">{group.providerName}</div>
+                  <For each={group.models}>
+                    {(model) => (
+                      <div
+                        class={`model-selector-item${flatIndex(model) === activeIndex() ? " active" : ""}${isSelected(model) ? " selected" : ""}`}
+                        role="option"
+                        aria-selected={isSelected(model)}
+                        onClick={() => pick(model)}
+                        onMouseEnter={() => { setActiveIndex(flatIndex(model)); setHoveredModel(model) }}
+                        onMouseLeave={() => setHoveredModel(null)}
+                      >
+                        <span class="model-selector-item-name">{model.name}</span>
+                        <Show when={isFree(model)}>
+                          <span class="model-selector-tag">{language.t("model.tag.free")}</span>
+                        </Show>
+                        <Show when={model.capabilities?.reasoning}>
+                          <span class="model-selector-tag model-selector-tag--reasoning">reasoning</span>
+                        </Show>
+                      </div>
+                    )}
+                  </For>
+                </>
+              )}
+            </For>
+          </div>
+
+          {/* Model info hover card */}
+          <Show when={hoveredModel()}>
+            {(m) => <ModelInfoCard model={m()} side="right" />}
+          </Show>
         </div>
       </div>
     </Popover>

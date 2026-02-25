@@ -15,8 +15,9 @@ import { useVSCode } from "../../context/vscode"
 import { ModelSelector } from "./ModelSelector"
 import { ModeSwitcher } from "./ModeSwitcher"
 import { ThinkingSelector } from "./ThinkingSelector"
-import { useFileMention } from "../../hooks/useFileMention"
+import { useAtMention, type MentionResult } from "../../hooks/useAtMention"
 import { useImageAttachments } from "../../hooks/useImageAttachments"
+import { useEnhancePrompt } from "../../hooks/useEnhancePrompt"
 import { fileName, dirName, buildHighlightSegments } from "./prompt-input-utils"
 import { SlashCommandPopover, SLASH_COMMANDS, type SlashCommand } from "./SlashCommandPopover"
 import { ContextPills, type ContextItem } from "./ContextPills"
@@ -35,8 +36,17 @@ export const PromptInput: Component = () => {
   const server = useServer()
   const language = useLanguage()
   const vscode = useVSCode()
-  const mention = useFileMention(vscode)
+  const mention = useAtMention(vscode, session.agents)
   const imageAttach = useImageAttachments()
+
+  // ── Enhance Prompt ────────────────────────────────────────────────────
+  const enhance = useEnhancePrompt(vscode, (enhanced: string) => {
+    setText(enhanced)
+    if (textareaRef) {
+      textareaRef.value = enhanced
+      adjustHeight()
+    }
+  })
 
   const sessionKey = () => session.currentSessionID() ?? "__new__"
 
@@ -56,6 +66,19 @@ export const PromptInput: Component = () => {
   // historyIndex: -1 表示当前草稿，0 = 最近一条，依此类推
   let historyIndex = -1
   let historyDraftSaved = ""
+
+  // ── 将 @ 选中的 agent/special 条目同步到 contextItems pill ──────────
+  createEffect(() => {
+    const item = mention.selectedContextItem()
+    if (item) {
+      setContextItems((prev) => {
+        // 避免重复（相同 type+label）
+        if (prev.some((p) => p.type === item.type && p.label === item.label)) return prev
+        return [...prev, item]
+      })
+      mention.clearSelectedContextItem()
+    }
+  })
 
   let textareaRef: HTMLTextAreaElement | undefined
   let highlightRef: HTMLDivElement | undefined
@@ -455,22 +478,44 @@ export const PromptInput: Component = () => {
         <div class="file-mention-dropdown" ref={dropdownRef}>
           <Show
             when={mention.mentionResults().length > 0}
-            fallback={<div class="file-mention-empty">No files found</div>}
+            fallback={<div class="file-mention-empty">No results found</div>}
           >
             <For each={mention.mentionResults()}>
-              {(path, index) => (
+              {(item, index) => (
                 <div
                   class="file-mention-item"
                   classList={{ "file-mention-item--active": index() === mention.mentionIndex() }}
                   onMouseDown={(e) => {
                     e.preventDefault()
-                    if (textareaRef) mention.selectFile(path, textareaRef, setText, adjustHeight)
+                    if (textareaRef) {
+                      mention.selectItem(item, textareaRef, setText, adjustHeight)
+                    }
                   }}
                   onMouseEnter={() => mention.setMentionIndex(index())}
                 >
-                  <FileIcon node={{ path, type: "file" }} class="file-mention-icon" />
-                  <span class="file-mention-name">{fileName(path)}</span>
-                  <span class="file-mention-dir">{dirName(path)}</span>
+                  <Show when={item.type === "file"}>
+                    <FileIcon node={{ path: item.value, type: "file" }} class="file-mention-icon" />
+                    <span class="file-mention-name">{fileName(item.value)}</span>
+                    <span class="file-mention-dir">{dirName(item.value)}</span>
+                  </Show>
+                  <Show when={item.type === "directory"}>
+                    <span class="file-mention-type-badge file-mention-type-dir">dir</span>
+                    <span class="file-mention-name">{item.label}</span>
+                  </Show>
+                  <Show when={item.type === "agent"}>
+                    <span class="file-mention-type-badge file-mention-type-agent">agent</span>
+                    <span class="file-mention-name">{item.label}</span>
+                    <Show when={item.description}>
+                      <span class="file-mention-dir">{item.description}</span>
+                    </Show>
+                  </Show>
+                  <Show when={item.type === "special"}>
+                    <span class="file-mention-type-badge file-mention-type-special">@</span>
+                    <span class="file-mention-name">{item.label}</span>
+                    <Show when={item.description}>
+                      <span class="file-mention-dir">{item.description}</span>
+                    </Show>
+                  </Show>
                 </div>
               )}
             </For>
@@ -583,6 +628,31 @@ export const PromptInput: Component = () => {
           <ThinkingSelector />
         </div>
         <div class="prompt-input-hint-actions">
+          {/* ✨ Enhance 按钮 */}
+          <Show when={text().trim().length > 0}>
+            <Tooltip value={language.t("prompt.action.enhance")} placement="top">
+              <Button
+                variant="ghost"
+                size="small"
+                onClick={() => enhance.enhance(text(), contextItems())}
+                disabled={enhance.isEnhancing() || isDisabled()}
+                aria-label={language.t("prompt.action.enhance")}
+                class={enhance.isEnhancing() ? "prompt-enhance-btn--loading" : ""}
+              >
+                <Show
+                  when={!enhance.isEnhancing()}
+                  fallback={
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" class="prompt-enhance-spin">
+                      <path d="M8 1a7 7 0 1 0 7 7A7 7 0 0 0 8 1zm0 12a5 5 0 1 1 5-5 5 5 0 0 1-5 5z" opacity="0.3"/>
+                      <path d="M15 8a7 7 0 0 0-7-7V3a5 5 0 0 1 5 5z"/>
+                    </svg>
+                  }
+                >
+                  ✨
+                </Show>
+              </Button>
+            </Tooltip>
+          </Show>
           <Tooltip value={language.t("prompt.action.send")} placement="top">
             <Button
               variant="primary"
