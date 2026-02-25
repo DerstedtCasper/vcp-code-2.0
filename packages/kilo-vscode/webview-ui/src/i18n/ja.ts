@@ -755,7 +755,7 @@
   "settings.prompts.title": "プロンプト",
   "settings.experimental.title": "実験的機能",
   "settings.language.title": "言語",
-  "settings.aboutKiloCode.title": "VCP Codeについて",
+  "settings.aboutVCPCode.title": "VCP Codeについて",
 
   "session.messages.empty": "下にメッセージを入力して会話を始めましょう。",
   "session.messages.welcome":
@@ -783,25 +783,25 @@
   "time.thisMonth": "今月",
   "time.older": "それ以前",
 
-  "settings.aboutKiloCode.status.connected": "接続済み",
-  "settings.aboutKiloCode.status.connecting": "接続中...",
-  "settings.aboutKiloCode.status.disconnected": "切断",
-  "settings.aboutKiloCode.status.error": "エラー",
-  "settings.aboutKiloCode.cliServer": "CLIサーバー",
-  "settings.aboutKiloCode.status.label": "ステータス：",
-  "settings.aboutKiloCode.port.label": "ポート：",
-  "settings.aboutKiloCode.versionInfo": "バージョン情報",
-  "settings.aboutKiloCode.version.label": "バージョン：",
-  "settings.aboutKiloCode.extensionName": "VCP Code拡張機能",
-  "settings.aboutKiloCode.community": "コミュニティとサポート",
-  "settings.aboutKiloCode.feedback.prefix": "ご質問やフィードバックがありましたら、お気軽にissueを作成してください",
-  "settings.aboutKiloCode.feedback.or": "または",
-  "settings.aboutKiloCode.support.prefix":
+  "settings.aboutVCPCode.status.connected": "接続済み",
+  "settings.aboutVCPCode.status.connecting": "接続中...",
+  "settings.aboutVCPCode.status.disconnected": "切断",
+  "settings.aboutVCPCode.status.error": "エラー",
+  "settings.aboutVCPCode.cliServer": "CLIサーバー",
+  "settings.aboutVCPCode.status.label": "ステータス：",
+  "settings.aboutVCPCode.port.label": "ポート：",
+  "settings.aboutVCPCode.versionInfo": "バージョン情報",
+  "settings.aboutVCPCode.version.label": "バージョン：",
+  "settings.aboutVCPCode.extensionName": "VCP Code拡張機能",
+  "settings.aboutVCPCode.community": "コミュニティとサポート",
+  "settings.aboutVCPCode.feedback.prefix": "ご質問やフィードバックがありましたら、お気軽にissueを作成してください",
+  "settings.aboutVCPCode.feedback.or": "または",
+  "settings.aboutVCPCode.support.prefix":
     "請求やアカウントに関するご質問は、カスタマーサポートまでお問い合わせください",
-  "settings.aboutKiloCode.resetSettings.title": "設定をリセット",
-  "settings.aboutKiloCode.resetSettings.description":
+  "settings.aboutVCPCode.resetSettings.title": "設定をリセット",
+  "settings.aboutVCPCode.resetSettings.description":
     "VCP Code拡張機能のすべての設定をデフォルト値にリセットします。CLIやバックエンドの設定には影響しません。",
-  "settings.aboutKiloCode.resetSettings.button": "すべての設定をリセット",
+  "settings.aboutVCPCode.resetSettings.button": "すべての設定をリセット",
 
   "settings.agentBehaviour.subtab.modes": "モード",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -937,4 +937,5 @@
   "dialog.model.notSet": "未設定",
   "profile.personalAccount": "個人アカウント",
 }
+
 

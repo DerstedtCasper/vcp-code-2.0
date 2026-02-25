@@ -1,15 +1,16 @@
 import { Component } from "solid-js"
+import { Button } from "@kilocode/kilo-ui/button"
 import { useLanguage } from "../../context/language"
 import { useVSCode } from "../../context/vscode"
 import type { ConnectionState } from "../../types/messages"
 
-export interface AboutKiloCodeTabProps {
+export interface AboutVCPCodeTabProps {
   port: number | null
   connectionState: ConnectionState
   extensionVersion?: string
 }
 
-const AboutKiloCodeTab: Component<AboutKiloCodeTabProps> = (props) => {
+const AboutVCPCodeTab: Component<AboutVCPCodeTabProps> = (props) => {
   const language = useLanguage()
   const vscode = useVSCode()
   const repoBaseUrl = "https://github.com/DerstedtCasper/vcp-code-2.0"
@@ -36,13 +37,13 @@ const AboutKiloCodeTab: Component<AboutKiloCodeTabProps> = (props) => {
   const getStatusText = () => {
     switch (props.connectionState) {
       case "connected":
-        return language.t("settings.aboutKiloCode.status.connected")
+        return language.t("settings.aboutVCPCode.status.connected")
       case "connecting":
-        return language.t("settings.aboutKiloCode.status.connecting")
+        return language.t("settings.aboutVCPCode.status.connecting")
       case "disconnected":
-        return language.t("settings.aboutKiloCode.status.disconnected")
+        return language.t("settings.aboutVCPCode.status.disconnected")
       case "error":
-        return language.t("settings.aboutKiloCode.status.error")
+        return language.t("settings.aboutVCPCode.status.error")
     }
   }
 
@@ -84,16 +85,16 @@ const AboutKiloCodeTab: Component<AboutKiloCodeTabProps> = (props) => {
     <div>
       {/* Version Information */}
       <div style={sectionStyle}>
-        <h4 style={headingStyle}>{language.t("settings.aboutKiloCode.versionInfo")}</h4>
+        <h4 style={headingStyle}>{language.t("settings.aboutVCPCode.versionInfo")}</h4>
         <div style={{ display: "flex", "align-items": "center" }}>
-          <span style={labelStyle}>{language.t("settings.aboutKiloCode.version.label")}</span>
+          <span style={labelStyle}>{language.t("settings.aboutVCPCode.version.label")}</span>
           <span style={valueStyle}>{props.extensionVersion ?? "—"}</span>
         </div>
       </div>
 
       {/* Community & Support */}
       <div style={sectionStyle}>
-        <h4 style={headingStyle}>{language.t("settings.aboutKiloCode.community")}</h4>
+        <h4 style={headingStyle}>{language.t("settings.aboutVCPCode.community")}</h4>
         <p
           style={{
             "font-size": "12px",
@@ -102,7 +103,7 @@ const AboutKiloCodeTab: Component<AboutKiloCodeTabProps> = (props) => {
             "line-height": "1.5",
           }}
         >
-          {language.t("settings.aboutKiloCode.feedback.prefix")}{" "}
+          {language.t("settings.aboutVCPCode.feedback.prefix")}{" "}
           <span style={linkStyle} onClick={() => open(repoBaseUrl)}>
             GitHub
           </span>
@@ -110,7 +111,7 @@ const AboutKiloCodeTab: Component<AboutKiloCodeTabProps> = (props) => {
           <span style={linkStyle} onClick={() => open(repoIssuesUrl)}>
             Issues
           </span>
-          , {language.t("settings.aboutKiloCode.feedback.or")}{" "}
+          , {language.t("settings.aboutVCPCode.feedback.or")}{" "}
           <span style={linkStyle} onClick={() => open(repoDiscussionsUrl)}>
             Discussions
           </span>
@@ -124,7 +125,7 @@ const AboutKiloCodeTab: Component<AboutKiloCodeTabProps> = (props) => {
             "line-height": "1.5",
           }}
         >
-          {language.t("settings.aboutKiloCode.support.prefix")}{" "}
+          {language.t("settings.aboutVCPCode.support.prefix")}{" "}
           <span style={linkStyle} onClick={() => open(repoIssuesUrl)}>
             github.com/DerstedtCasper/vcp-code-2.0/issues
           </span>
@@ -134,11 +135,11 @@ const AboutKiloCodeTab: Component<AboutKiloCodeTabProps> = (props) => {
 
       {/* CLI Server */}
       <div style={sectionStyle}>
-        <h4 style={headingStyle}>{language.t("settings.aboutKiloCode.cliServer")}</h4>
+        <h4 style={headingStyle}>{language.t("settings.aboutVCPCode.cliServer")}</h4>
 
         {/* Connection Status */}
         <div style={{ display: "flex", "align-items": "center", "margin-bottom": "12px" }}>
-          <span style={labelStyle}>{language.t("settings.aboutKiloCode.status.label")}</span>
+          <span style={labelStyle}>{language.t("settings.aboutVCPCode.status.label")}</span>
           <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
             <span
               style={{
@@ -155,14 +156,14 @@ const AboutKiloCodeTab: Component<AboutKiloCodeTabProps> = (props) => {
 
         {/* Port Number */}
         <div style={{ display: "flex", "align-items": "center" }}>
-          <span style={labelStyle}>{language.t("settings.aboutKiloCode.port.label")}</span>
+          <span style={labelStyle}>{language.t("settings.aboutVCPCode.port.label")}</span>
           <span style={valueStyle}>{props.port !== null ? props.port : "—"}</span>
         </div>
       </div>
 
       {/* Reset Settings */}
       <div style={{ ...sectionStyle, "margin-bottom": "0" }}>
-        <h4 style={headingStyle}>{language.t("settings.aboutKiloCode.resetSettings.title")}</h4>
+        <h4 style={headingStyle}>{language.t("settings.aboutVCPCode.resetSettings.title")}</h4>
         <p
           style={{
             "font-size": "12px",
@@ -171,26 +172,17 @@ const AboutKiloCodeTab: Component<AboutKiloCodeTabProps> = (props) => {
             "line-height": "1.5",
           }}
         >
-          {language.t("settings.aboutKiloCode.resetSettings.description")}
+          {language.t("settings.aboutVCPCode.resetSettings.description")}
         </p>
-        <button
-          type="button"
+        <Button
+          size="small"
           onClick={() => vscode.postMessage({ type: "resetAllSettings" })}
-          style={{
-            background: "var(--vscode-button-background)",
-            color: "var(--vscode-button-foreground)",
-            border: "none",
-            padding: "6px 14px",
-            "border-radius": "2px",
-            cursor: "pointer",
-            "font-size": "12px",
-          }}
         >
-          {language.t("settings.aboutKiloCode.resetSettings.button")}
-        </button>
+          {language.t("settings.aboutVCPCode.resetSettings.button")}
+        </Button>
       </div>
     </div>
   )
 }
 
-export default AboutKiloCodeTab
+export default AboutVCPCodeTab

@@ -760,7 +760,7 @@ export const dict = {
   "settings.prompts.title": "프롬프트",
   "settings.experimental.title": "실험적",
   "settings.language.title": "언어",
-  "settings.aboutKiloCode.title": "VCP Code 정보",
+  "settings.aboutVCPCode.title": "VCP Code 정보",
 
   "session.messages.empty": "아래에 메시지를 입력하여 대화를 시작하세요.",
   "session.messages.welcome":
@@ -788,24 +788,24 @@ export const dict = {
   "time.thisMonth": "이번 달",
   "time.older": "이전",
 
-  "settings.aboutKiloCode.status.connected": "연결됨",
-  "settings.aboutKiloCode.status.connecting": "연결 중...",
-  "settings.aboutKiloCode.status.disconnected": "연결 끊김",
-  "settings.aboutKiloCode.status.error": "오류",
-  "settings.aboutKiloCode.cliServer": "CLI 서버",
-  "settings.aboutKiloCode.status.label": "상태:",
-  "settings.aboutKiloCode.port.label": "포트:",
-  "settings.aboutKiloCode.versionInfo": "버전 정보",
-  "settings.aboutKiloCode.version.label": "버전:",
-  "settings.aboutKiloCode.extensionName": "VCP Code 확장 프로그램",
-  "settings.aboutKiloCode.community": "커뮤니티 및 지원",
-  "settings.aboutKiloCode.feedback.prefix": "질문이나 피드백이 있으시면 다음에서 이슈를 열어주세요",
-  "settings.aboutKiloCode.feedback.or": "또는",
-  "settings.aboutKiloCode.support.prefix": "결제 또는 계정 관련 문의는 고객 지원팀에 문의하세요",
-  "settings.aboutKiloCode.resetSettings.title": "설정 초기화",
-  "settings.aboutKiloCode.resetSettings.description":
+  "settings.aboutVCPCode.status.connected": "연결됨",
+  "settings.aboutVCPCode.status.connecting": "연결 중...",
+  "settings.aboutVCPCode.status.disconnected": "연결 끊김",
+  "settings.aboutVCPCode.status.error": "오류",
+  "settings.aboutVCPCode.cliServer": "CLI 서버",
+  "settings.aboutVCPCode.status.label": "상태:",
+  "settings.aboutVCPCode.port.label": "포트:",
+  "settings.aboutVCPCode.versionInfo": "버전 정보",
+  "settings.aboutVCPCode.version.label": "버전:",
+  "settings.aboutVCPCode.extensionName": "VCP Code 확장 프로그램",
+  "settings.aboutVCPCode.community": "커뮤니티 및 지원",
+  "settings.aboutVCPCode.feedback.prefix": "질문이나 피드백이 있으시면 다음에서 이슈를 열어주세요",
+  "settings.aboutVCPCode.feedback.or": "또는",
+  "settings.aboutVCPCode.support.prefix": "결제 또는 계정 관련 문의는 고객 지원팀에 문의하세요",
+  "settings.aboutVCPCode.resetSettings.title": "설정 초기화",
+  "settings.aboutVCPCode.resetSettings.description":
     "VCP Code 확장 프로그램의 모든 설정을 기본값으로 초기화합니다. CLI 또는 백엔드 구성에는 영향을 미치지 않습니다.",
-  "settings.aboutKiloCode.resetSettings.button": "모든 설정 초기화",
+  "settings.aboutVCPCode.resetSettings.button": "모든 설정 초기화",
 
   "settings.agentBehaviour.subtab.modes": "모드",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -938,4 +938,5 @@ export const dict = {
   "dialog.model.notSet": "설정되지 않음",
   "profile.personalAccount": "개인 계정",
 }
+
 

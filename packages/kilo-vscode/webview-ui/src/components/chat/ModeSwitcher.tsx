@@ -7,6 +7,7 @@
 import { Component, createMemo, createSignal, For, Show } from "solid-js"
 import { Popover } from "@kilocode/kilo-ui/popover"
 import { Button } from "@kilocode/kilo-ui/button"
+import { showToast } from "@kilocode/kilo-ui/toast"
 import { useSession } from "../../context/session"
 import { useConfig } from "../../context/config"
 import { useLanguage } from "../../context/language"
@@ -132,9 +133,16 @@ export const ModeSwitcher: Component = () => {
           },
         },
       })
+      showToast({
+        variant: "success",
+        icon: "circle-check",
+        title: language.t("toast.agentTeam.enabled.title"),
+        description: language.t("toast.agentTeam.enabled.description"),
+      })
       return
     }
 
+    const wasAgentTeamEnabled = isAgentTeamEnabled()
     if (isAgentTeamEnabled()) {
       updateConfig({
         vcp: {
@@ -148,6 +156,14 @@ export const ModeSwitcher: Component = () => {
     }
 
     session.selectAgent(name)
+    if (wasAgentTeamEnabled) {
+      showToast({
+        variant: "success",
+        icon: "circle-check",
+        title: language.t("toast.agentTeam.disabled.title"),
+        description: language.t("toast.agentTeam.disabled.description", { mode: formatModeLabel(name, language.t("vcp.view.protocol.agentTeam")) }),
+      })
+    }
   }
 
   return (

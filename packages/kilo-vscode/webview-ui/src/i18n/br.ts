@@ -762,7 +762,7 @@
   "settings.prompts.title": "Prompts",
   "settings.experimental.title": "Experimental",
   "settings.language.title": "Idioma",
-  "settings.aboutKiloCode.title": "Sobre o VCP Code",
+  "settings.aboutVCPCode.title": "Sobre o VCP Code",
 
   "session.messages.empty": "Inicie uma conversa digitando uma mensagem abaixo.",
   "session.messages.welcome":
@@ -790,25 +790,25 @@
   "time.thisMonth": "Este mês",
   "time.older": "Mais antigo",
 
-  "settings.aboutKiloCode.status.connected": "Conectado",
-  "settings.aboutKiloCode.status.connecting": "Conectando...",
-  "settings.aboutKiloCode.status.disconnected": "Desconectado",
-  "settings.aboutKiloCode.status.error": "Erro",
-  "settings.aboutKiloCode.cliServer": "Servidor CLI",
-  "settings.aboutKiloCode.status.label": "Status:",
-  "settings.aboutKiloCode.port.label": "Porta:",
-  "settings.aboutKiloCode.versionInfo": "Informações da Versão",
-  "settings.aboutKiloCode.version.label": "Versão:",
-  "settings.aboutKiloCode.extensionName": "Extensão VCP Code",
-  "settings.aboutKiloCode.community": "Comunidade e Suporte",
-  "settings.aboutKiloCode.feedback.prefix": "Se você tiver perguntas ou feedback, abra uma issue no",
-  "settings.aboutKiloCode.feedback.or": "ou",
-  "settings.aboutKiloCode.support.prefix":
+  "settings.aboutVCPCode.status.connected": "Conectado",
+  "settings.aboutVCPCode.status.connecting": "Conectando...",
+  "settings.aboutVCPCode.status.disconnected": "Desconectado",
+  "settings.aboutVCPCode.status.error": "Erro",
+  "settings.aboutVCPCode.cliServer": "Servidor CLI",
+  "settings.aboutVCPCode.status.label": "Status:",
+  "settings.aboutVCPCode.port.label": "Porta:",
+  "settings.aboutVCPCode.versionInfo": "Informações da Versão",
+  "settings.aboutVCPCode.version.label": "Versão:",
+  "settings.aboutVCPCode.extensionName": "Extensão VCP Code",
+  "settings.aboutVCPCode.community": "Comunidade e Suporte",
+  "settings.aboutVCPCode.feedback.prefix": "Se você tiver perguntas ou feedback, abra uma issue no",
+  "settings.aboutVCPCode.feedback.or": "ou",
+  "settings.aboutVCPCode.support.prefix":
     "Para questões de cobrança ou conta, entre em contato com o Suporte ao Cliente em",
-  "settings.aboutKiloCode.resetSettings.title": "Redefinir Configurações",
-  "settings.aboutKiloCode.resetSettings.description":
+  "settings.aboutVCPCode.resetSettings.title": "Redefinir Configurações",
+  "settings.aboutVCPCode.resetSettings.description":
     "Redefinir todas as configurações da extensão VCP Code para os valores padrão. Isso não afeta a configuração do CLI ou do backend.",
-  "settings.aboutKiloCode.resetSettings.button": "Redefinir Todas as Configurações",
+  "settings.aboutVCPCode.resetSettings.button": "Redefinir Todas as Configurações",
 
   "settings.agentBehaviour.subtab.modes": "Modos",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -946,4 +946,5 @@
   "dialog.model.notSet": "Não definido",
   "profile.personalAccount": "Conta pessoal",
 }
+
 

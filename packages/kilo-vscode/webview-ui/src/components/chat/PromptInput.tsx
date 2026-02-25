@@ -307,6 +307,28 @@ export const PromptInput: Component = () => {
     }
   }
 
+  const syncSlashState = (value: string, cursor: number) => {
+    if (mention.showMention()) {
+      closeSlash()
+      return
+    }
+    const slashContext = extractSlashQuery(value, cursor)
+    if (!slashContext) {
+      closeSlash()
+      return
+    }
+    setSlashQuery(slashContext.query)
+    setShowSlash(true)
+    setSlashIndex(0)
+  }
+
+  const syncSlashFromTextarea = () => {
+    if (!textareaRef) return
+    const value = textareaRef.value
+    const cursor = textareaRef.selectionStart ?? value.length
+    syncSlashState(value, cursor)
+  }
+
   const applySlashCommand = (command: SlashCommandOption) => {
     if (command.type === "builtin") {
       switch (command.trigger) {
@@ -432,15 +454,7 @@ export const PromptInput: Component = () => {
       if (debounceTimer) clearTimeout(debounceTimer)
       return
     }
-
-    const slashContext = extractSlashQuery(val, cursor)
-    if (slashContext) {
-      setSlashQuery(slashContext.query)
-      setShowSlash(true)
-      setSlashIndex(0)
-    } else {
-      closeSlash()
-    }
+    syncSlashState(val, cursor)
 
     if (debounceTimer) clearTimeout(debounceTimer)
     debounceTimer = setTimeout(() => requestAutocomplete(val), AUTOCOMPLETE_DEBOUNCE_MS)
@@ -452,6 +466,10 @@ export const PromptInput: Component = () => {
       setGhostText("")
       queueMicrotask(scrollToActiveItem)
       return
+    }
+
+    if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      queueMicrotask(syncSlashFromTextarea)
     }
 
     if (showSlash()) {
@@ -672,7 +690,7 @@ export const PromptInput: Component = () => {
                   type="button"
                   class="image-attachment-remove"
                   onClick={() => imageAttach.remove(img.id)}
-                  aria-label="Remove image"
+                  aria-label={language.t("prompt.attachment.remove")}
                 >
                   x
                 </button>
@@ -704,6 +722,10 @@ export const PromptInput: Component = () => {
             value={text()}
             onInput={handleInput}
             onKeyDown={handleKeyDown}
+            onKeyUp={syncSlashFromTextarea}
+            onClick={syncSlashFromTextarea}
+            onFocus={syncSlashFromTextarea}
+            onBlur={() => closeSlash()}
             onPaste={handlePaste}
             onScroll={syncHighlightScroll}
             disabled={isDisabled()}
@@ -714,13 +736,13 @@ export const PromptInput: Component = () => {
       <Show when={showBusyActions()}>
         <div style={{ display: "flex", gap: "8px", "align-items": "center", "margin-top": "8px", "flex-wrap": "wrap" }}>
           <Button size="small" variant="secondary" onClick={() => handleBusySend("guide")}>
-            Send now
+            {language.t("prompt.busy.sendNow")}
           </Button>
           <Button size="small" variant="secondary" onClick={() => handleBusySend("queue")}>
-            Queue
+            {language.t("prompt.busy.queue")}
           </Button>
           <Button size="small" variant="ghost" onClick={() => handleBusySend("interrupt")}>
-            Interrupt + send
+            {language.t("prompt.busy.interruptSend")}
           </Button>
           <Button size="small" variant="ghost" onClick={() => setShowBusyActions(false)}>
             {language.t("common.cancel")}
@@ -735,7 +757,7 @@ export const PromptInput: Component = () => {
                 <span style={{ "font-size": "11px", opacity: 0.85 }}>{item.text.slice(0, 60)}</span>
                 <div style={{ display: "flex", gap: "4px", "align-items": "center" }}>
                   <Button size="small" variant="ghost" onClick={() => reorderQueueItem(index(), 0)} disabled={index() === 0}>
-                    Top
+                    {language.t("common.top")}
                   </Button>
                   <Button
                     size="small"
@@ -743,7 +765,7 @@ export const PromptInput: Component = () => {
                     onClick={() => reorderQueueItem(index(), index() - 1)}
                     disabled={index() === 0}
                   >
-                    Up
+                    {language.t("common.up")}
                   </Button>
                   <Button
                     size="small"
@@ -751,10 +773,10 @@ export const PromptInput: Component = () => {
                     onClick={() => reorderQueueItem(index(), index() + 1)}
                     disabled={index() >= session.promptQueue().length - 1}
                   >
-                    Down
+                    {language.t("common.down")}
                   </Button>
                   <Button size="small" variant="ghost" onClick={() => session.dequeuePrompt(item.id)}>
-                    Remove
+                    {language.t("common.remove")}
                   </Button>
                 </div>
               </div>

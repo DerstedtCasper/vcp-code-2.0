@@ -761,7 +761,7 @@
   "settings.prompts.title": "Prompts",
   "settings.experimental.title": "Eksperimentelt",
   "settings.language.title": "Sprog",
-  "settings.aboutKiloCode.title": "Om VCP Code",
+  "settings.aboutVCPCode.title": "Om VCP Code",
 
   "session.messages.empty": "Start en samtale ved at skrive en besked nedenfor.",
   "session.messages.welcome":
@@ -789,25 +789,25 @@
   "time.thisMonth": "Denne måned",
   "time.older": "Ældre",
 
-  "settings.aboutKiloCode.status.connected": "Forbundet",
-  "settings.aboutKiloCode.status.connecting": "Forbinder...",
-  "settings.aboutKiloCode.status.disconnected": "Afbrudt",
-  "settings.aboutKiloCode.status.error": "Fejl",
-  "settings.aboutKiloCode.cliServer": "CLI-server",
-  "settings.aboutKiloCode.status.label": "Status:",
-  "settings.aboutKiloCode.port.label": "Port:",
-  "settings.aboutKiloCode.versionInfo": "Versionsinformation",
-  "settings.aboutKiloCode.version.label": "Version:",
-  "settings.aboutKiloCode.extensionName": "VCP Code-udvidelse",
-  "settings.aboutKiloCode.community": "Fællesskab og support",
-  "settings.aboutKiloCode.feedback.prefix":
+  "settings.aboutVCPCode.status.connected": "Forbundet",
+  "settings.aboutVCPCode.status.connecting": "Forbinder...",
+  "settings.aboutVCPCode.status.disconnected": "Afbrudt",
+  "settings.aboutVCPCode.status.error": "Fejl",
+  "settings.aboutVCPCode.cliServer": "CLI-server",
+  "settings.aboutVCPCode.status.label": "Status:",
+  "settings.aboutVCPCode.port.label": "Port:",
+  "settings.aboutVCPCode.versionInfo": "Versionsinformation",
+  "settings.aboutVCPCode.version.label": "Version:",
+  "settings.aboutVCPCode.extensionName": "VCP Code-udvidelse",
+  "settings.aboutVCPCode.community": "Fællesskab og support",
+  "settings.aboutVCPCode.feedback.prefix":
     "Hvis du har spørgsmål eller feedback, er du velkommen til at åbne en issue på",
-  "settings.aboutKiloCode.feedback.or": "eller",
-  "settings.aboutKiloCode.support.prefix": "For fakturerings- eller kontospørgsmål, kontakt kundesupport på",
-  "settings.aboutKiloCode.resetSettings.title": "Nulstil indstillinger",
-  "settings.aboutKiloCode.resetSettings.description":
+  "settings.aboutVCPCode.feedback.or": "eller",
+  "settings.aboutVCPCode.support.prefix": "For fakturerings- eller kontospørgsmål, kontakt kundesupport på",
+  "settings.aboutVCPCode.resetSettings.title": "Nulstil indstillinger",
+  "settings.aboutVCPCode.resetSettings.description":
     "Nulstil alle VCP Code-udvidelsesindstillinger til standardværdierne. Dette påvirker ikke CLI- eller backend-konfiguration.",
-  "settings.aboutKiloCode.resetSettings.button": "Nulstil alle indstillinger",
+  "settings.aboutVCPCode.resetSettings.button": "Nulstil alle indstillinger",
 
   "settings.agentBehaviour.subtab.modes": "Tilstande",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -941,4 +941,5 @@
   "dialog.model.notSet": "Ikke angivet",
   "profile.personalAccount": "Personlig konto",
 }
+
 

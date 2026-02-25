@@ -789,7 +789,7 @@
   "settings.prompts.title": "Upiti",
   "settings.experimental.title": "Eksperimentalno",
   "settings.language.title": "Jezik",
-  "settings.aboutKiloCode.title": "O VCP Code-u",
+  "settings.aboutVCPCode.title": "O VCP Code-u",
 
   "session.messages.empty": "Započnite razgovor unosom poruke ispod.",
   "session.messages.welcome":
@@ -817,24 +817,24 @@
   "time.thisMonth": "Ovog mjeseca",
   "time.older": "Starije",
 
-  "settings.aboutKiloCode.status.connected": "Povezano",
-  "settings.aboutKiloCode.status.connecting": "Povezivanje...",
-  "settings.aboutKiloCode.status.disconnected": "Odspojeno",
-  "settings.aboutKiloCode.status.error": "Greška",
-  "settings.aboutKiloCode.cliServer": "CLI server",
-  "settings.aboutKiloCode.status.label": "Status:",
-  "settings.aboutKiloCode.port.label": "Port:",
-  "settings.aboutKiloCode.versionInfo": "Informacije o verziji",
-  "settings.aboutKiloCode.version.label": "Verzija:",
-  "settings.aboutKiloCode.extensionName": "VCP Code ekstenzija",
-  "settings.aboutKiloCode.community": "Zajednica i podrška",
-  "settings.aboutKiloCode.feedback.prefix": "Ako imate pitanja ili povratne informacije, slobodno otvorite issue na",
-  "settings.aboutKiloCode.feedback.or": "ili",
-  "settings.aboutKiloCode.support.prefix": "Za pitanja o naplati ili računu, kontaktirajte korisničku podršku na",
-  "settings.aboutKiloCode.resetSettings.title": "Resetovanje postavki",
-  "settings.aboutKiloCode.resetSettings.description":
+  "settings.aboutVCPCode.status.connected": "Povezano",
+  "settings.aboutVCPCode.status.connecting": "Povezivanje...",
+  "settings.aboutVCPCode.status.disconnected": "Odspojeno",
+  "settings.aboutVCPCode.status.error": "Greška",
+  "settings.aboutVCPCode.cliServer": "CLI server",
+  "settings.aboutVCPCode.status.label": "Status:",
+  "settings.aboutVCPCode.port.label": "Port:",
+  "settings.aboutVCPCode.versionInfo": "Informacije o verziji",
+  "settings.aboutVCPCode.version.label": "Verzija:",
+  "settings.aboutVCPCode.extensionName": "VCP Code ekstenzija",
+  "settings.aboutVCPCode.community": "Zajednica i podrška",
+  "settings.aboutVCPCode.feedback.prefix": "Ako imate pitanja ili povratne informacije, slobodno otvorite issue na",
+  "settings.aboutVCPCode.feedback.or": "ili",
+  "settings.aboutVCPCode.support.prefix": "Za pitanja o naplati ili računu, kontaktirajte korisničku podršku na",
+  "settings.aboutVCPCode.resetSettings.title": "Resetovanje postavki",
+  "settings.aboutVCPCode.resetSettings.description":
     "Resetujte sve postavke VCP Code ekstenzije na zadane vrijednosti. Ovo ne utiče na CLI ili backend konfiguraciju.",
-  "settings.aboutKiloCode.resetSettings.button": "Resetuj sve postavke",
+  "settings.aboutVCPCode.resetSettings.button": "Resetuj sve postavke",
 
   "settings.agentBehaviour.subtab.modes": "Modovi",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -968,4 +968,5 @@
   "dialog.model.notSet": "Nije postavljeno",
   "profile.personalAccount": "Osobni račun",
 }
+
 

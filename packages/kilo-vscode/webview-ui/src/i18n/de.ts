@@ -767,7 +767,7 @@ export const dict = {
   "settings.prompts.title": "Prompts",
   "settings.experimental.title": "Experimentell",
   "settings.language.title": "Sprache",
-  "settings.aboutKiloCode.title": "Über VCP Code",
+  "settings.aboutVCPCode.title": "Über VCP Code",
 
   "session.messages.empty": "Starten Sie eine Unterhaltung, indem Sie unten eine Nachricht eingeben.",
   "session.messages.welcome":
@@ -795,25 +795,25 @@ export const dict = {
   "time.thisMonth": "Diesen Monat",
   "time.older": "Älter",
 
-  "settings.aboutKiloCode.status.connected": "Verbunden",
-  "settings.aboutKiloCode.status.connecting": "Verbindung wird hergestellt...",
-  "settings.aboutKiloCode.status.disconnected": "Getrennt",
-  "settings.aboutKiloCode.status.error": "Fehler",
-  "settings.aboutKiloCode.cliServer": "CLI-Server",
-  "settings.aboutKiloCode.status.label": "Status:",
-  "settings.aboutKiloCode.port.label": "Port:",
-  "settings.aboutKiloCode.versionInfo": "Versionsinformationen",
-  "settings.aboutKiloCode.version.label": "Version:",
-  "settings.aboutKiloCode.extensionName": "VCP Code Erweiterung",
-  "settings.aboutKiloCode.community": "Community & Support",
-  "settings.aboutKiloCode.feedback.prefix": "Bei Fragen oder Feedback können Sie ein Issue eröffnen auf",
-  "settings.aboutKiloCode.feedback.or": "oder",
-  "settings.aboutKiloCode.support.prefix":
+  "settings.aboutVCPCode.status.connected": "Verbunden",
+  "settings.aboutVCPCode.status.connecting": "Verbindung wird hergestellt...",
+  "settings.aboutVCPCode.status.disconnected": "Getrennt",
+  "settings.aboutVCPCode.status.error": "Fehler",
+  "settings.aboutVCPCode.cliServer": "CLI-Server",
+  "settings.aboutVCPCode.status.label": "Status:",
+  "settings.aboutVCPCode.port.label": "Port:",
+  "settings.aboutVCPCode.versionInfo": "Versionsinformationen",
+  "settings.aboutVCPCode.version.label": "Version:",
+  "settings.aboutVCPCode.extensionName": "VCP Code Erweiterung",
+  "settings.aboutVCPCode.community": "Community & Support",
+  "settings.aboutVCPCode.feedback.prefix": "Bei Fragen oder Feedback können Sie ein Issue eröffnen auf",
+  "settings.aboutVCPCode.feedback.or": "oder",
+  "settings.aboutVCPCode.support.prefix":
     "Bei Abrechnungs- oder Kontofragen wenden Sie sich an den Kundensupport unter",
-  "settings.aboutKiloCode.resetSettings.title": "Einstellungen zurücksetzen",
-  "settings.aboutKiloCode.resetSettings.description":
+  "settings.aboutVCPCode.resetSettings.title": "Einstellungen zurücksetzen",
+  "settings.aboutVCPCode.resetSettings.description":
     "Alle VCP Code-Erweiterungseinstellungen auf Standardwerte zurücksetzen. Dies hat keinen Einfluss auf die CLI- oder Backend-Konfiguration.",
-  "settings.aboutKiloCode.resetSettings.button": "Alle Einstellungen zurücksetzen",
+  "settings.aboutVCPCode.resetSettings.button": "Alle Einstellungen zurücksetzen",
 
   "settings.agentBehaviour.subtab.modes": "Modi",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -954,4 +954,5 @@ export const dict = {
   "dialog.model.notSet": "Nicht festgelegt",
   "profile.personalAccount": "Persönliches Konto",
 } satisfies Partial<Record<Keys, string>>
+
 

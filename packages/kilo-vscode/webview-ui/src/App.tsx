@@ -7,7 +7,9 @@ import { DiffComponentProvider } from "@kilocode/kilo-ui/context/diff"
 import { Code } from "@kilocode/kilo-ui/code"
 import { Diff } from "@kilocode/kilo-ui/diff"
 import { DataProvider } from "@kilocode/kilo-ui/context/data"
-import { Toast } from "@kilocode/kilo-ui/toast"
+import { Button } from "@kilocode/kilo-ui/button"
+import { Card } from "@kilocode/kilo-ui/card"
+import { Toast, showToast } from "@kilocode/kilo-ui/toast"
 import Settings from "./components/Settings"
 import ProfileView from "./components/ProfileView"
 import { VSCodeProvider, useVSCode } from "./context/vscode"
@@ -44,11 +46,12 @@ const DummyView: Component<{ title: string }> = (props) => {
   )
 }
 
-const VCPView: Component = () => {
+const VCPView: Component<{ onOpenSettingsTab: (tab: string) => void; onOpenQueue: () => void }> = (props) => {
   const { config } = useConfig()
   const session = useSession()
   const server = useServer()
   const language = useLanguage()
+  const vscode = useVSCode()
   const vcpParts = createMemo(() => {
     const texts: string[] = []
     for (const message of session.messages()) {
@@ -78,113 +81,171 @@ const VCPView: Component = () => {
   const status = (enabled: boolean | undefined) =>
     enabled === false ? language.t("vcp.view.status.disabled") : language.t("vcp.view.status.enabled")
 
+  const connectionStateClass = createMemo(() => {
+    const state = server.connectionState()
+    if (state === "connected") return "status-dot status-dot--ok"
+    if (state === "connecting") return "status-dot status-dot--warn"
+    return "status-dot status-dot--error"
+  })
+
+  const protocolRows = createMemo(() => [
+    { label: language.t("vcp.view.protocol.contextFold"), enabled: config().vcp?.contextFold?.enabled },
+    { label: language.t("vcp.view.protocol.vcpInfo"), enabled: config().vcp?.vcpInfo?.enabled },
+    { label: language.t("vcp.view.protocol.toolRequest"), enabled: config().vcp?.toolRequest?.enabled },
+    { label: language.t("vcp.view.protocol.htmlRender"), enabled: config().vcp?.html?.enabled },
+    { label: language.t("vcp.view.protocol.agentTeam"), enabled: config().vcp?.agentTeam?.enabled },
+    { label: language.t("vcp.view.protocol.memoryRuntime"), enabled: config().vcp?.memory?.enabled },
+  ])
+
+  const refreshDiagnostics = () => {
+    const id = session.currentSessionID()
+    if (id) {
+      session.syncSession(id)
+    }
+    session.requestPromptQueue()
+    vscode.postMessage({ type: "requestProviders" })
+    showToast({
+      variant: "success",
+      icon: "circle-check",
+      title: language.t("vcp.view.diagnostics.actions.refreshed.title"),
+      description: language.t("vcp.view.diagnostics.actions.refreshed.description"),
+    })
+  }
+
+  const exportDiagnostics = async () => {
+    const snapshot = {
+      timestamp: new Date().toISOString(),
+      connection: server.connectionState(),
+      port: server.serverInfo()?.port ?? null,
+      extensionVersion: server.extensionVersion() ?? null,
+      error: server.error() ?? null,
+      session: {
+        id: session.currentSessionID() ?? null,
+        status: session.status(),
+        queuedPrompts: session.promptQueue().length,
+        pendingPermissions: session.permissions().length,
+        pendingQuestions: session.questions().length,
+      },
+      protocol: {
+        contextFold: config().vcp?.contextFold?.enabled ?? true,
+        vcpInfo: config().vcp?.vcpInfo?.enabled ?? true,
+        toolRequest: config().vcp?.toolRequest?.enabled ?? true,
+        htmlRender: config().vcp?.html?.enabled ?? true,
+        agentTeam: config().vcp?.agentTeam?.enabled ?? false,
+        memoryRuntime: config().vcp?.memory?.enabled ?? true,
+      },
+    }
+
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(snapshot, null, 2))
+      showToast({
+        variant: "success",
+        icon: "circle-check",
+        title: language.t("vcp.view.diagnostics.actions.export.success.title"),
+        description: language.t("vcp.view.diagnostics.actions.export.success.description"),
+      })
+    } catch {
+      showToast({
+        title: language.t("vcp.view.diagnostics.actions.export.failed.title"),
+        description: language.t("vcp.view.diagnostics.actions.export.failed.description"),
+      })
+    }
+  }
+
   return (
-    <div
-      style={{
-        display: "grid",
-        gap: "12px",
-        padding: "12px",
-      }}
-    >
-      <div
-        style={{
-          border: "1px solid var(--border-base, var(--vscode-panel-border))",
-          "border-radius": "8px",
-          padding: "12px",
-          "background-color": "var(--surface-base, var(--vscode-editor-background))",
-        }}
-      >
+    <div class="vcp-control-center">
+      <Card>
         <h3 style={{ margin: "0 0 8px 0" }}>{language.t("vcp.view.title")}</h3>
         <p style={{ margin: 0, "font-size": "12px", color: "var(--text-weak-base, var(--vscode-descriptionForeground))" }}>
           {language.t("vcp.view.description")}
         </p>
-      </div>
+      </Card>
 
-      <div
-        style={{
-          border: "1px solid var(--border-base, var(--vscode-panel-border))",
-          "border-radius": "8px",
-          padding: "12px",
-          "background-color": "var(--surface-base, var(--vscode-editor-background))",
-        }}
-      >
-        <h4 style={{ margin: "0 0 8px 0" }}>{language.t("vcp.view.protocol.title")}</h4>
-        <div style={{ display: "grid", gap: "6px", "font-size": "12px" }}>
-          <div>{language.t("vcp.view.protocol.contextFold")}: {status(config().vcp?.contextFold?.enabled)}</div>
-          <div>{language.t("vcp.view.protocol.vcpInfo")}: {status(config().vcp?.vcpInfo?.enabled)}</div>
-          <div>{language.t("vcp.view.protocol.toolRequest")}: {status(config().vcp?.toolRequest?.enabled)}</div>
-          <div>{language.t("vcp.view.protocol.htmlRender")}: {status(config().vcp?.html?.enabled)}</div>
-          <div>{language.t("vcp.view.protocol.agentTeam")}: {status(config().vcp?.agentTeam?.enabled)}</div>
-          <div>{language.t("vcp.view.protocol.memoryRuntime")}: {status(config().vcp?.memory?.enabled)}</div>
+      <Card>
+        <h4 style={{ margin: "0 0 10px 0" }}>{language.t("vcp.view.protocol.title")}</h4>
+        <div class="vcp-control-center__rows">
+          {protocolRows().map((item) => (
+            <div class="vcp-control-center__row">
+              <div style={{ display: "flex", "align-items": "center", gap: "8px", "min-width": 0 }}>
+                <span>{item.label}</span>
+                <span class={`vcp-status-tag${item.enabled === false ? " vcp-status-tag--disabled" : ""}`}>
+                  {status(item.enabled)}
+                </span>
+              </div>
+              <Button size="small" variant="ghost" onClick={() => props.onOpenSettingsTab("agentBehaviour")}>
+                {language.t("vcp.view.action.configure")}
+              </Button>
+            </div>
+          ))}
         </div>
-      </div>
+      </Card>
 
-      <div
-        style={{
-          border: "1px solid var(--border-base, var(--vscode-panel-border))",
-          "border-radius": "8px",
-          padding: "12px",
-          "background-color": "var(--surface-base, var(--vscode-editor-background))",
-        }}
-      >
-        <h4 style={{ margin: "0 0 8px 0" }}>{language.t("vcp.view.runtime.title")}</h4>
-        <div style={{ display: "grid", gap: "6px", "font-size": "12px" }}>
+      <Card>
+        <h4 style={{ margin: "0 0 10px 0" }}>{language.t("vcp.view.runtime.title")}</h4>
+        <div class="vcp-control-center__metrics">
           <div>{language.t("vcp.view.runtime.activeSession")}: {session.currentSessionID() ?? "-"}</div>
           <div>{language.t("vcp.view.runtime.sessionStatus")}: {session.status()}</div>
           <div>{language.t("vcp.view.runtime.queuedPrompts")}: {session.promptQueue().length}</div>
           <div>{language.t("vcp.view.runtime.pendingPermissions")}: {session.permissions().length}</div>
           <div>{language.t("vcp.view.runtime.pendingQuestions")}: {session.questions().length}</div>
         </div>
-      </div>
+        <div class="vcp-control-center__actions">
+          <Button size="small" variant="secondary" onClick={props.onOpenQueue}>
+            {language.t("vcp.view.runtime.actions.viewQueue")}
+          </Button>
+          <Button
+            size="small"
+            variant="ghost"
+            onClick={() => {
+              session.dequeuePrompt()
+              showToast({
+                variant: "success",
+                icon: "circle-check",
+                title: language.t("vcp.view.runtime.actions.queueCleared.title"),
+                description: language.t("vcp.view.runtime.actions.queueCleared.description"),
+              })
+            }}
+          >
+            {language.t("vcp.view.runtime.actions.clearQueue")}
+          </Button>
+        </div>
+      </Card>
 
-      <div
-        style={{
-          border: "1px solid var(--border-base, var(--vscode-panel-border))",
-          "border-radius": "8px",
-          padding: "12px",
-          "background-color": "var(--surface-base, var(--vscode-editor-background))",
-        }}
-      >
-        <h4 style={{ margin: "0 0 8px 0" }}>{language.t("vcp.view.diagnostics.title")}</h4>
-        <div style={{ display: "grid", gap: "6px", "font-size": "12px" }}>
-          <div>{language.t("vcp.view.diagnostics.connection")}: {server.connectionState()}</div>
+      <Card>
+        <h4 style={{ margin: "0 0 10px 0" }}>{language.t("vcp.view.diagnostics.title")}</h4>
+        <div class="vcp-control-center__metrics">
+          <div>
+            {language.t("vcp.view.diagnostics.connection")}:{" "}
+            <span style={{ display: "inline-flex", "align-items": "center", gap: "6px" }}>
+              <span class={connectionStateClass()} />
+              {server.connectionState()}
+            </span>
+          </div>
           <div>{language.t("vcp.view.diagnostics.serverPort")}: {server.serverInfo()?.port ?? "-"}</div>
           <div>{language.t("vcp.view.diagnostics.extensionVersion")}: {server.extensionVersion() ?? "-"}</div>
           <div>{language.t("vcp.view.diagnostics.error")}: {server.error() ?? "-"}</div>
         </div>
-      </div>
+        <div class="vcp-control-center__actions">
+          <Button size="small" variant="secondary" onClick={refreshDiagnostics}>
+            {language.t("vcp.view.diagnostics.actions.refresh")}
+          </Button>
+          <Button size="small" variant="ghost" onClick={() => void exportDiagnostics()}>
+            {language.t("vcp.view.diagnostics.actions.export")}
+          </Button>
+        </div>
+      </Card>
 
-      <div
-        style={{
-          border: "1px solid var(--border-base, var(--vscode-panel-border))",
-          "border-radius": "8px",
-          padding: "12px",
-          "background-color": "var(--surface-base, var(--vscode-editor-background))",
-        }}
-      >
-        <h4 style={{ margin: "0 0 8px 0" }}>{language.t("vcp.view.visualization.title")}</h4>
-        <div style={{ display: "grid", gap: "6px", "font-size": "12px" }}>
+      <Card>
+        <h4 style={{ margin: "0 0 10px 0" }}>{language.t("vcp.view.visualization.title")}</h4>
+        <div class="vcp-control-center__metrics">
           <div>{language.t("vcp.view.visualization.foldBlocks")}: {foldCount()}</div>
           <div>{language.t("vcp.view.visualization.vcpInfoBlocks")}: {infoCount()}</div>
           <div>{language.t("vcp.view.visualization.toolRequestBlocks")}: {toolRequestCount()}</div>
-        </div>
-      </div>
-
-      <div
-        style={{
-          border: "1px solid var(--border-base, var(--vscode-panel-border))",
-          "border-radius": "8px",
-          padding: "12px",
-          "background-color": "var(--surface-base, var(--vscode-editor-background))",
-        }}
-      >
-        <h4 style={{ margin: "0 0 8px 0" }}>{language.t("vcp.view.observability.title")}</h4>
-        <div style={{ display: "grid", gap: "6px", "font-size": "12px" }}>
           <div>{language.t("vcp.view.observability.windowSensorCalls")}: {windowSensorCount()}</div>
           <div>{language.t("vcp.view.observability.screenPilotCalls")}: {screenPilotCount()}</div>
           <div>{language.t("vcp.view.observability.browserAutomation")}: {status(config().browserAutomation?.enabled)}</div>
         </div>
-      </div>
+      </Card>
     </div>
   )
 }
@@ -272,7 +333,7 @@ const AppContent: Component = () => {
         setCurrentView("profile")
         break
       case "vcpButtonClicked":
-        setSettingsTab("vcp")
+        setSettingsTab("agentBehaviour")
         setCurrentView("settings")
         break
       case "providersButtonClicked":
@@ -338,7 +399,13 @@ const AppContent: Component = () => {
           <Settings initialTab={settingsTab()} onBack={() => setCurrentView("newTask")} />
         </Match>
         <Match when={currentView() === "vcp"}>
-          <VCPView />
+          <VCPView
+            onOpenSettingsTab={(tab) => {
+              setSettingsTab(tab)
+              setCurrentView("settings")
+            }}
+            onOpenQueue={() => setCurrentView("newTask")}
+          />
         </Match>
       </Switch>
     </div>

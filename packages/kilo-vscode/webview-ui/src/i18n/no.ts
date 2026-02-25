@@ -764,7 +764,7 @@ export const dict = {
   "settings.prompts.title": "Meldinger",
   "settings.experimental.title": "Eksperimentelt",
   "settings.language.title": "Språk",
-  "settings.aboutKiloCode.title": "Om VCP Code",
+  "settings.aboutVCPCode.title": "Om VCP Code",
 
   "session.messages.empty": "Start en samtale ved å skrive en melding nedenfor.",
   "session.messages.welcome":
@@ -792,24 +792,24 @@ export const dict = {
   "time.thisMonth": "Denne måneden",
   "time.older": "Eldre",
 
-  "settings.aboutKiloCode.status.connected": "Tilkoblet",
-  "settings.aboutKiloCode.status.connecting": "Kobler til...",
-  "settings.aboutKiloCode.status.disconnected": "Frakoblet",
-  "settings.aboutKiloCode.status.error": "Feil",
-  "settings.aboutKiloCode.cliServer": "CLI-server",
-  "settings.aboutKiloCode.status.label": "Status:",
-  "settings.aboutKiloCode.port.label": "Port:",
-  "settings.aboutKiloCode.versionInfo": "Versjonsinformasjon",
-  "settings.aboutKiloCode.version.label": "Versjon:",
-  "settings.aboutKiloCode.extensionName": "VCP Code-utvidelse",
-  "settings.aboutKiloCode.community": "Fellesskap og støtte",
-  "settings.aboutKiloCode.feedback.prefix": "Hvis du har spørsmål eller tilbakemeldinger, åpne gjerne en issue på",
-  "settings.aboutKiloCode.feedback.or": "eller",
-  "settings.aboutKiloCode.support.prefix": "For fakturerings- eller kontospørsmål, kontakt kundestøtte på",
-  "settings.aboutKiloCode.resetSettings.title": "Tilbakestill innstillinger",
-  "settings.aboutKiloCode.resetSettings.description":
+  "settings.aboutVCPCode.status.connected": "Tilkoblet",
+  "settings.aboutVCPCode.status.connecting": "Kobler til...",
+  "settings.aboutVCPCode.status.disconnected": "Frakoblet",
+  "settings.aboutVCPCode.status.error": "Feil",
+  "settings.aboutVCPCode.cliServer": "CLI-server",
+  "settings.aboutVCPCode.status.label": "Status:",
+  "settings.aboutVCPCode.port.label": "Port:",
+  "settings.aboutVCPCode.versionInfo": "Versjonsinformasjon",
+  "settings.aboutVCPCode.version.label": "Versjon:",
+  "settings.aboutVCPCode.extensionName": "VCP Code-utvidelse",
+  "settings.aboutVCPCode.community": "Fellesskap og støtte",
+  "settings.aboutVCPCode.feedback.prefix": "Hvis du har spørsmål eller tilbakemeldinger, åpne gjerne en issue på",
+  "settings.aboutVCPCode.feedback.or": "eller",
+  "settings.aboutVCPCode.support.prefix": "For fakturerings- eller kontospørsmål, kontakt kundestøtte på",
+  "settings.aboutVCPCode.resetSettings.title": "Tilbakestill innstillinger",
+  "settings.aboutVCPCode.resetSettings.description":
     "Tilbakestill alle VCP Code-utvidelsesinnstillinger til standardverdier. Dette påvirker ikke CLI- eller backend-konfigurasjon.",
-  "settings.aboutKiloCode.resetSettings.button": "Tilbakestill alle innstillinger",
+  "settings.aboutVCPCode.resetSettings.button": "Tilbakestill alle innstillinger",
 
   "settings.agentBehaviour.subtab.modes": "Moduser",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -943,4 +943,5 @@ export const dict = {
   "dialog.model.notSet": "Ikke angitt",
   "profile.personalAccount": "Personlig konto",
 } satisfies Partial<Record<Keys, string>>
+
 

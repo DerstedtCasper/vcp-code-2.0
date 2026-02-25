@@ -141,7 +141,11 @@ const ExperimentalTab: Component = () => {
         <Card>
           <For each={Object.entries(config().tools ?? {})}>
             {([name, enabled], index) => (
-              <SettingsRow title={name} description="" last={index() >= Object.keys(config().tools ?? {}).length - 1}>
+              <SettingsRow
+                title={language.t("settings.experimental.toolToggle.title", { name })}
+                description={language.t("settings.experimental.toolToggle.description")}
+                last={index() >= Object.keys(config().tools ?? {}).length - 1}
+              >
                 <Switch
                   checked={enabled}
                   onChange={(checked) => updateConfig({ tools: { ...config().tools, [name]: checked } })}

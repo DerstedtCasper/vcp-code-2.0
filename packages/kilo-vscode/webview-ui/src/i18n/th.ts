@@ -753,7 +753,7 @@
   "settings.prompts.title": "พรอมต์",
   "settings.experimental.title": "ทดลอง",
   "settings.language.title": "ภาษา",
-  "settings.aboutKiloCode.title": "เกี่ยวกับ VCP Code",
+  "settings.aboutVCPCode.title": "เกี่ยวกับ VCP Code",
 
   "session.messages.empty": "เริ่มการสนทนาโดยพิมพ์ข้อความด้านล่าง",
   "session.messages.welcome": "VCP Code เป็นผู้ช่วยเขียนโค้ด AI ขอให้สร้างฟีเจอร์ แก้ไขบัก หรืออธิบายโค้ดเบสของคุณ",
@@ -780,24 +780,24 @@
   "time.thisMonth": "เดือนนี้",
   "time.older": "เก่ากว่า",
 
-  "settings.aboutKiloCode.status.connected": "เชื่อมต่อแล้ว",
-  "settings.aboutKiloCode.status.connecting": "กำลังเชื่อมต่อ...",
-  "settings.aboutKiloCode.status.disconnected": "ตัดการเชื่อมต่อ",
-  "settings.aboutKiloCode.status.error": "ข้อผิดพลาด",
-  "settings.aboutKiloCode.cliServer": "เซิร์ฟเวอร์ CLI",
-  "settings.aboutKiloCode.status.label": "สถานะ:",
-  "settings.aboutKiloCode.port.label": "พอร์ต:",
-  "settings.aboutKiloCode.versionInfo": "ข้อมูลเวอร์ชัน",
-  "settings.aboutKiloCode.version.label": "เวอร์ชัน:",
-  "settings.aboutKiloCode.extensionName": "ส่วนขยาย VCP Code",
-  "settings.aboutKiloCode.community": "ชุมชนและการสนับสนุน",
-  "settings.aboutKiloCode.feedback.prefix": "หากคุณมีคำถามหรือข้อเสนอแนะ สามารถเปิด issue ได้ที่",
-  "settings.aboutKiloCode.feedback.or": "หรือ",
-  "settings.aboutKiloCode.support.prefix": "สำหรับคำถามเกี่ยวกับการเรียกเก็บเงินหรือบัญชี ติดต่อฝ่ายสนับสนุนลูกค้าที่",
-  "settings.aboutKiloCode.resetSettings.title": "รีเซ็ตการตั้งค่า",
-  "settings.aboutKiloCode.resetSettings.description":
+  "settings.aboutVCPCode.status.connected": "เชื่อมต่อแล้ว",
+  "settings.aboutVCPCode.status.connecting": "กำลังเชื่อมต่อ...",
+  "settings.aboutVCPCode.status.disconnected": "ตัดการเชื่อมต่อ",
+  "settings.aboutVCPCode.status.error": "ข้อผิดพลาด",
+  "settings.aboutVCPCode.cliServer": "เซิร์ฟเวอร์ CLI",
+  "settings.aboutVCPCode.status.label": "สถานะ:",
+  "settings.aboutVCPCode.port.label": "พอร์ต:",
+  "settings.aboutVCPCode.versionInfo": "ข้อมูลเวอร์ชัน",
+  "settings.aboutVCPCode.version.label": "เวอร์ชัน:",
+  "settings.aboutVCPCode.extensionName": "ส่วนขยาย VCP Code",
+  "settings.aboutVCPCode.community": "ชุมชนและการสนับสนุน",
+  "settings.aboutVCPCode.feedback.prefix": "หากคุณมีคำถามหรือข้อเสนอแนะ สามารถเปิด issue ได้ที่",
+  "settings.aboutVCPCode.feedback.or": "หรือ",
+  "settings.aboutVCPCode.support.prefix": "สำหรับคำถามเกี่ยวกับการเรียกเก็บเงินหรือบัญชี ติดต่อฝ่ายสนับสนุนลูกค้าที่",
+  "settings.aboutVCPCode.resetSettings.title": "รีเซ็ตการตั้งค่า",
+  "settings.aboutVCPCode.resetSettings.description":
     "รีเซ็ตการตั้งค่าส่วนขยาย VCP Code ทั้งหมดเป็นค่าเริ่มต้น ไม่ส่งผลกระทบต่อการกำหนดค่า CLI หรือแบ็กเอนด์",
-  "settings.aboutKiloCode.resetSettings.button": "รีเซ็ตการตั้งค่าทั้งหมด",
+  "settings.aboutVCPCode.resetSettings.button": "รีเซ็ตการตั้งค่าทั้งหมด",
 
   "settings.agentBehaviour.subtab.modes": "โหมด",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -930,4 +930,5 @@
   "dialog.model.notSet": "ไม่ได้ตั้งค่า",
   "profile.personalAccount": "บัญชีส่วนตัว",
 }
+
 

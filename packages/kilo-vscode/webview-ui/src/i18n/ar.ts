@@ -755,7 +755,7 @@
   "settings.prompts.title": "الموجهات",
   "settings.experimental.title": "تجريبي",
   "settings.language.title": "اللغة",
-  "settings.aboutKiloCode.title": "حول VCP Code",
+  "settings.aboutVCPCode.title": "حول VCP Code",
 
   "session.messages.empty": "ابدأ محادثة بكتابة رسالة أدناه.",
   "session.messages.welcome":
@@ -783,24 +783,24 @@
   "time.thisMonth": "هذا الشهر",
   "time.older": "أقدم",
 
-  "settings.aboutKiloCode.status.connected": "متصل",
-  "settings.aboutKiloCode.status.connecting": "جارٍ الاتصال...",
-  "settings.aboutKiloCode.status.disconnected": "غير متصل",
-  "settings.aboutKiloCode.status.error": "خطأ",
-  "settings.aboutKiloCode.cliServer": "خادم CLI",
-  "settings.aboutKiloCode.status.label": "الحالة:",
-  "settings.aboutKiloCode.port.label": "المنفذ:",
-  "settings.aboutKiloCode.versionInfo": "معلومات الإصدار",
-  "settings.aboutKiloCode.version.label": "الإصدار:",
-  "settings.aboutKiloCode.extensionName": "إضافة VCP Code",
-  "settings.aboutKiloCode.community": "المجتمع والدعم",
-  "settings.aboutKiloCode.feedback.prefix": "إذا كان لديك أي أسئلة أو ملاحظات، لا تتردد في فتح مشكلة على",
-  "settings.aboutKiloCode.feedback.or": "أو",
-  "settings.aboutKiloCode.support.prefix": "لأسئلة الفوترة أو الحساب، تواصل مع دعم العملاء على",
-  "settings.aboutKiloCode.resetSettings.title": "إعادة تعيين الإعدادات",
-  "settings.aboutKiloCode.resetSettings.description":
+  "settings.aboutVCPCode.status.connected": "متصل",
+  "settings.aboutVCPCode.status.connecting": "جارٍ الاتصال...",
+  "settings.aboutVCPCode.status.disconnected": "غير متصل",
+  "settings.aboutVCPCode.status.error": "خطأ",
+  "settings.aboutVCPCode.cliServer": "خادم CLI",
+  "settings.aboutVCPCode.status.label": "الحالة:",
+  "settings.aboutVCPCode.port.label": "المنفذ:",
+  "settings.aboutVCPCode.versionInfo": "معلومات الإصدار",
+  "settings.aboutVCPCode.version.label": "الإصدار:",
+  "settings.aboutVCPCode.extensionName": "إضافة VCP Code",
+  "settings.aboutVCPCode.community": "المجتمع والدعم",
+  "settings.aboutVCPCode.feedback.prefix": "إذا كان لديك أي أسئلة أو ملاحظات، لا تتردد في فتح مشكلة على",
+  "settings.aboutVCPCode.feedback.or": "أو",
+  "settings.aboutVCPCode.support.prefix": "لأسئلة الفوترة أو الحساب، تواصل مع دعم العملاء على",
+  "settings.aboutVCPCode.resetSettings.title": "إعادة تعيين الإعدادات",
+  "settings.aboutVCPCode.resetSettings.description":
     "إعادة تعيين جميع إعدادات إضافة VCP Code إلى قيمها الافتراضية. لا يؤثر هذا على تكوين CLI أو الواجهة الخلفية.",
-  "settings.aboutKiloCode.resetSettings.button": "إعادة تعيين جميع الإعدادات",
+  "settings.aboutVCPCode.resetSettings.button": "إعادة تعيين جميع الإعدادات",
 
   "settings.agentBehaviour.subtab.modes": "الأوضاع",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -932,4 +932,5 @@
   "dialog.model.notSet": "غير محدد",
   "profile.personalAccount": "حساب شخصي",
 }
+
 

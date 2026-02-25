@@ -1,7 +1,7 @@
 ﻿import type { ModelSelection } from "../../types/messages"
 import type { EnrichedModel } from "../../context/provider"
 
-export const KILO_GATEWAY_ID = "VCP"
+export const KILO_GATEWAY_ID = "kilo"
 
 export const PROVIDER_ORDER = [KILO_GATEWAY_ID, "anthropic", "openai", "google"]
 

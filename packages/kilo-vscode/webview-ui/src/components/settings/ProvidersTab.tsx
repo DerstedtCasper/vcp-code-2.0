@@ -1,16 +1,18 @@
-﻿import { Component, For, Show, Match, Switch, createEffect, createMemo, createSignal } from "solid-js"
+﻿import { Component, For, Show, Match, Switch as SolidSwitch, createEffect, createMemo, createSignal } from "solid-js"
 import { Select } from "@kilocode/kilo-ui/select"
 import { Card } from "@kilocode/kilo-ui/card"
 import { Button } from "@kilocode/kilo-ui/button"
 import { IconButton } from "@kilocode/kilo-ui/icon-button"
 import { TextField } from "@kilocode/kilo-ui/text-field"
 import { Dialog } from "@kilocode/kilo-ui/dialog"
+import { Switch } from "@kilocode/kilo-ui/switch"
 import { showToast } from "@kilocode/kilo-ui/toast"
 import { useDialog } from "@kilocode/kilo-ui/context/dialog"
 import { useConfig } from "../../context/config"
 import { useProvider } from "../../context/provider"
 import { useLanguage } from "../../context/language"
 import { useVSCode } from "../../context/vscode"
+import { useDirtyState } from "../../hooks/useDirtyState"
 import { ModelSelectorBase } from "../chat/ModelSelector"
 import type {
   ModelSelection,
@@ -59,7 +61,7 @@ interface ProviderEditorDraft {
 }
 
 const POPULAR_PROVIDERS = [
-  "VCP",
+  "kilo",
   "opencode",
   "anthropic",
   "github-copilot",
@@ -77,8 +79,8 @@ const PROVIDER_NPM_MAP: Record<string, string> = {
   openrouter: "@openrouter/ai-sdk-provider",
   azure: "@ai-sdk/azure",
   "github-copilot": "@ai-sdk/github-copilot",
-  VCP: "@kilocode/VCP-gateway",
-  opencode: "@kilocode/VCP-gateway",
+  kilo: "@kilocode/kilo-gateway",
+  opencode: "@kilocode/kilo-gateway",
 }
 
 const PROVIDER_NOTES = [
@@ -271,7 +273,7 @@ const ProviderConnectDialog: Component<ProviderConnectDialogProps> = (props) => 
   return (
     <Dialog title={language.t("provider.connect.title", { provider: props.providerName })} transition>
       <div style={{ display: "flex", "flex-direction": "column", gap: "12px", padding: "8px 4px 16px 4px" }}>
-        <Switch>
+        <SolidSwitch>
           <Match when={methodIndex() === undefined}>
             <div style={{ "font-size": "13px", color: "var(--text-base, var(--vscode-foreground))" }}>
               {language.t("provider.connect.selectMethod", { provider: props.providerName })}
@@ -322,7 +324,7 @@ const ProviderConnectDialog: Component<ProviderConnectDialogProps> = (props) => 
             >
               {(auth) => (
                 <div style={{ display: "grid", gap: "10px" }}>
-                  <Switch>
+                  <SolidSwitch>
                     <Match when={auth().method === "code"}>
                       <div style={{ "font-size": "13px", color: "var(--text-base, var(--vscode-foreground))" }}>
                         {language.t("provider.connect.oauth.code.visit.prefix")}
@@ -353,7 +355,7 @@ const ProviderConnectDialog: Component<ProviderConnectDialogProps> = (props) => 
                         {language.t("provider.connect.oauth.auto.visit.suffix", { provider: props.providerName })}
                       </div>
                     </Match>
-                  </Switch>
+                  </SolidSwitch>
                   <Show when={auth().method === "auto"}>
                     <TextField
                       value={confirmationCode()}
@@ -388,7 +390,7 @@ const ProviderConnectDialog: Component<ProviderConnectDialogProps> = (props) => 
               )}
             </Show>
           </Match>
-        </Switch>
+        </SolidSwitch>
         <Show when={errorText()}>
           {(message) => (
             <div style={{ "font-size": "12px", color: "var(--vscode-errorForeground, #f48771)" }}>{message()}</div>
@@ -421,7 +423,12 @@ const ProvidersTab: Component = () => {
 
   const [newDisabled, setNewDisabled] = createSignal<ProviderOption | undefined>()
   const [newEnabled, setNewEnabled] = createSignal<ProviderOption | undefined>()
-  const [editor, setEditor] = createSignal<ProviderEditorDraft | null>(null)
+  const dirtyState = useDirtyState<ProviderEditorDraft | null>(null)
+  const editor = dirtyState.current
+  const setEditor = dirtyState.setCurrent
+  const isDirty = dirtyState.isDirty
+  const resetEditor = dirtyState.reset
+  const discardEditorChanges = dirtyState.discard
   const [activeProfile, setActiveProfile] = createSignal<string>("")
 
   const disabledProviders = () => config().disabled_providers ?? []
@@ -513,6 +520,10 @@ const ProvidersTab: Component = () => {
 
   const updateEditor = <K extends keyof ProviderEditorDraft>(key: K, value: ProviderEditorDraft[K]) => {
     setEditor((prev) => (prev ? { ...prev, [key]: value } : prev))
+  }
+  const updateEditorAndAutoSave = <K extends keyof ProviderEditorDraft>(key: K, value: ProviderEditorDraft[K]) => {
+    updateEditor(key, value)
+    queueMicrotask(() => saveEditor())
   }
 
   const updateHeaderRow = (index: number, key: "key" | "value", value: string) => {
@@ -671,7 +682,7 @@ const ProvidersTab: Component = () => {
     const includeUsage = typeof cfg.options?.includeUsage === "boolean" ? cfg.options.includeUsage : true
 
     setActiveProfile(providerID)
-    setEditor({
+    const next: ProviderEditorDraft = {
       id: providerID,
       name: cfg.name ?? catalog?.name ?? providerID,
       providerType: providerTypeFromConfig(providerID, cfg),
@@ -690,7 +701,8 @@ const ProvidersTab: Component = () => {
       maxOutputTokens: typeof cfg.options?.maxOutputTokens === "number" ? String(cfg.options.maxOutputTokens) : "",
       contextWindow: typeof cfg.options?.contextWindow === "number" ? String(cfg.options.contextWindow) : "",
       headers: headers.length > 0 ? headers : [{ key: "", value: "" }],
-    })
+    }
+    resetEditor(next)
   }
 
   const connectProvider = (providerID: string) => {
@@ -706,6 +718,7 @@ const ProvidersTab: Component = () => {
         runAction={runProviderAction}
         onConnected={() => {
           clearDisabledProvider(providerID)
+          vscode.postMessage({ type: "requestProviders" })
           showToast({
             variant: "success",
             icon: "circle-check",
@@ -819,18 +832,26 @@ const ProvidersTab: Component = () => {
       options,
     }
 
-    updateConfig({
-      provider: nextProviders,
-      disabled_providers: (config().disabled_providers ?? []).filter((id) => id !== draft.id),
-    })
+    try {
+      updateConfig({
+        provider: nextProviders,
+        disabled_providers: (config().disabled_providers ?? []).filter((id) => id !== draft.id),
+      })
 
-    vscode.postMessage({ type: "requestProviders" })
-    showToast({
-      variant: "success",
-      icon: "circle-check",
-      title: language.t("common.save"),
-      description: `${draft.id} profile updated`,
-    })
+      vscode.postMessage({ type: "requestProviders" })
+      showToast({
+        variant: "success",
+        icon: "circle-check",
+        title: language.t("common.save"),
+        description: language.t("toast.config.saved"),
+      })
+      resetEditor(draft)
+    } catch {
+      showToast({
+        title: language.t("common.requestFailed"),
+        description: language.t("toast.config.saveFailed"),
+      })
+    }
   }
 
   const addCustomProvider = () => {
@@ -893,7 +914,7 @@ const ProvidersTab: Component = () => {
     const nextDisabled = currentDisabled.includes(draft.id) ? currentDisabled : [...currentDisabled, draft.id]
     updateConfig({ provider: nextProviders, disabled_providers: nextDisabled })
     vscode.postMessage({ type: "requestProviders" })
-    setEditor(null)
+    resetEditor(null)
     setActiveProfile("")
   }
 
@@ -951,7 +972,10 @@ const ProvidersTab: Component = () => {
 
       <h4 style={{ "margin-top": "16px", "margin-bottom": "8px" }}>{language.t("settings.providers.title")}</h4>
       <Card>
-        <SettingsRow title="配置文件" description="保存多组 API 配置便于快速切换。">
+        <SettingsRow
+          title={language.t("settings.provider.profiles.title")}
+          description={language.t("settings.provider.profiles.description")}
+        >
           <div style={{ display: "flex", gap: "8px", "align-items": "center", width: "100%" }}>
             <div style={{ flex: 1 }}>
               <Select
@@ -963,7 +987,7 @@ const ProvidersTab: Component = () => {
                 variant="secondary"
                 size="small"
                 triggerVariant="settings"
-                placeholder="Select profile..."
+                placeholder={language.t("common.choose")}
               />
             </div>
             <IconButton size="small" variant="secondary" icon="plus" onClick={addCustomProvider} />
@@ -983,16 +1007,21 @@ const ProvidersTab: Component = () => {
                 color: "var(--text-weak-base, var(--vscode-descriptionForeground))",
               }}
             >
-              暂无可编辑配置文件，点击 + 新建。
+              {language.t("settings.provider.profiles.empty")}
             </div>
           </Card>
         }
       >
         {(draft) => (
           <>
-            <h4 style={{ "margin-top": "16px", "margin-bottom": "8px" }}>提供商配置</h4>
+            <h4 style={{ "margin-top": "16px", "margin-bottom": "8px" }}>
+              {language.t("settings.provider.config.title")}
+            </h4>
             <Card>
-              <SettingsRow title="API 提供商" description="选择适配器类型。">
+              <SettingsRow
+                title={language.t("settings.provider.type.title")}
+                description={language.t("settings.provider.type.description")}
+              >
                 <Select
                   options={providerTypeOptions()}
                   current={providerTypeOptions().find((item) => item.value === draft().providerType)}
@@ -1004,21 +1033,27 @@ const ProvidersTab: Component = () => {
                   triggerVariant="settings"
                 />
               </SettingsRow>
-              <SettingsRow title="显示名称" description="该配置在列表中的名称。">
+              <SettingsRow
+                title={language.t("settings.provider.displayName.title")}
+                description={language.t("settings.provider.displayName.description")}
+              >
                 <TextField
                   id="provider-display-name-input"
                   value={draft().name}
                   onChange={(value) => updateEditor("name", value)}
                 />
               </SettingsRow>
-              <SettingsRow title="OpenAI 基础 URL" description="OpenAI 兼容 API 地址。">
+              <SettingsRow
+                title={language.t("settings.provider.baseUrl.title")}
+                description={language.t("settings.provider.baseUrl.description")}
+              >
                 <TextField
                   value={draft().baseURL}
                   placeholder="http://127.0.0.1:6005/v1"
                   onChange={(value) => updateEditor("baseURL", value)}
                 />
               </SettingsRow>
-              <SettingsRow title="API 密钥" description="用于访问提供商。">
+              <SettingsRow title={language.t("settings.provider.apiKey.title")} description={language.t("settings.provider.apiKey.description")}>
                 <TextField
                   type="password"
                   value={draft().apiKey}
@@ -1026,7 +1061,7 @@ const ProvidersTab: Component = () => {
                   onChange={(value) => updateEditor("apiKey", value)}
                 />
               </SettingsRow>
-              <SettingsRow title="模型" description="优先使用下拉选择，无法枚举时可手动输入。">
+              <SettingsRow title={language.t("settings.provider.model.title")} description={language.t("settings.provider.model.description")}>
                 <div style={{ display: "grid", gap: "8px", width: "100%" }}>
                   <Show
                     when={selectedProviderModels().length > 0}
@@ -1064,44 +1099,69 @@ const ProvidersTab: Component = () => {
                           color: "var(--text-weak-base, var(--vscode-descriptionForeground))",
                         }}
                       >
-                        上下文窗口: {model().limit?.context ?? "--"} tokens
+                        {language.t("settings.provider.contextWindowLabel")}: {model().limit?.context ?? "--"} tokens
                       </div>
                     )}
                   </Show>
+                  <Button
+                    size="small"
+                    variant="ghost"
+                    onClick={() => {
+                      vscode.postMessage({ type: "requestProviders" })
+                      showToast({
+                        variant: "success",
+                        icon: "circle-check",
+                        title: language.t("toast.models.refreshed.title"),
+                        description: language.t("toast.models.refreshed.description"),
+                      })
+                    }}
+                  >
+                    {language.t("settings.provider.fetchModels")}
+                  </Button>
                 </div>
               </SettingsRow>
-              <SettingsRow title="模型显示名" description="可自定义展示文案。">
+              <SettingsRow
+                title={language.t("settings.provider.modelName.title")}
+                description={language.t("settings.provider.modelName.description")}
+              >
                 <TextField value={draft().modelName} onChange={(value) => updateEditor("modelName", value)} />
               </SettingsRow>
-              <SettingsRow title="启用流式传输" description="对应 options.stream。">
-                <input
-                  type="checkbox"
-                  checked={draft().stream}
-                  onChange={(event) => updateEditor("stream", event.currentTarget.checked)}
-                />
+              <SettingsRow title={language.t("settings.provider.stream.title")} description={language.t("settings.provider.stream.description")}>
+                <Switch checked={draft().stream} onChange={(checked) => updateEditorAndAutoSave("stream", checked)} hideLabel>
+                  {language.t("settings.provider.stream.title")}
+                </Switch>
               </SettingsRow>
-              <SettingsRow title="包含最大输出 Token 数" description="对应 options.includeMaxTokens。">
-                <input
-                  type="checkbox"
+              <SettingsRow
+                title={language.t("settings.provider.includeMaxTokens.title")}
+                description={language.t("settings.provider.includeMaxTokens.description")}
+              >
+                <Switch
                   checked={draft().includeMaxTokens}
-                  onChange={(event) => updateEditor("includeMaxTokens", event.currentTarget.checked)}
-                />
+                  onChange={(checked) => updateEditorAndAutoSave("includeMaxTokens", checked)}
+                  hideLabel
+                >
+                  {language.t("settings.provider.includeMaxTokens.title")}
+                </Switch>
               </SettingsRow>
-              <SettingsRow title="启用 Azure 服务" description="对应 options.useAzure。">
-                <input
-                  type="checkbox"
-                  checked={draft().useAzure}
-                  onChange={(event) => updateEditor("useAzure", event.currentTarget.checked)}
-                />
+              <SettingsRow title={language.t("settings.provider.useAzure.title")} description={language.t("settings.provider.useAzure.description")}>
+                <Switch checked={draft().useAzure} onChange={(checked) => updateEditorAndAutoSave("useAzure", checked)} hideLabel>
+                  {language.t("settings.provider.useAzure.title")}
+                </Switch>
               </SettingsRow>
-              <SettingsRow title="Azure API 版本" description="对应 options.azureApiVersion。">
+              <SettingsRow
+                title={language.t("settings.provider.azureApiVersion.title")}
+                description={language.t("settings.provider.azureApiVersion.description")}
+              >
                 <TextField
                   value={draft().azureApiVersion}
                   placeholder="2024-10-01-preview"
                   onChange={(value) => updateEditor("azureApiVersion", value)}
                 />
               </SettingsRow>
-              <SettingsRow title="模型推理强度" description="对应 options.reasoningEffort。">
+              <SettingsRow
+                title={language.t("settings.provider.reasoningEffort.title")}
+                description={language.t("settings.provider.reasoningEffort.description")}
+              >
                 <Select
                   options={[
                     { value: "", label: "default" },
@@ -1125,21 +1185,27 @@ const ProvidersTab: Component = () => {
                   triggerVariant="settings"
                 />
               </SettingsRow>
-              <SettingsRow title="最大输出 Token 数" description="对应 options.maxOutputTokens。">
+              <SettingsRow
+                title={language.t("settings.provider.maxOutputTokens.title")}
+                description={language.t("settings.provider.maxOutputTokens.description")}
+              >
                 <TextField
                   value={draft().maxOutputTokens}
                   placeholder="-1"
                   onChange={(value) => updateEditor("maxOutputTokens", value)}
                 />
               </SettingsRow>
-              <SettingsRow title="上下文窗口大小" description="对应 options.contextWindow。">
+              <SettingsRow
+                title={language.t("settings.provider.contextWindow.title")}
+                description={language.t("settings.provider.contextWindow.description")}
+              >
                 <TextField
                   value={draft().contextWindow}
                   placeholder="828000"
                   onChange={(value) => updateEditor("contextWindow", value)}
                 />
               </SettingsRow>
-              <SettingsRow title="自定义标头" description="附加 Header（可选）。" last>
+              <SettingsRow title={language.t("settings.provider.headers.title")} description={language.t("settings.provider.headers.description")} last>
                 <div style={{ display: "grid", gap: "8px", width: "100%" }}>
                   <For each={draft().headers}>
                     {(header, index) => (
@@ -1173,18 +1239,11 @@ const ProvidersTab: Component = () => {
                   </Button>
                 </div>
               </SettingsRow>
-              <div
-                style={{
-                  display: "flex",
-                  "justify-content": "space-between",
-                  "align-items": "center",
-                  "margin-top": "8px",
-                }}
-              >
+              <div style={{ display: "flex", "justify-content": "space-between", "align-items": "center", "margin-top": "8px" }}>
                 <span
                   style={{ "font-size": "11px", color: "var(--text-weak-base, var(--vscode-descriptionForeground))" }}
                 >
-                  来源: {sourceLabel(selectedProfileSource())}
+                  {language.t("settings.provider.source")}: {sourceLabel(selectedProfileSource())}
                 </span>
                 <div style={{ display: "flex", gap: "8px" }}>
                   <Show when={!connectedSet().has(draft().id) && !!providerCatalog()[draft().id]}>
@@ -1206,6 +1265,29 @@ const ProvidersTab: Component = () => {
                   </Button>
                 </div>
               </div>
+              <Show when={isDirty()}>
+                <div class="sticky-save-bar">
+                  <span>{language.t("settings.unsavedChanges")}</span>
+                  <Button
+                    size="small"
+                    variant="ghost"
+                    onClick={() => {
+                      discardEditorChanges()
+                      showToast({
+                        variant: "success",
+                        icon: "circle-check",
+                        title: language.t("toast.config.discarded.title"),
+                        description: language.t("toast.config.discarded.description"),
+                      })
+                    }}
+                  >
+                    {language.t("common.cancel")}
+                  </Button>
+                  <Button size="small" onClick={saveEditor}>
+                    {language.t("common.save")}
+                  </Button>
+                </div>
+              </Show>
             </Card>
           </>
         )}
@@ -1352,7 +1434,7 @@ const ProvidersTab: Component = () => {
                   color: "var(--text-weak-base, var(--vscode-descriptionForeground))",
                 }}
               >
-                OpenAI compatible provider
+                {language.t("settings.providers.custom.description")}
               </div>
             </div>
             <Button size="small" variant="secondary" onClick={addCustomProvider}>
@@ -1363,7 +1445,9 @@ const ProvidersTab: Component = () => {
       </Card>
 
       <details style={{ "margin-top": "16px" }}>
-        <summary style={{ cursor: "pointer", "font-size": "13px", "font-weight": 600 }}>高级筛选</summary>
+        <summary style={{ cursor: "pointer", "font-size": "13px", "font-weight": 600 }}>
+          {language.t("settings.provider.advancedFilter")}
+        </summary>
         <div style={{ display: "grid", gap: "12px", "margin-top": "8px" }}>
           <Card>
             <div
@@ -1395,7 +1479,7 @@ const ProvidersTab: Component = () => {
                   variant="secondary"
                   size="small"
                   triggerVariant="settings"
-                  placeholder="Select provider..."
+                  placeholder={language.t("common.choose")}
                 />
               </div>
               <Button
@@ -1464,7 +1548,7 @@ const ProvidersTab: Component = () => {
                   variant="secondary"
                   size="small"
                   triggerVariant="settings"
-                  placeholder="Select provider..."
+                  placeholder={language.t("common.choose")}
                 />
               </div>
               <Button
@@ -1509,5 +1593,7 @@ const ProvidersTab: Component = () => {
 }
 
 export default ProvidersTab
+
+
 
 

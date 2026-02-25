@@ -17,7 +17,7 @@ import TerminalTab from "./settings/TerminalTab"
 import PromptsTab from "./settings/PromptsTab"
 import ExperimentalTab from "./settings/ExperimentalTab"
 import LanguageTab from "./settings/LanguageTab"
-import AboutKiloCodeTab from "./settings/AboutKiloCodeTab"
+import AboutVCPCodeTab from "./settings/AboutVCPCodeTab"
 import { useServer } from "../context/server"
 
 export interface SettingsProps {
@@ -35,6 +35,14 @@ const Settings: Component<SettingsProps> = (props) => {
       () => props.initialTab,
       (tab) => {
         if (!tab) return
+        if (tab === "vcp") {
+          setActiveTab("agentBehaviour")
+          return
+        }
+        if (tab === "aboutKiloCode") {
+          setActiveTab("aboutVCPCode")
+          return
+        }
         setActiveTab(tab)
       },
     ),
@@ -73,65 +81,61 @@ const Settings: Component<SettingsProps> = (props) => {
         style={{ flex: 1, overflow: "hidden" }}
       >
         <Tabs.List>
-          <Tabs.Trigger value="providers" onClick={() => setActiveTab("providers")}>
+          <Tabs.Trigger value="providers">
             <Icon name="providers" />
             {language.t("settings.providers.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="agentBehaviour" onClick={() => setActiveTab("agentBehaviour")}>
+          <Tabs.Trigger value="agentBehaviour">
             <Icon name="brain" />
             {language.t("settings.agentBehaviour.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="vcp" onClick={() => setActiveTab("vcp")}>
-            <Icon name="settings-gear" />
-            {language.t("settings.agentBehaviour.subtab.vcp")}
-          </Tabs.Trigger>
-          <Tabs.Trigger value="autoApprove" onClick={() => setActiveTab("autoApprove")}>
+          <Tabs.Trigger value="autoApprove">
             <Icon name="checklist" />
             {language.t("settings.autoApprove.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="browser" onClick={() => setActiveTab("browser")}>
+          <Tabs.Trigger value="browser">
             <Icon name="window-cursor" />
             {language.t("settings.browser.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="checkpoints" onClick={() => setActiveTab("checkpoints")}>
+          <Tabs.Trigger value="checkpoints">
             <Icon name="branch" />
             {language.t("settings.checkpoints.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="display" onClick={() => setActiveTab("display")}>
+          <Tabs.Trigger value="display">
             <Icon name="eye" />
             {language.t("settings.display.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="autocomplete" onClick={() => setActiveTab("autocomplete")}>
+          <Tabs.Trigger value="autocomplete">
             <Icon name="code-lines" />
             {language.t("settings.autocomplete.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="notifications" onClick={() => setActiveTab("notifications")}>
+          <Tabs.Trigger value="notifications">
             <Icon name="circle-check" />
             {language.t("settings.notifications.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="context" onClick={() => setActiveTab("context")}>
+          <Tabs.Trigger value="context">
             <Icon name="server" />
             {language.t("settings.context.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="terminal" onClick={() => setActiveTab("terminal")}>
+          <Tabs.Trigger value="terminal">
             <Icon name="console" />
             {language.t("settings.terminal.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="prompts" onClick={() => setActiveTab("prompts")}>
+          <Tabs.Trigger value="prompts">
             <Icon name="comment" />
             {language.t("settings.prompts.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="experimental" onClick={() => setActiveTab("experimental")}>
+          <Tabs.Trigger value="experimental">
             <Icon name="settings-gear" />
             {language.t("settings.experimental.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="language" onClick={() => setActiveTab("language")}>
+          <Tabs.Trigger value="language">
             <Icon name="speech-bubble" />
             {language.t("settings.language.title")}
           </Tabs.Trigger>
-          <Tabs.Trigger value="aboutKiloCode" onClick={() => setActiveTab("aboutKiloCode")}>
+          <Tabs.Trigger value="aboutVCPCode">
             <Icon name="help" />
-            {language.t("settings.aboutKiloCode.title")}
+            {language.t("settings.aboutVCPCode.title")}
           </Tabs.Trigger>
         </Tabs.List>
 
@@ -142,10 +146,6 @@ const Settings: Component<SettingsProps> = (props) => {
         <Tabs.Content value="agentBehaviour">
           <h3>{language.t("settings.agentBehaviour.title")}</h3>
           <AgentBehaviourTab />
-        </Tabs.Content>
-        <Tabs.Content value="vcp">
-          <h3>{language.t("settings.agentBehaviour.subtab.vcp")}</h3>
-          <AgentBehaviourTab lockedSubtab="vcp" />
         </Tabs.Content>
         <Tabs.Content value="autoApprove">
           <h3>{language.t("settings.autoApprove.title")}</h3>
@@ -191,9 +191,9 @@ const Settings: Component<SettingsProps> = (props) => {
           <h3>{language.t("settings.language.title")}</h3>
           <LanguageTab />
         </Tabs.Content>
-        <Tabs.Content value="aboutKiloCode">
-          <h3>{language.t("settings.aboutKiloCode.title")}</h3>
-          <AboutKiloCodeTab
+        <Tabs.Content value="aboutVCPCode">
+          <h3>{language.t("settings.aboutVCPCode.title")}</h3>
+          <AboutVCPCodeTab
             port={server.serverInfo()?.port ?? null}
             connectionState={server.connectionState()}
             extensionVersion={server.extensionVersion()}

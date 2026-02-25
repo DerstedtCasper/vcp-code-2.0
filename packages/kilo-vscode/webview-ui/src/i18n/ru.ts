@@ -767,7 +767,7 @@
   "settings.prompts.title": "Промпты",
   "settings.experimental.title": "Экспериментальное",
   "settings.language.title": "Язык",
-  "settings.aboutKiloCode.title": "О VCP Code",
+  "settings.aboutVCPCode.title": "О VCP Code",
 
   "session.messages.empty": "Начните разговор, введя сообщение ниже.",
   "session.messages.welcome":
@@ -795,24 +795,24 @@
   "time.thisMonth": "В этом месяце",
   "time.older": "Ранее",
 
-  "settings.aboutKiloCode.status.connected": "Подключено",
-  "settings.aboutKiloCode.status.connecting": "Подключение...",
-  "settings.aboutKiloCode.status.disconnected": "Отключено",
-  "settings.aboutKiloCode.status.error": "Ошибка",
-  "settings.aboutKiloCode.cliServer": "CLI-сервер",
-  "settings.aboutKiloCode.status.label": "Статус:",
-  "settings.aboutKiloCode.port.label": "Порт:",
-  "settings.aboutKiloCode.versionInfo": "Информация о версии",
-  "settings.aboutKiloCode.version.label": "Версия:",
-  "settings.aboutKiloCode.extensionName": "Расширение VCP Code",
-  "settings.aboutKiloCode.community": "Сообщество и поддержка",
-  "settings.aboutKiloCode.feedback.prefix": "Если у вас есть вопросы или отзывы, создайте issue на",
-  "settings.aboutKiloCode.feedback.or": "или",
-  "settings.aboutKiloCode.support.prefix": "По вопросам оплаты или аккаунта обращайтесь в службу поддержки по адресу",
-  "settings.aboutKiloCode.resetSettings.title": "Сброс настроек",
-  "settings.aboutKiloCode.resetSettings.description":
+  "settings.aboutVCPCode.status.connected": "Подключено",
+  "settings.aboutVCPCode.status.connecting": "Подключение...",
+  "settings.aboutVCPCode.status.disconnected": "Отключено",
+  "settings.aboutVCPCode.status.error": "Ошибка",
+  "settings.aboutVCPCode.cliServer": "CLI-сервер",
+  "settings.aboutVCPCode.status.label": "Статус:",
+  "settings.aboutVCPCode.port.label": "Порт:",
+  "settings.aboutVCPCode.versionInfo": "Информация о версии",
+  "settings.aboutVCPCode.version.label": "Версия:",
+  "settings.aboutVCPCode.extensionName": "Расширение VCP Code",
+  "settings.aboutVCPCode.community": "Сообщество и поддержка",
+  "settings.aboutVCPCode.feedback.prefix": "Если у вас есть вопросы или отзывы, создайте issue на",
+  "settings.aboutVCPCode.feedback.or": "или",
+  "settings.aboutVCPCode.support.prefix": "По вопросам оплаты или аккаунта обращайтесь в службу поддержки по адресу",
+  "settings.aboutVCPCode.resetSettings.title": "Сброс настроек",
+  "settings.aboutVCPCode.resetSettings.description":
     "Сбросить все настройки расширения VCP Code до значений по умолчанию. Это не влияет на конфигурацию CLI или бэкенда.",
-  "settings.aboutKiloCode.resetSettings.button": "Сбросить все настройки",
+  "settings.aboutVCPCode.resetSettings.button": "Сбросить все настройки",
 
   "settings.agentBehaviour.subtab.modes": "Режимы",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -946,4 +946,5 @@
   "dialog.model.notSet": "Не задано",
   "profile.personalAccount": "Личный аккаунт",
 }
+
 
