@@ -1,0 +1,618 @@
+{
+  "name": "vcp-code",
+  "displayName": "VCP Code 2.0: AI Coding Agent, Copilot, and Autocomplete",
+  "description": "Open Source AI coding agent that generates code from natural language, automates tasks, and runs terminal commands. Features inline autocomplete, browser automation, automated refactoring, and custom modes for planning, coding, and debugging. Supports 500+ AI models including Claude (Anthropic), Gemini, Grok, GPT, Codex and GLM.",
+  "version": "7.0.33",
+  "icon": "assets/icons/logo-outline-black.png",
+  "publisher": "vcpcode",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kilo-Org/novacode.git",
+    "directory": "packages/nova-vscode"
+  },
+  "engines": {
+    "vscode": "^1.103.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "vcp-code-sidebar",
+          "title": "VCP Code 2.0 (NEW)",
+          "icon": "assets/icons/nova-light.png",
+          "darkIcon": "assets/icons/nova-dark.png"
+        }
+      ]
+    },
+    "views": {
+      "vcp-code-sidebar": [
+        {
+          "type": "webview",
+          "id": "vcp-code.new.sidebarView",
+          "name": "VCP Code 2.0 (NEW)"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "vcp-code.new.plusButtonClicked",
+        "title": "New Task",
+        "icon": "$(add)"
+      },
+      {
+        "command": "vcp-code.new.agentManagerOpen",
+        "title": "Agent Manager",
+        "icon": "$(circuit-board)"
+      },
+      {
+        "command": "vcp-code.new.marketplaceButtonClicked",
+        "title": "Marketplace",
+        "icon": "$(extensions)"
+      },
+      {
+        "command": "vcp-code.new.historyButtonClicked",
+        "title": "History",
+        "icon": "$(history)"
+      },
+      {
+        "command": "vcp-code.new.profileButtonClicked",
+        "title": "Profile",
+        "icon": "$(account)"
+      },
+      {
+        "command": "vcp-code.new.vcpButtonClicked",
+        "title": "VCP",
+        "icon": "$(symbol-property)"
+      },
+      {
+        "command": "vcp-code.new.settingsButtonClicked",
+        "title": "Settings",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "vcp-code.new.promptsButtonClicked",
+        "title": "Prompts",
+        "icon": "$(comment)"
+      },
+      {
+        "command": "vcp-code.new.helpButtonClicked",
+        "title": "Help",
+        "icon": "$(question)"
+      },
+      {
+        "command": "vcp-code.new.popoutButtonClicked",
+        "title": "Pop Out",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "vcp-code.new.openInNewTab",
+        "title": "Open in New Tab",
+        "category": "VCP Code 2.0"
+      },
+      {
+        "command": "vcp-code.new.importConfig",
+        "title": "Import Config",
+        "category": "VCP Code 2.0"
+      },
+      {
+        "command": "vcp-code.new.exportConfig",
+        "title": "Export Config",
+        "category": "VCP Code 2.0"
+      },
+      {
+        "command": "vcp-code.new.openInTab",
+        "title": "VCP Code 2.0 (NEW)",
+        "icon": {
+            "light": "assets/icons/nova-light.svg",
+            "dark": "assets/icons/nova-dark.svg"
+        }
+      },
+      {
+        "command": "vcp-code.new.autocomplete.generateSuggestions",
+        "title": "Generate Suggested Edits",
+        "category": "VCP Code 2.0"
+      },
+      {
+        "command": "vcp-code.new.agentManager.previousSession",
+        "title": "Agent Manager: Previous Session",
+        "category": "VCP Code 2.0"
+      },
+      {
+        "command": "vcp-code.new.agentManager.nextSession",
+        "title": "Agent Manager: Next Session",
+        "category": "VCP Code 2.0"
+      },
+      {
+        "command": "vcp-code.new.agentManager.previousTab",
+        "title": "Agent Manager: Previous Tab",
+        "category": "VCP Code 2.0"
+      },
+      {
+        "command": "vcp-code.new.agentManager.nextTab",
+        "title": "Agent Manager: Next Tab",
+        "category": "VCP Code 2.0"
+      },
+      {
+        "command": "vcp-code.new.agentManager.showTerminal",
+        "title": "Agent Manager: Focus Terminal",
+        "category": "VCP Code 2.0",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "vcp-code.new.agentManager.focusPanel",
+        "title": "Agent Manager: Focus Panel",
+        "category": "VCP Code 2.0",
+        "icon": "$(circuit-board)"
+      },
+      {
+        "command": "vcp-code.new.agentManager.newTab",
+        "title": "Agent Manager: New Tab",
+        "category": "VCP Code 2.0"
+      },
+      {
+        "command": "vcp-code.new.agentManager.closeTab",
+        "title": "Agent Manager: Close Tab",
+        "category": "VCP Code 2.0"
+      },
+      {
+        "command": "vcp-code.new.agentManager.newWorktree",
+        "title": "Agent Manager: New Worktree",
+        "category": "VCP Code 2.0"
+      },
+      {
+        "command": "vcp-code.new.agentManager.closeWorktree",
+        "title": "Agent Manager: Close Worktree",
+        "category": "VCP Code 2.0"
+      },
+      {
+        "command": "vcp-code.new.generateCommitMessage",
+        "title": "Generate Commit Message",
+        "category": "VCP Code 2.0 (NEW)",
+        "icon": {
+            "light": "assets/icons/nova-light.svg",
+            "dark": "assets/icons/nova-dark.svg"
+        }
+      },
+      {
+        "command": "vcp-code.new.explainCode",
+        "title": "Explain Code",
+        "category": "VCP Code 2.0"
+      },
+      {
+        "command": "vcp-code.new.fixCode",
+        "title": "Fix Code",
+        "category": "VCP Code 2.0"
+      },
+      {
+        "command": "vcp-code.new.improveCode",
+        "title": "Improve Code",
+        "category": "VCP Code 2.0"
+      },
+      {
+        "command": "vcp-code.new.addToContext",
+        "title": "Add to Context",
+        "category": "VCP Code 2.0"
+      },
+      {
+        "command": "vcp-code.new.terminalAddToContext",
+        "title": "Add Terminal Content to Context",
+        "category": "VCP Code 2.0"
+      },
+      {
+        "command": "vcp-code.new.terminalFixCommand",
+        "title": "Fix This Command",
+        "category": "VCP Code 2.0"
+      },
+      {
+        "command": "vcp-code.new.terminalExplainCommand",
+        "title": "Explain This Command",
+        "category": "VCP Code 2.0"
+      },
+      {
+        "command": "vcp-code.new.focusChatInput",
+        "title": "Focus Chat Input",
+        "category": "VCP Code 2.0"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "vcp-code.new.editorContextMenu",
+        "label": "VCP Code 2.0"
+      },
+      {
+        "id": "vcp-code.new.terminalContextMenu",
+        "label": "VCP Code 2.0"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "vcp-code.new.plusButtonClicked",
+          "group": "navigation@0",
+          "when": "view == vcp-code.new.sidebarView"
+        },
+        {
+          "command": "vcp-code.new.agentManagerOpen",
+          "group": "navigation@1",
+          "when": "view == vcp-code.new.sidebarView"
+        },
+        {
+          "command": "vcp-code.new.marketplaceButtonClicked",
+          "group": "navigation@2",
+          "when": "view == vcp-code.new.sidebarView"
+        },
+        {
+          "command": "vcp-code.new.historyButtonClicked",
+          "group": "navigation@3",
+          "when": "view == vcp-code.new.sidebarView"
+        },
+        {
+          "command": "vcp-code.new.profileButtonClicked",
+          "group": "navigation@4",
+          "when": "view == vcp-code.new.sidebarView"
+        },
+        {
+          "command": "vcp-code.new.vcpButtonClicked",
+          "group": "navigation@5",
+          "when": "view == vcp-code.new.sidebarView"
+        },
+        {
+          "command": "vcp-code.new.settingsButtonClicked",
+          "group": "navigation@6",
+          "when": "view == vcp-code.new.sidebarView"
+        },
+        {
+          "command": "vcp-code.new.promptsButtonClicked",
+          "group": "navigation@7",
+          "when": "view == vcp-code.new.sidebarView"
+        },
+        {
+          "command": "vcp-code.new.helpButtonClicked",
+          "group": "navigation@8",
+          "when": "view == vcp-code.new.sidebarView"
+        },
+        {
+          "command": "vcp-code.new.popoutButtonClicked",
+          "group": "navigation@9",
+          "when": "view == vcp-code.new.sidebarView"
+        }
+      ],
+      "scm/title": [
+        {
+          "command": "vcp-code.new.generateCommitMessage",
+          "group": "navigation",
+          "when": "scmProvider == git"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "vcp-code.new.openInTab",
+          "group": "navigation",
+          "when": "true"
+        },
+        {
+          "command": "vcp-code.new.openInNewTab",
+          "group": "navigation@1",
+          "when": "true"
+        }
+      ],
+      "editor/context": [
+        {
+          "submenu": "vcp-code.new.editorContextMenu",
+          "group": "1_novacode"
+        }
+      ],
+      "vcp-code.new.editorContextMenu": [
+        {
+          "command": "vcp-code.new.explainCode",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "vcp-code.new.fixCode",
+          "group": "1_actions@2"
+        },
+        {
+          "command": "vcp-code.new.improveCode",
+          "group": "1_actions@3"
+        },
+        {
+          "command": "vcp-code.new.addToContext",
+          "group": "1_actions@4"
+        }
+      ],
+      "terminal/context": [
+        {
+          "submenu": "vcp-code.new.terminalContextMenu",
+          "group": "2_novacode"
+        }
+      ],
+      "vcp-code.new.terminalContextMenu": [
+        {
+          "command": "vcp-code.new.terminalAddToContext",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "vcp-code.new.terminalFixCommand",
+          "group": "1_actions@2"
+        },
+        {
+          "command": "vcp-code.new.terminalExplainCommand",
+          "group": "1_actions@3"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "vcp-code.new.focusChatInput",
+        "key": "ctrl+shift+a",
+        "mac": "cmd+shift+a"
+      },
+      {
+        "command": "vcp-code.new.agentManagerOpen",
+        "key": "ctrl+shift+m",
+        "mac": "cmd+shift+m"
+      },
+      {
+        "command": "vcp-code.new.addToContext",
+        "key": "ctrl+k ctrl+a",
+        "mac": "cmd+k cmd+a",
+        "when": "editorTextFocus && editorHasSelection"
+      },
+      {
+        "command": "vcp-code.new.agentManager.previousSession",
+        "key": "ctrl+up",
+        "mac": "cmd+up",
+        "when": "activeWebviewPanelId == 'vcp-code.new.AgentManagerPanel'"
+      },
+      {
+        "command": "vcp-code.new.agentManager.nextSession",
+        "key": "ctrl+down",
+        "mac": "cmd+down",
+        "when": "activeWebviewPanelId == 'vcp-code.new.AgentManagerPanel'"
+      },
+      {
+        "command": "vcp-code.new.agentManager.previousTab",
+        "key": "ctrl+left",
+        "mac": "cmd+left",
+        "when": "activeWebviewPanelId == 'vcp-code.new.AgentManagerPanel'"
+      },
+      {
+        "command": "vcp-code.new.agentManager.nextTab",
+        "key": "ctrl+right",
+        "mac": "cmd+right",
+        "when": "activeWebviewPanelId == 'vcp-code.new.AgentManagerPanel'"
+      },
+      {
+        "command": "vcp-code.new.agentManager.showTerminal",
+        "key": "ctrl+/",
+        "mac": "cmd+/",
+        "when": "activeWebviewPanelId == 'vcp-code.new.AgentManagerPanel'"
+      },
+      {
+        "command": "vcp-code.new.agentManager.focusPanel",
+        "key": "ctrl+.",
+        "mac": "cmd+.",
+        "when": "terminalFocus && vcp-code.agentTerminalFocus"
+      },
+      {
+        "command": "vcp-code.new.agentManager.newTab",
+        "key": "ctrl+t",
+        "mac": "cmd+t",
+        "when": "activeWebviewPanelId == 'vcp-code.new.AgentManagerPanel'"
+      },
+      {
+        "command": "vcp-code.new.agentManager.closeTab",
+        "key": "ctrl+w",
+        "mac": "cmd+w",
+        "when": "activeWebviewPanelId == 'vcp-code.new.AgentManagerPanel'"
+      },
+      {
+        "command": "vcp-code.new.agentManager.newWorktree",
+        "key": "ctrl+n",
+        "mac": "cmd+n",
+        "when": "activeWebviewPanelId == 'vcp-code.new.AgentManagerPanel'"
+      },
+      {
+        "command": "vcp-code.new.agentManager.closeWorktree",
+        "key": "ctrl+shift+w",
+        "mac": "cmd+shift+w",
+        "when": "activeWebviewPanelId == 'vcp-code.new.AgentManagerPanel'"
+      }
+    ],
+    "configuration": {
+      "title": "VCP Code 2.0",
+      "properties": {
+        "vcp-code.new.language": {
+          "type": "string",
+          "default": "",
+          "description": "Override the UI language for VCP Code 2.0 (e.g. en, de, ja). Empty means use VS Code's display language.",
+          "enum": [
+            "",
+            "en",
+            "zh",
+            "zht",
+            "ko",
+            "de",
+            "es",
+            "fr",
+            "da",
+            "ja",
+            "pl",
+            "ru",
+            "ar",
+            "no",
+            "br",
+            "th",
+            "bs"
+          ],
+          "enumDescriptions": [
+            "Auto (VS Code language)",
+            "English",
+            "简体中文",
+            "繁體中文",
+            "한국어",
+            "Deutsch",
+            "Español",
+            "Français",
+            "Dansk",
+            "日本語",
+            "Polski",
+            "Русский",
+            "العربية",
+            "Norsk",
+            "Português (Brasil)",
+            "ภาษาไทย",
+            "Bosanski"
+          ]
+        },
+        "vcp-code.new.model.providerID": {
+          "type": "string",
+          "default": "kilo",
+          "description": "Default model provider ID for new sessions"
+        },
+        "vcp-code.new.model.modelID": {
+          "type": "string",
+          "default": "kilo/auto",
+          "description": "Default model ID for new sessions"
+        },
+        "vcp-code.new.autocomplete.enableAutoTrigger": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic inline completion suggestions"
+        },
+        "vcp-code.new.autocomplete.enableSmartInlineTaskKeybinding": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable smart inline task keybinding"
+        },
+        "vcp-code.new.autocomplete.enableChatAutocomplete": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable chat textarea autocomplete"
+        },
+        "vcp-code.new.browserAutomation.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable browser automation powered by Playwright. When enabled, the AI agent can interact with web pages in a visible Chrome window."
+        },
+        "vcp-code.new.browserAutomation.useSystemChrome": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use your system's installed Chrome browser instead of downloading a separate Chromium instance."
+        },
+        "vcp-code.new.browserAutomation.headless": {
+          "type": "boolean",
+          "default": false,
+          "description": "Run browser automation in headless mode (no visible window). When disabled, you can watch the agent interact with the browser."
+        },
+        "vcp-code.new.notifications.agent": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show notification when agent completes a task"
+        },
+        "vcp-code.new.notifications.permissions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show notification on permission requests"
+        },
+        "vcp-code.new.notifications.errors": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show notification on errors"
+        },
+        "vcp-code.new.sounds.agent": {
+          "type": "string",
+          "default": "default",
+          "enum": [
+            "default",
+            "none"
+          ],
+          "description": "Sound to play when agent completes"
+        },
+        "vcp-code.new.sounds.permissions": {
+          "type": "string",
+          "default": "default",
+          "enum": [
+            "default",
+            "none"
+          ],
+          "description": "Sound to play on permission requests"
+        },
+        "vcp-code.new.sounds.errors": {
+          "type": "string",
+          "default": "default",
+          "enum": [
+            "default",
+            "none"
+          ],
+          "description": "Sound to play on errors"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "prepare:cli-binary": "bun script/local-bin.ts",
+    "compile": "bun run prepare:cli-binary && bun run check-types && bun run lint && node esbuild.js",
+    "watch": "bun run --parallel watch:esbuild watch:tsc",
+    "watch:esbuild": "bun run prepare:cli-binary && node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "watch:cli": "bun script/watch-cli.ts",
+    "package": "bun run prepare:cli-binary && bun run check-types && bun run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "bun run compile-tests && bun run compile && bun run lint",
+    "check-types": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint src",
+    "test": "vscode-test",
+    "test:unit": "bun test tests/unit/"
+  },
+  "devDependencies": {
+    "@types/diff": "^6.0.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/qrcode": "^1.5.6",
+    "@types/vscode": "^1.103.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.27.2",
+    "esbuild-plugin-solid": "^0.6.0",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.1",
+    "qrcode": "^1.5.4",
+    "ts-morph": "27.0.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.54.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@novacode/nova-i18n": "workspace:*",
+    "@novacode/nova-ui": "workspace:*",
+    "@novacode/sdk": "workspace:*",
+    "@opencode-ai/ui": "workspace:*",
+    "@thisbeyond/solid-dnd": "0.7.5",
+    "diff": "^7.0.0",
+    "dotenv": "^16.4.7",
+    "eventsource": "^2.0.2",
+    "fastest-levenshtein": "^1.0.16",
+    "ignore": "^7.0.3",
+    "js-tiktoken": "^1.0.18",
+    "lru-cache": "^11.0.2",
+    "openai": "^4.85.4",
+    "quick-lru": "^7.0.0",
+    "simple-git": "3.31.1",
+    "solid-js": "^1.9.11",
+    "uri-js": "^4.4.1",
+    "web-tree-sitter": "^0.24.7",
+    "zod": "^3.24.2"
+  }
+}
+
+
