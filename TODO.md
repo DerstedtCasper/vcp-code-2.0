@@ -117,7 +117,7 @@
   - [x] Token 统计: 上传/下载 Token + 预估成本
   - [x] 最近 5 次请求历史
   - [x] 快捷操作: 清空队列、刷新连接
-  - [ ] 修改 `session.tsx` 增加 Token 统计状态 ← 已利用现有 contextUsage
+  - [x] 修改 `session.tsx` 增加 Token 统计状态（已通过 `contextUsage` + `vcpStatusUpdate` 完成）
   - [x] 补充消息契约 `CompactContextRequest` / `EnhancePromptRequest`（types/messages.ts）
 
 ---
@@ -206,3 +206,5 @@
 | 2026-02-26 | ✅ Git 清理完成（压缩提交 + 重命名 remotes） |
 | 2026-02-26 | ✅ P0 完成：SlashCommandPopover / ContextPills / VcpStatusBadge / 历史导航 / i18n / CSS / 消息契约（`40bf52c70`） |
 | 2026-02-26 | ✅ P0-2/5/6/7 + P1-1/3/7/8 + P2-1/2/3 完成：useAtMention / ModelInfoCard / Recent模型 / ModeSwitcher增强 / SettingsRow v2 / StickySaveBar / EnhancePrompt（`b034ffe28`） |
+| 2026-02-26 | ✅ `VcpStatusUpdateMessage` 扩展推送接线完成（`034f45fb6`） |
+| 2026-02-26 | ✅ 品牌脱钩阶段 G 收尾提交完成（`819243036`） |
