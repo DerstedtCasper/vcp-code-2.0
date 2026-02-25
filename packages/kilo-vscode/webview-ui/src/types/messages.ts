@@ -1046,6 +1046,18 @@ export interface CompactRequest {
   modelID?: string
 }
 
+/** 压缩当前会话上下文（Slash 命令 /compact 用） */
+export interface CompactContextRequest {
+  type: "compactContext"
+}
+
+/** 增强提示词请求（Webview → Extension） */
+export interface EnhancePromptRequest {
+  type: "enhancePrompt"
+  text: string
+  contextItems?: unknown[]
+}
+
 export interface RequestAgentsMessage {
   type: "requestAgents"
 }
@@ -1384,6 +1396,8 @@ export type WebviewMessage =
   | SetSessionsCollapsedRequest
   | PersistVariantRequest
   | RequestVariantsMessage
+  | CompactContextRequest
+  | EnhancePromptRequest
 
 // ============================================
 // VS Code API type

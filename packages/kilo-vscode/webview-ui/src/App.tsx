@@ -18,6 +18,7 @@ import { SessionProvider, useSession } from "./context/session"
 import { LanguageProvider, useLanguage } from "./context/language"
 import { ChatView } from "./components/chat"
 import { KiloNotifications } from "./components/chat/KiloNotifications"
+import { VcpStatusBadge } from "./components/chat/VcpStatusBadge"
 import SessionList from "./components/history/SessionList"
 import { NotificationsProvider } from "./context/notifications"
 import type { Message as SDKMessage, Part as SDKPart } from "@kilocode/sdk/v2"
@@ -308,6 +309,7 @@ const AppContent: Component = () => {
 
   return (
     <div class="container">
+      <VcpStatusBadge />
       <Switch fallback={<ChatView />}>
         <Match when={currentView() === "newTask"}>
           <Show when={!session.currentSessionID()}>

@@ -854,3 +854,360 @@
   white-space: nowrap;
   padding: 0 4px;
 }
+
+/* ============================================
+   Slash Command Popover
+   ============================================ */
+
+.slash-command-popover {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--vscode-dropdown-background);
+  border: 1px solid var(--vscode-dropdown-border, var(--vscode-panel-border));
+  border-radius: 6px;
+  overflow: hidden;
+  z-index: 200;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.slash-command-popover-header {
+  padding: 4px 10px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--vscode-descriptionForeground);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+}
+
+.slash-command-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.1s;
+}
+
+.slash-command-item:hover,
+.slash-command-item--active {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.slash-command-item-icon {
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.slash-command-item-keyword {
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  min-width: 80px;
+}
+
+.slash-command-item-desc {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================
+   Context Pills
+   ============================================ */
+
+.context-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px 8px 0;
+}
+
+.context-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 2px 5px;
+  background: var(--vscode-badge-background, rgba(128, 128, 128, 0.15));
+  border: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.25));
+  border-radius: 12px;
+  font-size: 11px;
+  color: var(--vscode-foreground);
+  max-width: 200px;
+}
+
+.context-pill-icon {
+  font-size: 11px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.context-pill-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 120px;
+}
+
+.context-pill-detail {
+  color: var(--vscode-descriptionForeground);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.context-pill-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  color: var(--vscode-descriptionForeground);
+  font-size: 10px;
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.context-pill-remove:hover {
+  opacity: 1;
+  color: var(--vscode-errorForeground);
+}
+
+/* ============================================
+   VcpStatusBadge — 全局状态胶囊
+   ============================================ */
+
+.vcp-status-badge-container {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.vcp-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px 3px 6px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  font-size: 11px;
+  cursor: pointer;
+  background: var(--vscode-badge-background, rgba(128, 128, 128, 0.15));
+  color: var(--vscode-foreground);
+  transition: opacity 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  max-width: 220px;
+  overflow: hidden;
+}
+
+.vcp-status-badge:hover {
+  border-color: var(--vscode-focusBorder);
+}
+
+.vcp-status-badge--idle {
+  border-color: rgba(0, 200, 80, 0.25);
+}
+
+.vcp-status-badge--busy {
+  border-color: rgba(255, 190, 0, 0.3);
+  animation: vcp-pulse 1.8s ease-in-out infinite;
+}
+
+.vcp-status-badge--error {
+  border-color: rgba(220, 50, 50, 0.3);
+}
+
+@keyframes vcp-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.vcp-status-badge-dot {
+  font-size: 10px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.vcp-status-badge-model {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+  max-width: 100px;
+}
+
+.vcp-status-badge-sep {
+  opacity: 0.5;
+}
+
+.vcp-status-badge-agent {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--vscode-descriptionForeground);
+  max-width: 70px;
+}
+
+/* VcpStatusBadge — 详情抽屉 */
+
+.vcp-status-drawer {
+  margin-top: 4px;
+  width: 280px;
+  background: var(--vscode-dropdown-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  font-size: 12px;
+}
+
+.vcp-status-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+}
+
+.vcp-status-drawer-title {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--vscode-foreground);
+}
+
+.vcp-status-drawer-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  padding: 0 2px;
+  line-height: 1;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.vcp-status-drawer-close:hover {
+  opacity: 1;
+}
+
+.vcp-status-drawer-section {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--vscode-panel-border, rgba(128,128,128,0.15));
+}
+
+.vcp-status-drawer-section:last-child {
+  border-bottom: none;
+}
+
+.vcp-status-drawer-section-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--vscode-descriptionForeground);
+  margin-bottom: 6px;
+}
+
+.vcp-status-drawer-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.vcp-status-drawer-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vcp-status-drawer-stat-label {
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.vcp-status-drawer-stat-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.vcp-status-drawer-runs {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.vcp-status-drawer-run {
+  display: grid;
+  grid-template-columns: 14px 1fr auto auto auto;
+  gap: 5px;
+  align-items: center;
+  font-size: 11px;
+  padding: 2px 0;
+  color: var(--vscode-foreground);
+}
+
+.vcp-status-drawer-run--error {
+  color: var(--vscode-errorForeground);
+}
+
+.vcp-status-drawer-run-status {
+  text-align: center;
+}
+
+.vcp-status-drawer-run-model {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vcp-status-drawer-run-tokens,
+.vcp-status-drawer-run-duration,
+.vcp-status-drawer-run-time {
+  color: var(--vscode-descriptionForeground);
+  font-size: 10px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.vcp-status-drawer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vcp-status-drawer-action-btn {
+  width: 100%;
+  padding: 5px 8px;
+  background: var(--vscode-button-secondaryBackground, rgba(128, 128, 128, 0.12));
+  color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
+  border: 1px solid var(--vscode-panel-border, transparent);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.vcp-status-drawer-action-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground, rgba(128, 128, 128, 0.2));
+}
+
+.vcp-status-drawer-action-btn--danger {
+  color: var(--vscode-errorForeground);
+  border-color: rgba(220, 50, 50, 0.2);
+}
+

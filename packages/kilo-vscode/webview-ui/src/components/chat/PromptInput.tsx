@@ -1,6 +1,7 @@
 ﻿/**
  * PromptInput component
- * Text input with send/abort buttons, ghost-text autocomplete, and @ file mention support
+ * Text input with send/abort buttons, ghost-text autocomplete,
+ * @ file mention support, slash commands, context pills, and history navigation.
  */
 
 import { Component, createSignal, createEffect, on, For, Index, onCleanup, Show, untrack } from "solid-js"
@@ -17,12 +18,17 @@ import { ThinkingSelector } from "./ThinkingSelector"
 import { useFileMention } from "../../hooks/useFileMention"
 import { useImageAttachments } from "../../hooks/useImageAttachments"
 import { fileName, dirName, buildHighlightSegments } from "./prompt-input-utils"
+import { SlashCommandPopover, SLASH_COMMANDS, type SlashCommand } from "./SlashCommandPopover"
+import { ContextPills, type ContextItem } from "./ContextPills"
 
 const AUTOCOMPLETE_DEBOUNCE_MS = 500
 const MIN_TEXT_LENGTH = 3
 
 // Per-session input text storage (module-level so it survives remounts)
 const drafts = new Map<string, string>()
+
+// 每个 session 的历史发送记录（模块级，最多 100 条）
+const sendHistory = new Map<string, string[]>()
 
 export const PromptInput: Component = () => {
   const session = useSession()
@@ -38,13 +44,26 @@ export const PromptInput: Component = () => {
   const [ghostText, setGhostText] = createSignal("")
   const [showBusyActions, setShowBusyActions] = createSignal(false)
 
+  // ── Slash 命令面板状态 ──────────────────────────────────────────────
+  const [showSlash, setShowSlash] = createSignal(false)
+  const [slashQuery, setSlashQuery] = createSignal("")
+  const [slashIndex, setSlashIndex] = createSignal(0)
+
+  // ── 上下文 Pills 状态 ────────────────────────────────────────────────
+  const [contextItems, setContextItems] = createSignal<ContextItem[]>([])
+
+  // ── 历史导航状态 ──────────────────────────────────────────────────────
+  // historyIndex: -1 表示当前草稿，0 = 最近一条，依此类推
+  let historyIndex = -1
+  let historyDraftSaved = ""
+
   let textareaRef: HTMLTextAreaElement | undefined
   let highlightRef: HTMLDivElement | undefined
   let dropdownRef: HTMLDivElement | undefined
   let debounceTimer: ReturnType<typeof setTimeout> | undefined
   let requestCounter = 0
   // Save/restore input text when switching sessions.
-  // Uses `on()` to track only sessionKey 鈥?avoids re-running on every keystroke.
+  // Uses `on()` to track only sessionKey — avoids re-running on every keystroke.
   createEffect(
     on(sessionKey, (key, prev) => {
       if (prev !== undefined && prev !== key) {
@@ -172,6 +191,20 @@ export const PromptInput: Component = () => {
     adjustHeight()
     setGhostText("")
     syncHighlightScroll()
+    // 重置历史导航
+    historyIndex = -1
+
+    // ── Slash 命令检测 ────────────────────────────────────────────────
+    const cursorPos = target.selectionStart ?? val.length
+    const beforeCursor = val.slice(0, cursorPos)
+    const slashMatch = /^\/(\w*)$/.exec(beforeCursor)
+    if (slashMatch) {
+      setSlashQuery(slashMatch[1] ?? "")
+      setSlashIndex(0)
+      setShowSlash(true)
+    } else {
+      setShowSlash(false)
+    }
 
     mention.onInput(val, target.selectionStart ?? val.length)
 
@@ -185,7 +218,66 @@ export const PromptInput: Component = () => {
     debounceTimer = setTimeout(() => requestAutocomplete(val), AUTOCOMPLETE_DEBOUNCE_MS)
   }
 
+  /** 执行 slash 命令 */
+  const executeSlashCommand = (cmd: SlashCommand) => {
+    setShowSlash(false)
+    setText("")
+    if (textareaRef) {
+      textareaRef.value = ""
+      adjustHeight()
+    }
+    switch (cmd.id) {
+      case "new":
+        session.createSession?.()
+        break
+      case "clear":
+        session.clearCurrentSession?.()
+        break
+      case "model":
+        // 打开模型选择器（通过自定义事件通知 ModelSelector）
+        window.dispatchEvent(new CustomEvent("openModelSelector"))
+        break
+      case "mode":
+        window.dispatchEvent(new CustomEvent("openModeSwitcher"))
+        break
+      case "compact":
+        vscode.postMessage({ type: "compactContext" })
+        break
+      case "enhance":
+        vscode.postMessage({ type: "enhancePrompt", text: text() })
+    }
+  }
+
   const handleKeyDown = (e: KeyboardEvent) => {
+    // ── Slash 命令面板键盘处理 ──────────────────────────────────────
+    if (showSlash()) {
+      const filtered = SLASH_COMMANDS.filter((c) => {
+        const q = slashQuery().toLowerCase()
+        return !q || c.keyword.startsWith(q) || c.keyword.includes(q)
+      })
+      if (e.key === "ArrowDown") {
+        e.preventDefault()
+        setSlashIndex((i) => Math.min(i + 1, filtered.length - 1))
+        return
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault()
+        setSlashIndex((i) => Math.max(i - 1, 0))
+        return
+      }
+      if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault()
+        const cmd = filtered[slashIndex()]
+        if (cmd) executeSlashCommand(cmd)
+        return
+      }
+      if (e.key === "Escape") {
+        e.preventDefault()
+        setShowSlash(false)
+        return
+      }
+    }
+
     if (mention.onKeyDown(e, textareaRef, setText, adjustHeight)) {
       setGhostText("")
       queueMicrotask(scrollToActiveItem)
@@ -209,6 +301,43 @@ export const PromptInput: Component = () => {
       session.abort()
       return
     }
+
+    // ── 历史导航 (↑/↓) ────────────────────────────────────────────────
+    const history = sendHistory.get(sessionKey()) ?? []
+    const curVal = textareaRef?.value ?? ""
+    if (e.key === "ArrowUp" && !e.shiftKey && !mention.showMention()) {
+      // 仅当光标在第一行时触发历史导航
+      const lineStart = curVal.lastIndexOf("\n", (textareaRef?.selectionStart ?? 0) - 1)
+      if (lineStart === -1 && history.length > 0) {
+        e.preventDefault()
+        if (historyIndex === -1) historyDraftSaved = curVal
+        historyIndex = Math.min(historyIndex + 1, history.length - 1)
+        const histVal = history[historyIndex] ?? ""
+        setText(histVal)
+        if (textareaRef) {
+          textareaRef.value = histVal
+          adjustHeight()
+          // 将光标移到末尾
+          requestAnimationFrame(() => {
+            textareaRef!.selectionStart = histVal.length
+            textareaRef!.selectionEnd = histVal.length
+          })
+        }
+        return
+      }
+    }
+    if (e.key === "ArrowDown" && !e.shiftKey && historyIndex >= 0) {
+      e.preventDefault()
+      historyIndex--
+      const nextVal = historyIndex >= 0 ? (history[historyIndex] ?? "") : historyDraftSaved
+      setText(nextVal)
+      if (textareaRef) {
+        textareaRef.value = nextVal
+        adjustHeight()
+      }
+      return
+    }
+
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       dismissSuggestion()
@@ -252,6 +381,15 @@ export const PromptInput: Component = () => {
       setShowBusyActions(true)
       return
     }
+    // 记录发送历史（用于 ↑↓ 历史导航）
+    if (draft.message.trim()) {
+      const key = sessionKey()
+      const hist = sendHistory.get(key) ?? []
+      hist.unshift(draft.message.trim())
+      if (hist.length > 100) hist.pop()
+      sendHistory.set(key, hist)
+    }
+    historyIndex = -1
     session.sendMessage(draft.message, draft.selection?.providerID, draft.selection?.modelID, draft.attachments)
     resetDraft()
   }
@@ -299,6 +437,20 @@ export const PromptInput: Component = () => {
       onDragLeave={imageAttach.handleDragLeave}
       onDrop={imageAttach.handleDrop}
     >
+      {/* Slash 命令面板 */}
+      <Show when={showSlash()}>
+        <SlashCommandPopover
+          query={slashQuery()}
+          activeIndex={slashIndex()}
+          onSelect={executeSlashCommand}
+          onHover={setSlashIndex}
+        />
+      </Show>
+      {/* 上下文 Pills */}
+      <ContextPills
+        items={contextItems()}
+        onRemove={(id) => setContextItems((prev) => prev.filter((i) => i.id !== id))}
+      />
       <Show when={mention.showMention()}>
         <div class="file-mention-dropdown" ref={dropdownRef}>
           <Show
