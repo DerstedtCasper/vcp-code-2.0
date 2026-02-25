@@ -16,14 +16,13 @@ export function useDirtyState<T>(initial: T): DirtyState<T> {
   const isDirty = createMemo(() => JSON.stringify(original()) !== JSON.stringify(current()))
 
   const reset = (value: T) => {
-    setOriginal(value)
-    setCurrent(value)
+    setOriginal(() => value)
+    setCurrent(() => value)
   }
 
   const discard = () => {
-    setCurrent(original())
+    setCurrent(() => original())
   }
 
   return { original, current, setCurrent, isDirty, reset, discard }
 }
-
