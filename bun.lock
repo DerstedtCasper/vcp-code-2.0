@@ -23,7 +23,7 @@
     },
     "packages/app": {
       "name": "@opencode-ai/app",
-      "version": "7.0.27",
+      "version": "7.0.29",
       "dependencies": {
         "@kilocode/kilo-i18n": "workspace:*",
         "@kilocode/kilo-ui": "workspace:*",
@@ -75,7 +75,7 @@
     },
     "packages/desktop": {
       "name": "@opencode-ai/desktop",
-      "version": "7.0.27",
+      "version": "7.0.29",
       "dependencies": {
         "@opencode-ai/app": "workspace:*",
         "@opencode-ai/ui": "workspace:*",
@@ -108,7 +108,7 @@
     },
     "packages/kilo-docs": {
       "name": "@kilocode/kilo-docs",
-      "version": "7.0.27",
+      "version": "7.0.29",
       "dependencies": {
         "@docsearch/css": "^4",
         "@docsearch/js": "^4",
@@ -136,7 +136,7 @@
     },
     "packages/kilo-gateway": {
       "name": "@kilocode/kilo-gateway",
-      "version": "7.0.27",
+      "version": "7.0.29",
       "dependencies": {
         "@clack/prompts": "1.0.0-alpha.1",
         "@kilocode/plugin": "workspace:*",
@@ -168,7 +168,7 @@
     },
     "packages/kilo-i18n": {
       "name": "@kilocode/kilo-i18n",
-      "version": "7.0.27",
+      "version": "7.0.29",
       "devDependencies": {
         "@tsconfig/node22": "catalog:",
         "@types/bun": "catalog:",
@@ -178,7 +178,7 @@
     },
     "packages/kilo-telemetry": {
       "name": "@kilocode/kilo-telemetry",
-      "version": "7.0.27",
+      "version": "7.0.29",
       "dependencies": {
         "@kilocode/kilo-gateway": "workspace:*",
         "@opentelemetry/api": "1.9.0",
@@ -198,7 +198,7 @@
     },
     "packages/kilo-ui": {
       "name": "@kilocode/kilo-ui",
-      "version": "7.0.27",
+      "version": "7.0.29",
       "dependencies": {
         "@kobalte/core": "0.13.11",
       },
@@ -220,8 +220,8 @@
       },
     },
     "packages/kilo-vscode": {
-      "name": "kilo-code",
-      "version": "7.0.27",
+      "name": "vcp-code",
+      "version": "7.0.31",
       "dependencies": {
         "@anthropic-ai/sdk": "^0.39.0",
         "@kilocode/kilo-i18n": "workspace:*",
@@ -249,7 +249,7 @@
         "@types/mocha": "^10.0.10",
         "@types/node": "22.x",
         "@types/qrcode": "^1.5.6",
-        "@types/vscode": "^1.108.0",
+        "@types/vscode": "^1.103.0",
         "@vscode/test-cli": "^0.0.12",
         "@vscode/test-electron": "^2.5.2",
         "esbuild": "^0.27.2",
@@ -265,7 +265,7 @@
     },
     "packages/opencode": {
       "name": "@kilocode/cli",
-      "version": "7.0.27",
+      "version": "7.0.29",
       "bin": {
         "opencode": "./bin/opencode",
       },
@@ -377,7 +377,7 @@
     },
     "packages/plugin": {
       "name": "@kilocode/plugin",
-      "version": "7.0.27",
+      "version": "7.0.29",
       "dependencies": {
         "@kilocode/sdk": "workspace:*",
         "zod": "catalog:",
@@ -391,14 +391,14 @@
     },
     "packages/script": {
       "name": "@opencode-ai/script",
-      "version": "7.0.27",
+      "version": "7.0.29",
       "devDependencies": {
         "@types/bun": "catalog:",
       },
     },
     "packages/sdk/js": {
       "name": "@kilocode/sdk",
-      "version": "7.0.27",
+      "version": "7.0.29",
       "devDependencies": {
         "@hey-api/openapi-ts": "0.90.10",
         "@tsconfig/node22": "catalog:",
@@ -409,7 +409,7 @@
     },
     "packages/ui": {
       "name": "@opencode-ai/ui",
-      "version": "7.0.27",
+      "version": "7.0.29",
       "dependencies": {
         "@kilocode/sdk": "workspace:*",
         "@kobalte/core": "catalog:",
@@ -451,7 +451,7 @@
     },
     "packages/util": {
       "name": "@opencode-ai/util",
-      "version": "7.0.27",
+      "version": "7.0.29",
       "dependencies": {
         "zod": "catalog:",
       },
@@ -2465,8 +2465,6 @@
 
     "keyv": ["keyv@4.5.4", "", { "dependencies": { "json-buffer": "3.0.1" } }, "sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw=="],
 
-    "kilo-code": ["kilo-code@workspace:packages/kilo-vscode"],
-
     "kind-of": ["kind-of@6.0.3", "", {}, "sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw=="],
 
     "lazystream": ["lazystream@1.0.1", "", { "dependencies": { "readable-stream": "^2.0.5" } }, "sha512-b94GiNHQNy6JNTrt5w6zNyffMrNkXZb3KTkCZJb2V1xaEGCk093vkZ2jk3tpaeP33/OiXC+WvK9AxUebnf5nbw=="],
@@ -3173,6 +3171,8 @@
 
     "vary": ["vary@1.1.2", "", {}, "sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg=="],
 
+    "vcp-code": ["vcp-code@workspace:packages/kilo-vscode"],
+
     "vfile": ["vfile@6.0.3", "", { "dependencies": { "@types/unist": "^3.0.0", "vfile-message": "^4.0.0" } }, "sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q=="],
 
     "vfile-message": ["vfile-message@4.0.3", "", { "dependencies": { "@types/unist": "^3.0.0", "unist-util-stringify-position": "^4.0.0" } }, "sha512-QTHzsGd1EhbZs4AsQ20JX1rC3cOlt/IWJruk893DfLRr57lcnOeMaWG4K0JrRta4mIJZKth2Au3mM3u03/JWKw=="],
@@ -3587,18 +3587,6 @@
 
     "katex/commander": ["commander@8.3.0", "", {}, "sha512-OkTL9umf+He2DZkUq8f8J9of7yL6RJKI24dVITBmNfZBmri9zYZQrKkuXiKhyfPSu8tUhnVBB1iKXevvnlR4Ww=="],
 
-    "kilo-code/diff": ["diff@7.0.0", "", {}, "sha512-PJWHUb1RFevKCwaFA9RlG5tCd+FO5iRh9A8HEtkmBH2Li03iJriB6m6JIN4rGz3K3JLawI7/veA1xzRKP6ISBw=="],
-
-    "kilo-code/prettier": ["prettier@3.8.1", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-UOnG6LftzbdaHZcKoPFtOcCKztrQ57WkHDeRD9t/PTQtmT0NHSeWWepj6pS0z/N7+08BHFDQVUrfmfMRcZwbMg=="],
-
-    "kilo-code/solid-js": ["solid-js@1.9.11", "", { "dependencies": { "csstype": "^3.1.0", "seroval": "~1.5.0", "seroval-plugins": "~1.5.0" } }, "sha512-WEJtcc5mkh/BnHA6Yrg4whlF8g6QwpmXXRg4P2ztPmcKeHHlH4+djYecBLhSpecZY2RRECXYUwIc/C2r3yzQ4Q=="],
-
-    "kilo-code/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
-
-    "kilo-code/web-tree-sitter": ["web-tree-sitter@0.24.7", "", {}, "sha512-CdC/TqVFbXqR+C51v38hv6wOPatKEUGxa39scAeFSm98wIhZxAYonhRQPSMmfZ2w7JDI0zQDdzdmgtNk06/krQ=="],
-
-    "kilo-code/zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
-
     "lazystream/readable-stream": ["readable-stream@2.3.8", "", { "dependencies": { "core-util-is": "~1.0.0", "inherits": "~2.0.3", "isarray": "~1.0.0", "process-nextick-args": "~2.0.0", "safe-buffer": "~5.1.1", "string_decoder": "~1.1.1", "util-deprecate": "~1.0.1" } }, "sha512-8p0AUk4XODgIewSi0l8Epjs+EVnWiK7NoDIEGU0HhE7+ZyY8D1IMY7odu5lRrFXGg71L15KG8QrPmum45RTtdA=="],
 
     "light-my-request/cookie": ["cookie@1.1.1", "", {}, "sha512-ei8Aos7ja0weRpFzJnEA9UHJ/7XQmqglbRwnf2ATjcB9Wq874VKH9kfjjirM6UhU2/E5fFYadylyhFldcqSidQ=="],
@@ -3712,6 +3700,18 @@
     "tree-sitter-bash/node-addon-api": ["node-addon-api@8.5.0", "", {}, "sha512-/bRZty2mXUIFY/xU5HLvveNHlswNJej+RnxBjOMkidWfwZzgTbPG1E3K5TOxRLOR+5hX7bSofy8yf1hZevMS8A=="],
 
     "url/punycode": ["punycode@1.3.2", "", {}, "sha512-RofWgt/7fL5wP1Y7fxE7/EmTLzQVnB0ycyibJ0OOHIlJqTNzglYFxVwETOcIoJqJmpDXJ9xImDv+Fq34F/d4Dw=="],
+
+    "vcp-code/diff": ["diff@7.0.0", "", {}, "sha512-PJWHUb1RFevKCwaFA9RlG5tCd+FO5iRh9A8HEtkmBH2Li03iJriB6m6JIN4rGz3K3JLawI7/veA1xzRKP6ISBw=="],
+
+    "vcp-code/prettier": ["prettier@3.8.1", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-UOnG6LftzbdaHZcKoPFtOcCKztrQ57WkHDeRD9t/PTQtmT0NHSeWWepj6pS0z/N7+08BHFDQVUrfmfMRcZwbMg=="],
+
+    "vcp-code/solid-js": ["solid-js@1.9.11", "", { "dependencies": { "csstype": "^3.1.0", "seroval": "~1.5.0", "seroval-plugins": "~1.5.0" } }, "sha512-WEJtcc5mkh/BnHA6Yrg4whlF8g6QwpmXXRg4P2ztPmcKeHHlH4+djYecBLhSpecZY2RRECXYUwIc/C2r3yzQ4Q=="],
+
+    "vcp-code/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
+
+    "vcp-code/web-tree-sitter": ["web-tree-sitter@0.24.7", "", {}, "sha512-CdC/TqVFbXqR+C51v38hv6wOPatKEUGxa39scAeFSm98wIhZxAYonhRQPSMmfZ2w7JDI0zQDdzdmgtNk06/krQ=="],
+
+    "vcp-code/zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
 
     "vitest/why-is-node-running": ["why-is-node-running@2.3.0", "", { "dependencies": { "siginfo": "^2.0.0", "stackback": "0.0.2" }, "bin": { "why-is-node-running": "cli.js" } }, "sha512-hUrmaWBdVDcxvYqnyh09zunKzROWjbZTiNy8dBEjkS7ehEDQibXJ7XvlmtbwuTclUiIyN+CyXQD4Vmko8fNm8w=="],
 
@@ -3997,10 +3997,6 @@
 
     "jszip/readable-stream/string_decoder": ["string_decoder@1.1.1", "", { "dependencies": { "safe-buffer": "~5.1.0" } }, "sha512-n/ShnvDi6FHbbVfviro+WojiFzv+s8MPMHBczVePfUpDJLwoLT0ht1l4YwBCbi8pJAveEEdnkHyPyTP/mzRfwg=="],
 
-    "kilo-code/solid-js/seroval": ["seroval@1.5.0", "", {}, "sha512-OE4cvmJ1uSPrKorFIH9/w/Qwuvi/IMcGbv5RKgcJ/zjA/IohDLU6SVaxFN9FwajbP7nsX0dQqMDes1whk3y+yw=="],
-
-    "kilo-code/solid-js/seroval-plugins": ["seroval-plugins@1.5.0", "", { "peerDependencies": { "seroval": "^1.0" } }, "sha512-EAHqADIQondwRZIdeW2I636zgsODzoBDwb3PT/+7TLDWyw1Dy/Xv7iGUIEXXav7usHDE9HVhOU61irI3EnyyHA=="],
-
     "lazystream/readable-stream/safe-buffer": ["safe-buffer@5.1.2", "", {}, "sha512-Gd2UZBJDkXlY7GbJxfsE8/nvKkUEU1G38c1siN6QP6a9PT9MmHB8GnpscSmMJSoF8LOIrt8ud/wPtojys4G6+g=="],
 
     "lazystream/readable-stream/string_decoder": ["string_decoder@1.1.1", "", { "dependencies": { "safe-buffer": "~5.1.0" } }, "sha512-n/ShnvDi6FHbbVfviro+WojiFzv+s8MPMHBczVePfUpDJLwoLT0ht1l4YwBCbi8pJAveEEdnkHyPyTP/mzRfwg=="],
@@ -4054,6 +4050,10 @@
     "test-exclude/glob/jackspeak": ["jackspeak@3.4.3", "", { "dependencies": { "@isaacs/cliui": "^8.0.2" }, "optionalDependencies": { "@pkgjs/parseargs": "^0.11.0" } }, "sha512-OGlZQpz2yfahA/Rd1Y8Cd9SIEsqvXkLVoSw/cgwhnhFMDbsQFeZYoJJ7bIZBS9BcamUW96asq/npPWugM+RQBw=="],
 
     "test-exclude/glob/path-scurry": ["path-scurry@1.11.1", "", { "dependencies": { "lru-cache": "^10.2.0", "minipass": "^5.0.0 || ^6.0.2 || ^7.0.0" } }, "sha512-Xa4Nw17FS9ApQFJ9umLiJS4orGjm7ZzwUrwamcGQuHSzDyth9boKDaycYdDcZDuqYATXw4HFXgaqWTctW/v1HA=="],
+
+    "vcp-code/solid-js/seroval": ["seroval@1.5.0", "", {}, "sha512-OE4cvmJ1uSPrKorFIH9/w/Qwuvi/IMcGbv5RKgcJ/zjA/IohDLU6SVaxFN9FwajbP7nsX0dQqMDes1whk3y+yw=="],
+
+    "vcp-code/solid-js/seroval-plugins": ["seroval-plugins@1.5.0", "", { "peerDependencies": { "seroval": "^1.0" } }, "sha512-EAHqADIQondwRZIdeW2I636zgsODzoBDwb3PT/+7TLDWyw1Dy/Xv7iGUIEXXav7usHDE9HVhOU61irI3EnyyHA=="],
 
     "wrap-ansi-cjs/string-width/emoji-regex": ["emoji-regex@8.0.0", "", {}, "sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A=="],
 

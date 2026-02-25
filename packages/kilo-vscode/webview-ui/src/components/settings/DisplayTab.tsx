@@ -30,7 +30,7 @@ const DisplayTab: Component = () => {
           <div style={{ width: "160px" }}>
             <TextField
               value={config().username ?? ""}
-              placeholder="User"
+              placeholder={language.t("settings.display.username.placeholder")}
               onChange={(val) => updateConfig({ username: val.trim() || undefined })}
             />
           </div>
@@ -58,5 +58,4 @@ const DisplayTab: Component = () => {
 }
 
 export default DisplayTab
-
 

@@ -105,28 +105,47 @@ const WorkflowsEditor: Component = () => {
   return (
     <div>
       <Card style={{ "margin-bottom": "12px" }}>
-        <SettingsRow title="Workflow Name" description="Slash command id. Spaces will be converted to hyphens.">
-          <TextField value={newName()} placeholder="e.g. code-review" onChange={(value) => setNewName(value)} />
+        <SettingsRow
+          title={language.t("settings.workflows.name.title")}
+          description={language.t("settings.workflows.name.description")}
+        >
+          <TextField
+            value={newName()}
+            placeholder={language.t("settings.workflows.name.placeholder")}
+            onChange={(value) => setNewName(value)}
+          />
         </SettingsRow>
 
-        <SettingsRow title="Template" description="Markdown prompt template content." last>
+        <SettingsRow
+          title={language.t("settings.workflows.template.title")}
+          description={language.t("settings.workflows.template.description")}
+          last
+        >
           <TextField
             value={newTemplate()}
-            placeholder="Ask the assistant to review recent changes..."
+            placeholder={language.t("settings.workflows.template.placeholder")}
             multiline
             onChange={(value) => setNewTemplate(value)}
           />
         </SettingsRow>
 
-        <SettingsRow title="Description" description="Optional short description for command palette." last>
+        <SettingsRow
+          title={language.t("settings.workflows.description.title")}
+          description={language.t("settings.workflows.description.description")}
+          last
+        >
           <TextField
             value={newDescription()}
-            placeholder="Review staged files and list risks."
+            placeholder={language.t("settings.workflows.description.placeholder")}
             onChange={(value) => setNewDescription(value)}
           />
         </SettingsRow>
 
-        <SettingsRow title="Agent" description="Optional agent override." last>
+        <SettingsRow
+          title={language.t("settings.workflows.agent.title")}
+          description={language.t("settings.workflows.agent.description")}
+          last
+        >
           <Select
             options={agentOptions()}
             current={agentOptions().find((option) => option.value === newAgent())}
@@ -139,13 +158,25 @@ const WorkflowsEditor: Component = () => {
           />
         </SettingsRow>
 
-        <SettingsRow title="Model" description="Optional model override in provider/model format." last>
-          <TextField value={newModel()} placeholder="e.g. vcptoolbox/gpt-4.1" onChange={(value) => setNewModel(value)} />
+        <SettingsRow
+          title={language.t("settings.workflows.model.title")}
+          description={language.t("settings.workflows.model.description")}
+          last
+        >
+          <TextField
+            value={newModel()}
+            placeholder={language.t("settings.workflows.model.placeholder")}
+            onChange={(value) => setNewModel(value)}
+          />
         </SettingsRow>
 
-        <SettingsRow title="Enable Subtask Mode" description="Allow this workflow to run as subtask command." last>
+        <SettingsRow
+          title={language.t("settings.workflows.subtask.title")}
+          description={language.t("settings.workflows.subtask.description")}
+          last
+        >
           <Switch checked={newSubtask()} onChange={(checked) => setNewSubtask(checked)} hideLabel>
-            Enable Subtask Mode
+            {language.t("settings.workflows.subtask.label")}
           </Switch>
         </SettingsRow>
 
@@ -166,7 +197,7 @@ const WorkflowsEditor: Component = () => {
                 color: "var(--text-weak-base, var(--vscode-descriptionForeground))",
               }}
             >
-              No workflows configured yet.
+              {language.t("settings.workflows.empty")}
             </div>
           </Card>
         }
@@ -192,7 +223,10 @@ const WorkflowsEditor: Component = () => {
                   <IconButton size="small" variant="ghost" icon="close" onClick={() => removeWorkflow(name)} />
                 </div>
 
-                <SettingsRow title="Template" description="Markdown prompt template content.">
+                <SettingsRow
+                  title={language.t("settings.workflows.template.title")}
+                  description={language.t("settings.workflows.template.description")}
+                >
                   <TextField
                     value={current.template ?? ""}
                     multiline
@@ -200,14 +234,20 @@ const WorkflowsEditor: Component = () => {
                   />
                 </SettingsRow>
 
-                <SettingsRow title="Description" description="Optional short description for command palette.">
+                <SettingsRow
+                  title={language.t("settings.workflows.description.title")}
+                  description={language.t("settings.workflows.description.description")}
+                >
                   <TextField
                     value={current.description ?? ""}
                     onChange={(value) => updateWorkflow(name, { description: normalizeInput(value) })}
                   />
                 </SettingsRow>
 
-                <SettingsRow title="Agent" description="Optional agent override.">
+                <SettingsRow
+                  title={language.t("settings.workflows.agent.title")}
+                  description={language.t("settings.workflows.agent.description")}
+                >
                   <Select
                     options={agentOptions()}
                     current={agentOptions().find((option) => option.value === (current.agent ?? ""))}
@@ -220,16 +260,27 @@ const WorkflowsEditor: Component = () => {
                   />
                 </SettingsRow>
 
-                <SettingsRow title="Model" description="Optional model override in provider/model format.">
+                <SettingsRow
+                  title={language.t("settings.workflows.model.title")}
+                  description={language.t("settings.workflows.model.description")}
+                >
                   <TextField
                     value={current.model ?? ""}
                     onChange={(value) => updateWorkflow(name, { model: normalizeInput(value) })}
                   />
                 </SettingsRow>
 
-                <SettingsRow title="Enable Subtask Mode" description="Allow this workflow to run as subtask command." last>
-                  <Switch checked={current.subtask ?? false} onChange={(checked) => updateWorkflow(name, { subtask: checked })} hideLabel>
-                    Enable Subtask Mode
+                <SettingsRow
+                  title={language.t("settings.workflows.subtask.title")}
+                  description={language.t("settings.workflows.subtask.description")}
+                  last
+                >
+                  <Switch
+                    checked={current.subtask ?? false}
+                    onChange={(checked) => updateWorkflow(name, { subtask: checked })}
+                    hideLabel
+                  >
+                    {language.t("settings.workflows.subtask.label")}
                   </Switch>
                 </SettingsRow>
               </Card>
@@ -242,5 +293,4 @@ const WorkflowsEditor: Component = () => {
 }
 
 export default WorkflowsEditor
-
 

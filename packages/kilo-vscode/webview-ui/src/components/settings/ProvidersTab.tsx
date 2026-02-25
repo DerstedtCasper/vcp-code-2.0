@@ -963,7 +963,7 @@ const ProvidersTab: Component = () => {
                 variant="secondary"
                 size="small"
                 triggerVariant="settings"
-                placeholder="Select profile..."
+                placeholder={language.t("settings.providers.profile.placeholder")}
               />
             </div>
             <IconButton size="small" variant="secondary" icon="plus" onClick={addCustomProvider} />
@@ -1147,14 +1147,14 @@ const ProvidersTab: Component = () => {
                         <div style={{ flex: 1 }}>
                           <TextField
                             value={header.key}
-                            placeholder="Header-Key"
+                            placeholder={language.t("settings.providers.headers.key.placeholder")}
                             onChange={(value) => updateHeaderRow(index(), "key", value)}
                           />
                         </div>
                         <div style={{ flex: 1 }}>
                           <TextField
                             value={header.value}
-                            placeholder="Header-Value"
+                            placeholder={language.t("settings.providers.headers.value.placeholder")}
                             onChange={(value) => updateHeaderRow(index(), "value", value)}
                           />
                         </div>
@@ -1395,7 +1395,7 @@ const ProvidersTab: Component = () => {
                   variant="secondary"
                   size="small"
                   triggerVariant="settings"
-                  placeholder="Select provider..."
+                  placeholder={language.t("settings.providers.providerSelect.placeholder")}
                 />
               </div>
               <Button
@@ -1464,7 +1464,7 @@ const ProvidersTab: Component = () => {
                   variant="secondary"
                   size="small"
                   triggerVariant="settings"
-                  placeholder="Select provider..."
+                  placeholder={language.t("settings.providers.providerSelect.placeholder")}
                 />
               </div>
               <Button
@@ -1509,5 +1509,4 @@ const ProvidersTab: Component = () => {
 }
 
 export default ProvidersTab
-
 

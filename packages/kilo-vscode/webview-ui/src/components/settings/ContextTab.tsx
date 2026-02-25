@@ -211,7 +211,9 @@ const ContextTab: Component = () => {
 
   return (
     <div>
-      <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>1) {language.t("settings.context.title")} / 基础压缩</h4>
+      <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>
+        1) {language.t("settings.context.title")} / {language.t("settings.context.section.compaction")}
+      </h4>
       <Card style={{ "margin-bottom": "12px" }}>
         <SettingsRow
           title={language.t("settings.context.autoCompaction.title")}
@@ -248,7 +250,7 @@ const ContextTab: Component = () => {
           <div style={{ flex: 1 }}>
             <TextField
               value={newPattern()}
-              placeholder="e.g. **/node_modules/**"
+              placeholder={language.t("settings.context.watcherPatterns.placeholder")}
               onChange={(val) => setNewPattern(val)}
               onKeyDown={(e: KeyboardEvent) => {
                 if (e.key === "Enter") addPattern()
@@ -269,133 +271,206 @@ const ContextTab: Component = () => {
         </For>
       </Card>
 
-      <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>2) 记忆注入（Passive + Retrieval）</h4>
+      <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>2) {language.t("settings.context.section.memoryInjection")}</h4>
       <Card style={{ "margin-bottom": "16px" }}>
-        <SettingsRow title="Memory Runtime Enabled" description="Master switch for VCP memory runtime.">
+        <SettingsRow
+          title={language.t("settings.context.memory.runtime.title")}
+          description={language.t("settings.context.memory.runtime.description")}
+        >
           <Switch checked={vcpMemory().enabled ?? false} onChange={(checked) => updateMemory({ enabled: checked })} hideLabel>
-            Memory Runtime Enabled
+            {language.t("settings.context.memory.runtime.title")}
           </Switch>
         </SettingsRow>
-        <SettingsRow title="Passive Enabled" description="Inject memory snippets into system context.">
+        <SettingsRow
+          title={language.t("settings.context.memory.passive.enabled.title")}
+          description={language.t("settings.context.memory.passive.enabled.description")}
+        >
           <Switch checked={passive().enabled ?? true} onChange={(checked) => updatePassive({ enabled: checked })} hideLabel>
-            Passive Enabled
+            {language.t("settings.context.memory.passive.enabled.title")}
           </Switch>
         </SettingsRow>
-        <SettingsRow title="Include Profile" description="Include user profile memory in context injection.">
+        <SettingsRow
+          title={language.t("settings.context.memory.passive.includeProfile.title")}
+          description={language.t("settings.context.memory.passive.includeProfile.description")}
+        >
           <Switch checked={passive().includeProfile ?? true} onChange={(checked) => updatePassive({ includeProfile: checked })} hideLabel>
-            Include Profile
+            {language.t("settings.context.memory.passive.includeProfile.title")}
           </Switch>
         </SettingsRow>
-        <SettingsRow title="Include Folder Doc" description="Include folder-level memory summary in context injection.">
+        <SettingsRow
+          title={language.t("settings.context.memory.passive.includeFolderDoc.title")}
+          description={language.t("settings.context.memory.passive.includeFolderDoc.description")}
+        >
           <Switch checked={passive().includeFolderDoc ?? true} onChange={(checked) => updatePassive({ includeFolderDoc: checked })} hideLabel>
-            Include Folder Doc
+            {language.t("settings.context.memory.passive.includeFolderDoc.title")}
           </Switch>
         </SettingsRow>
-        <SettingsRow title="Include Session Snippets" description="Include relevant snippets from current session messages.">
+        <SettingsRow
+          title={language.t("settings.context.memory.passive.includeSessionSnippets.title")}
+          description={language.t("settings.context.memory.passive.includeSessionSnippets.description")}
+        >
           <Switch
             checked={passive().includeSessionSnippets ?? true}
             onChange={(checked) => updatePassive({ includeSessionSnippets: checked })}
             hideLabel
           >
-            Include Session Snippets
+            {language.t("settings.context.memory.passive.includeSessionSnippets.title")}
           </Switch>
         </SettingsRow>
-        <SettingsRow title="Top K Atomic" description="Top-K atomic memories for passive injection.">
+        <SettingsRow
+          title={language.t("settings.context.memory.passive.topKAtomic.title")}
+          description={language.t("settings.context.memory.passive.topKAtomic.description")}
+        >
           <TextField value={passive().topKAtomic?.toString() ?? ""} onChange={(val) => updatePassive({ topKAtomic: normalizeInteger(val) })} />
         </SettingsRow>
-        <SettingsRow title="Top K Session" description="Top-K session snippets for passive injection.">
+        <SettingsRow
+          title={language.t("settings.context.memory.passive.topKSession.title")}
+          description={language.t("settings.context.memory.passive.topKSession.description")}
+        >
           <TextField value={passive().topKSession?.toString() ?? ""} onChange={(val) => updatePassive({ topKSession: normalizeInteger(val) })} />
         </SettingsRow>
-        <SettingsRow title="Max Chars" description="Maximum injected memory context size." last>
+        <SettingsRow
+          title={language.t("settings.context.memory.passive.maxChars.title")}
+          description={language.t("settings.context.memory.passive.maxChars.description")}
+          last
+        >
           <TextField value={passive().maxChars?.toString() ?? ""} onChange={(val) => updatePassive({ maxChars: normalizeInteger(val) })} />
         </SettingsRow>
       </Card>
 
       <Card style={{ "margin-bottom": "16px" }}>
-        <SettingsRow title="Retrieval Enabled" description="Enable retrieval parameter overrides for memory queries.">
+        <SettingsRow
+          title={language.t("settings.context.memory.retrieval.enabled.title")}
+          description={language.t("settings.context.memory.retrieval.enabled.description")}
+        >
           <Switch checked={retrieval().enabled ?? false} onChange={(checked) => updateRetrieval({ enabled: checked })} hideLabel>
-            Retrieval Enabled
+            {language.t("settings.context.memory.retrieval.enabled.title")}
           </Switch>
         </SettingsRow>
-        <SettingsRow title="Semantic Weight" description="Semantic route weight (0~1).">
+        <SettingsRow
+          title={language.t("settings.context.memory.retrieval.semanticWeight.title")}
+          description={language.t("settings.context.memory.retrieval.semanticWeight.description")}
+        >
           <TextField value={retrieval().semanticWeight?.toString() ?? ""} onChange={(val) => updateRetrieval({ semanticWeight: normalizeFloat(val) })} />
         </SettingsRow>
-        <SettingsRow title="Time Weight" description="Time route weight (0~1).">
+        <SettingsRow
+          title={language.t("settings.context.memory.retrieval.timeWeight.title")}
+          description={language.t("settings.context.memory.retrieval.timeWeight.description")}
+        >
           <TextField value={retrieval().timeWeight?.toString() ?? ""} onChange={(val) => updateRetrieval({ timeWeight: normalizeFloat(val) })} />
         </SettingsRow>
-        <SettingsRow title="Default Top K" description="Default memory search top-K." last>
+        <SettingsRow
+          title={language.t("settings.context.memory.retrieval.defaultTopK.title")}
+          description={language.t("settings.context.memory.retrieval.defaultTopK.description")}
+          last
+        >
           <TextField value={retrieval().defaultTopK?.toString() ?? ""} onChange={(val) => updateRetrieval({ defaultTopK: normalizeInteger(val) })} />
         </SettingsRow>
       </Card>
 
-      <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>3) 记忆写入（Writer + Refresh）</h4>
+      <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>3) {language.t("settings.context.section.memoryWriter")}</h4>
       <Card style={{ "margin-bottom": "16px" }}>
-        <SettingsRow title="Writer Enabled" description="Write memory asynchronously after each user message.">
+        <SettingsRow
+          title={language.t("settings.context.memory.writer.enabled.title")}
+          description={language.t("settings.context.memory.writer.enabled.description")}
+        >
           <Switch checked={writer().enabled ?? true} onChange={(checked) => updateWriter({ enabled: checked })} hideLabel>
-            Writer Enabled
+            {language.t("settings.context.memory.writer.enabled.title")}
           </Switch>
         </SettingsRow>
-        <SettingsRow title="Min Chars" description="Minimum message length to trigger writer.">
+        <SettingsRow
+          title={language.t("settings.context.memory.writer.minChars.title")}
+          description={language.t("settings.context.memory.writer.minChars.description")}
+        >
           <TextField value={writer().minChars?.toString() ?? ""} onChange={(val) => updateWriter({ minChars: normalizeInteger(val) })} />
         </SettingsRow>
-        <SettingsRow title="Max Atomic" description="Maximum retained atomic memories.">
+        <SettingsRow
+          title={language.t("settings.context.memory.writer.maxAtomic.title")}
+          description={language.t("settings.context.memory.writer.maxAtomic.description")}
+        >
           <TextField value={writer().maxAtomic?.toString() ?? ""} onChange={(val) => updateWriter({ maxAtomic: normalizeInteger(val) })} />
         </SettingsRow>
-        <SettingsRow title="Max Per Message" description="Maximum memory writes per user message.">
+        <SettingsRow
+          title={language.t("settings.context.memory.writer.maxPerMessage.title")}
+          description={language.t("settings.context.memory.writer.maxPerMessage.description")}
+        >
           <TextField value={writer().maxPerMessage?.toString() ?? ""} onChange={(val) => updateWriter({ maxPerMessage: normalizeInteger(val) })} />
         </SettingsRow>
-        <SettingsRow title="Force First Message" description="Always write memory on the first user message in a session.">
+        <SettingsRow
+          title={language.t("settings.context.memory.writer.forceFirstMessage.title")}
+          description={language.t("settings.context.memory.writer.forceFirstMessage.description")}
+        >
           <Switch checked={writer().forceFirstMessage ?? true} onChange={(checked) => updateWriter({ forceFirstMessage: checked })} hideLabel>
-            Force First Message
+            {language.t("settings.context.memory.writer.forceFirstMessage.title")}
           </Switch>
         </SettingsRow>
-        <SettingsRow title="Update Profile" description="Allow writer to update user profile memory.">
+        <SettingsRow
+          title={language.t("settings.context.memory.writer.updateProfile.title")}
+          description={language.t("settings.context.memory.writer.updateProfile.description")}
+        >
           <Switch checked={writer().updateProfile ?? true} onChange={(checked) => updateWriter({ updateProfile: checked })} hideLabel>
-            Update Profile
+            {language.t("settings.context.memory.writer.updateProfile.title")}
           </Switch>
         </SettingsRow>
-        <SettingsRow title="Update Folder Doc" description="Allow writer to update folder document memory." last>
+        <SettingsRow
+          title={language.t("settings.context.memory.writer.updateFolderDoc.title")}
+          description={language.t("settings.context.memory.writer.updateFolderDoc.description")}
+          last
+        >
           <Switch checked={writer().updateFolderDoc ?? true} onChange={(checked) => updateWriter({ updateFolderDoc: checked })} hideLabel>
-            Update Folder Doc
+            {language.t("settings.context.memory.writer.updateFolderDoc.title")}
           </Switch>
         </SettingsRow>
       </Card>
 
       <Card style={{ "margin-bottom": "16px" }}>
-        <SettingsRow title="Refresh Enabled" description="Enable post-tool memory refresh strategy.">
+        <SettingsRow
+          title={language.t("settings.context.memory.refresh.enabled.title")}
+          description={language.t("settings.context.memory.refresh.enabled.description")}
+        >
           <Switch checked={refresh().enabled ?? false} onChange={(checked) => updateRefresh({ enabled: checked })} hideLabel>
-            Refresh Enabled
+            {language.t("settings.context.memory.refresh.enabled.title")}
           </Switch>
         </SettingsRow>
-        <SettingsRow title="After Tool Call" description="Refresh memory after tool execution.">
+        <SettingsRow
+          title={language.t("settings.context.memory.refresh.afterToolCall.title")}
+          description={language.t("settings.context.memory.refresh.afterToolCall.description")}
+        >
           <Switch checked={refresh().afterToolCall ?? false} onChange={(checked) => updateRefresh({ afterToolCall: checked })} hideLabel>
-            After Tool Call
+            {language.t("settings.context.memory.refresh.afterToolCall.title")}
           </Switch>
         </SettingsRow>
-        <SettingsRow title="Profile Weight" description="Refresh weight for profile memory (0~1).">
+        <SettingsRow
+          title={language.t("settings.context.memory.refresh.profileWeight.title")}
+          description={language.t("settings.context.memory.refresh.profileWeight.description")}
+        >
           <TextField value={refresh().profileWeight?.toString() ?? ""} onChange={(val) => updateRefresh({ profileWeight: normalizeFloat(val) })} />
         </SettingsRow>
-        <SettingsRow title="Folder Weight" description="Refresh weight for folder memory (0~1)." last>
+        <SettingsRow
+          title={language.t("settings.context.memory.refresh.folderWeight.title")}
+          description={language.t("settings.context.memory.refresh.folderWeight.description")}
+          last
+        >
           <TextField value={refresh().folderWeight?.toString() ?? ""} onChange={(val) => updateRefresh({ folderWeight: normalizeFloat(val) })} />
         </SettingsRow>
       </Card>
 
-      <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>4) 记忆库管理（Overview / Search / Update / Delete）</h4>
+      <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>4) {language.t("settings.context.section.memoryAdmin")}</h4>
       <Card style={{ "margin-bottom": "16px" }}>
         <div style={{ display: "flex", gap: "8px", "align-items": "center", "margin-bottom": "8px" }}>
           <Button size="small" onClick={requestMemoryOverview}>
-            Refresh
+            {language.t("common.refresh")}
           </Button>
           <span style={{ "font-size": "12px", color: "var(--text-weak-base, var(--vscode-descriptionForeground))" }}>
-            Atomic Total: {memoryTotal()}
+            {language.t("settings.context.memory.admin.atomicTotal", { count: memoryTotal() })}
           </span>
         </div>
 
         <Show when={memoryProfile()}>
           <div style={{ "font-size": "12px", "margin-bottom": "8px" }}>
-            <div>Profile.preferences: {memoryProfile()?.preferences.join(" | ") || "-"}</div>
-            <div>Profile.style: {memoryProfile()?.style.join(" | ") || "-"}</div>
-            <div>Profile.facts: {memoryProfile()?.facts.join(" | ") || "-"}</div>
+            <div>{language.t("settings.context.memory.admin.profile.preferences")}: {memoryProfile()?.preferences.join(" | ") || "-"}</div>
+            <div>{language.t("settings.context.memory.admin.profile.style")}: {memoryProfile()?.style.join(" | ") || "-"}</div>
+            <div>{language.t("settings.context.memory.admin.profile.facts")}: {memoryProfile()?.facts.join(" | ") || "-"}</div>
           </div>
         </Show>
 
@@ -411,7 +486,7 @@ const ContextTab: Component = () => {
           <div style={{ flex: 1 }}>
             <TextField
               value={memoryQuery()}
-              placeholder="Search memory..."
+              placeholder={language.t("settings.context.memory.admin.search.placeholder")}
               onChange={(val) => setMemoryQuery(val)}
               onKeyDown={(e: KeyboardEvent) => {
                 if (e.key === "Enter") searchMemory()
@@ -419,7 +494,7 @@ const ContextTab: Component = () => {
             />
           </div>
           <Button size="small" onClick={searchMemory}>
-            Search
+            {language.t("settings.context.memory.admin.search.action")}
           </Button>
         </div>
 
@@ -427,7 +502,8 @@ const ContextTab: Component = () => {
           {(hit) => (
             <div style={{ padding: "6px 0", "border-top": "1px solid var(--border-weak-base)" }}>
               <div style={{ "font-size": "11px", color: "var(--text-weak-base, var(--vscode-descriptionForeground))" }}>
-                {hit.item.scope}/{hit.item.role} score={hit.score.toFixed(3)} id={hit.item.id}
+                {hit.item.scope}/{hit.item.role} {language.t("settings.context.memory.admin.score")}={hit.score.toFixed(3)}{" "}
+                {language.t("settings.context.memory.admin.id")}={hit.item.id}
               </div>
               <Show
                 when={editingID() === hit.item.id}
@@ -435,16 +511,20 @@ const ContextTab: Component = () => {
                   <div style={{ display: "flex", gap: "8px", "align-items": "center" }}>
                     <span style={{ "font-size": "12px", flex: 1 }}>{hit.item.text}</span>
                     <Button size="small" variant="ghost" onClick={() => { setEditingID(hit.item.id); setEditingText(hit.item.text) }}>
-                      Edit
+                      {language.t("common.edit")}
                     </Button>
                     <Button size="small" variant="ghost" onClick={() => togglePinned(hit.item.id)}>
-                      {previewPinnedIDs().includes(hit.item.id) ? "Unpin" : "Pin"}
+                      {previewPinnedIDs().includes(hit.item.id)
+                        ? language.t("settings.context.memory.admin.pin.off")
+                        : language.t("settings.context.memory.admin.pin.on")}
                     </Button>
                     <Button size="small" variant="ghost" onClick={() => toggleRemoved(hit.item.id)}>
-                      {previewRemovedIDs().includes(hit.item.id) ? "Include" : "Exclude"}
+                      {previewRemovedIDs().includes(hit.item.id)
+                        ? language.t("settings.context.memory.admin.exclude.off")
+                        : language.t("settings.context.memory.admin.exclude.on")}
                     </Button>
                     <Button size="small" variant="ghost" onClick={() => deleteMemory(hit.item.id)}>
-                      Delete
+                      {language.t("common.delete")}
                     </Button>
                   </div>
                 }
@@ -454,10 +534,10 @@ const ContextTab: Component = () => {
                     <TextField value={editingText()} onChange={(val) => setEditingText(val)} />
                   </div>
                   <Button size="small" onClick={saveEditingMemory}>
-                    Save
+                    {language.t("common.save")}
                   </Button>
                   <Button size="small" variant="ghost" onClick={() => { setEditingID(undefined); setEditingText("") }}>
-                    Cancel
+                    {language.t("common.cancel")}
                   </Button>
                 </div>
               </Show>
@@ -466,14 +546,14 @@ const ContextTab: Component = () => {
         </For>
       </Card>
 
-      <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>5) 上下文盒规则（Context Box Preview）</h4>
+      <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>5) {language.t("settings.context.section.preview")}</h4>
       <Card>
         <div style={{ display: "flex", gap: "12px", "align-items": "center", "margin-bottom": "8px" }}>
           <Switch checked={previewCompressed()} onChange={(checked) => setPreviewCompressed(checked)} hideLabel>
-            Compress Preview
+            {language.t("settings.context.preview.compress")}
           </Switch>
           <span style={{ "font-size": "11px", color: "var(--text-weak-base, var(--vscode-descriptionForeground))" }}>
-            pin: {previewPinnedIDs().length} | exclude: {previewRemovedIDs().length}
+            {language.t("settings.context.preview.stats", { pinned: previewPinnedIDs().length, excluded: previewRemovedIDs().length })}
           </span>
           <Button
             size="small"
@@ -483,14 +563,14 @@ const ContextTab: Component = () => {
               setPreviewRemovedIDs([])
             }}
           >
-            Clear Overrides
+            {language.t("settings.context.preview.clear")}
           </Button>
         </div>
         <div style={{ display: "flex", gap: "8px", "align-items": "center", "margin-bottom": "8px" }}>
           <div style={{ flex: 1 }}>
             <TextField
               value={previewQuery()}
-              placeholder="Input a query to preview context box..."
+              placeholder={language.t("settings.context.preview.query.placeholder")}
               onChange={(val) => setPreviewQuery(val)}
               onKeyDown={(e: KeyboardEvent) => {
                 if (e.key === "Enter") requestPreview()
@@ -498,10 +578,15 @@ const ContextTab: Component = () => {
             />
           </div>
           <Button size="small" onClick={requestPreview}>
-            Preview
+            {language.t("settings.context.preview.action")}
           </Button>
         </div>
-        <TextField value={previewText()} multiline placeholder="Context preview will appear here..." onChange={() => undefined} />
+        <TextField
+          value={previewText()}
+          multiline
+          placeholder={language.t("settings.context.preview.result.placeholder")}
+          onChange={() => undefined}
+        />
       </Card>
     </div>
   )
@@ -513,5 +598,3 @@ export default ContextTab
   type VcpMemoryWriter = NonNullable<VcpMemory["writer"]>
   type VcpMemoryRetrieval = NonNullable<VcpMemory["retrieval"]>
   type VcpMemoryRefresh = NonNullable<VcpMemory["refresh"]>
-
-

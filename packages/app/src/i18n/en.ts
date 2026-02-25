@@ -724,6 +724,8 @@
   "settings.providers.tag.environment": "Environment",
   "settings.providers.tag.config": "Config",
   "settings.providers.tag.custom": "Custom",
+  "settings.providers.customProvider.title": "Custom provider",
+  "settings.providers.customProvider.description": "Add an OpenAI-compatible provider by base URL.",
   "settings.providers.tag.other": "Other",
   "settings.models.title": "Models",
   "settings.models.description": "Model settings will be configurable here.",
@@ -807,5 +809,4 @@
   "workspace.reset.archived.many": "{{count}} sessions will be archived.",
   "workspace.reset.note": "This will reset the workspace to match the default branch.",
 }
-
 

@@ -708,6 +708,8 @@ export const dict = {
   "settings.providers.tag.environment": "环境",
   "settings.providers.tag.config": "配置",
   "settings.providers.tag.custom": "自定义",
+  "settings.providers.customProvider.title": "自定义提供商",
+  "settings.providers.customProvider.description": "通过基础 URL 添加一个 OpenAI 兼容的提供商。",
   "settings.providers.tag.other": "其他",
 
   "settings.models.title": "模型",
@@ -793,5 +795,4 @@ export const dict = {
   "workspace.reset.archived.many": "将归档 {{count}} 个会话。",
   "workspace.reset.note": "这将把工作区重置为与默认分支一致。",
 } satisfies Partial<Record<Keys, string>>
-
 

@@ -34,6 +34,10 @@ target
 opencode-dev
 logs/
 *.bun-build
+.bun/
+*.vsix
+helloagents/
 
 # Telemetry ID
 telemetry-id
+helloagents/

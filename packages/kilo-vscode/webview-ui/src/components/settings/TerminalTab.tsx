@@ -16,15 +16,15 @@ interface SelectOption {
 const TerminalTab: Component = () => {
   const { config, updateConfig } = useConfig()
   const language = useLanguage()
-  const permissionOptions: SelectOption[] = [
-    { value: "ask", label: "ask" },
-    { value: "allow", label: "allow" },
-    { value: "deny", label: "deny" },
-  ]
-  const diffStyleOptions: SelectOption[] = [
-    { value: "auto", label: "auto" },
-    { value: "stacked", label: "stacked" },
-  ]
+  const permissionOptions = createMemo<SelectOption[]>(() => [
+    { value: "ask", label: language.t("settings.autoApprove.level.ask") },
+    { value: "allow", label: language.t("settings.autoApprove.level.allow") },
+    { value: "deny", label: language.t("settings.autoApprove.level.deny") },
+  ])
+  const diffStyleOptions = createMemo<SelectOption[]>(() => [
+    { value: "auto", label: language.t("settings.terminal.diffStyle.auto") },
+    { value: "stacked", label: language.t("settings.terminal.diffStyle.stacked") },
+  ])
 
   const bashPermission = createMemo(() => {
     const value = config().permission?.bash
@@ -82,10 +82,13 @@ const TerminalTab: Component = () => {
   return (
     <div>
       <Card>
-        <SettingsRow title="Bash Permission" description="Default permission policy when terminal tools request command execution.">
+        <SettingsRow
+          title={language.t("settings.terminal.bashPermission.title")}
+          description={language.t("settings.terminal.bashPermission.description")}
+        >
           <Select
-            options={permissionOptions}
-            current={permissionOptions.find((option) => option.value === bashPermission())}
+            options={permissionOptions()}
+            current={permissionOptions().find((option) => option.value === bashPermission())}
             value={(option) => option.value}
             label={(option) => option.label}
             onSelect={(option) => option && updateBashPermission(option.value as PermissionLevel)}
@@ -95,26 +98,35 @@ const TerminalTab: Component = () => {
           />
         </SettingsRow>
 
-        <SettingsRow title="Terminal Suspend Keybind" description="Keybind used to suspend terminal in TUI mode.">
+        <SettingsRow
+          title={language.t("settings.terminal.keybindSuspend.title")}
+          description={language.t("settings.terminal.keybindSuspend.description")}
+        >
           <TextField
             value={config().keybinds?.terminal_suspend ?? ""}
-            placeholder="ctrl+z"
+            placeholder={language.t("settings.terminal.keybindSuspend.placeholder")}
             onChange={(value) => updateTerminalSuspend(value)}
           />
         </SettingsRow>
 
-        <SettingsRow title="Terminal Title Toggle Keybind" description="Keybind used to toggle terminal title in TUI mode.">
+        <SettingsRow
+          title={language.t("settings.terminal.keybindTitleToggle.title")}
+          description={language.t("settings.terminal.keybindTitleToggle.description")}
+        >
           <TextField
             value={config().keybinds?.terminal_title_toggle ?? ""}
-            placeholder="none"
+            placeholder={language.t("settings.terminal.keybindTitleToggle.placeholder")}
             onChange={(value) => updateTerminalTitleToggle(value)}
           />
         </SettingsRow>
 
-        <SettingsRow title="Diff Style" description="How terminal diff blocks are rendered in the TUI.">
+        <SettingsRow
+          title={language.t("settings.terminal.diffStyle.title")}
+          description={language.t("settings.terminal.diffStyle.description")}
+        >
           <Select
-            options={diffStyleOptions}
-            current={diffStyleOptions.find((option) => option.value === (config().tui?.diff_style ?? "auto"))}
+            options={diffStyleOptions()}
+            current={diffStyleOptions().find((option) => option.value === (config().tui?.diff_style ?? "auto"))}
             value={(option) => option.value}
             label={(option) => option.label}
             onSelect={(option) => option && updateDiffStyle(option.value as "auto" | "stacked")}
@@ -124,7 +136,11 @@ const TerminalTab: Component = () => {
           />
         </SettingsRow>
 
-        <SettingsRow title="Scroll Speed" description="Base terminal scroll speed in TUI mode." last>
+        <SettingsRow
+          title={language.t("settings.terminal.scrollSpeed.title")}
+          description={language.t("settings.terminal.scrollSpeed.description")}
+          last
+        >
           <TextField
             value={config().tui?.scroll_speed?.toString() ?? ""}
             placeholder="0.2"
@@ -137,5 +153,3 @@ const TerminalTab: Component = () => {
 }
 
 export default TerminalTab
-
-

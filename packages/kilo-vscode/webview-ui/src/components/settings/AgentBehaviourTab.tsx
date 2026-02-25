@@ -239,7 +239,7 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
           >
             <TextField
               value={currentAgentConfig().model ?? ""}
-              placeholder="e.g. anthropic/claude-sonnet-4-20250514"
+              placeholder={language.t("settings.agentBehaviour.modelOverride.placeholder")}
               onChange={(val) =>
                 updateAgentConfig(selectedAgent(), {
                   model: val.trim() || undefined,
@@ -255,7 +255,7 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
           >
             <TextField
               value={currentAgentConfig().prompt ?? ""}
-              placeholder="Custom instructions…"
+              placeholder={language.t("settings.agentBehaviour.prompt.placeholder")}
               multiline
               onChange={(val) =>
                 updateAgentConfig(selectedAgent(), {
@@ -355,11 +355,11 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
                   >
                     <Show when={mcp.command}>
                       <div>
-                        command: {mcp.command} {(mcp.args ?? []).join(" ")}
+                        {language.t("settings.agentBehaviour.mcp.command")}: {mcp.command} {(mcp.args ?? []).join(" ")}
                       </div>
                     </Show>
                     <Show when={mcp.url}>
-                      <div>url: {mcp.url}</div>
+                      <div>{language.t("settings.agentBehaviour.mcp.url")}: {mcp.url}</div>
                     </Show>
                   </div>
                 </div>
@@ -379,21 +379,21 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
     const toolRequest = createMemo(() => vcp().toolRequest ?? {})
     const agentTeam = createMemo(() => vcp().agentTeam ?? {})
     const foldStyleOptions: SelectOption[] = [
-      { value: "details", label: "details" },
-      { value: "plain", label: "plain" },
+      { value: "details", label: language.t("settings.agentBehaviour.vcp.contextFold.output.details") },
+      { value: "plain", label: language.t("settings.agentBehaviour.vcp.contextFold.output.plain") },
     ]
     const bridgeModeOptions: SelectOption[] = [
-      { value: "execute", label: "execute" },
-      { value: "event", label: "event" },
+      { value: "execute", label: language.t("settings.agentBehaviour.vcp.toolRequest.bridgeMode.execute") },
+      { value: "event", label: language.t("settings.agentBehaviour.vcp.toolRequest.bridgeMode.event") },
     ]
     const waveStrategyOptions: SelectOption[] = [
-      { value: "auto", label: "auto" },
-      { value: "conservative", label: "conservative" },
-      { value: "aggressive", label: "aggressive" },
+      { value: "auto", label: language.t("settings.agentBehaviour.vcp.agentTeam.waveStrategy.auto") },
+      { value: "conservative", label: language.t("settings.agentBehaviour.vcp.agentTeam.waveStrategy.conservative") },
+      { value: "aggressive", label: language.t("settings.agentBehaviour.vcp.agentTeam.waveStrategy.aggressive") },
     ]
     const handoffFormatOptions: SelectOption[] = [
-      { value: "summary", label: "summary" },
-      { value: "checklist", label: "checklist" },
+      { value: "summary", label: language.t("settings.agentBehaviour.vcp.agentTeam.handoffFormat.summary") },
+      { value: "checklist", label: language.t("settings.agentBehaviour.vcp.agentTeam.handoffFormat.checklist") },
     ]
 
     const updateVcp = (partial: Partial<VcpConfig>) => {
@@ -484,27 +484,36 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
     return (
       <div>
         <Card style={{ "margin-bottom": "12px" }}>
-          <SettingsRow title="Enable VCP Compatibility" description="Master switch for VCP parsing and rendering.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.compat.title")}
+            description={language.t("settings.agentBehaviour.vcp.compat.description")}
+          >
             <Switch
               checked={vcp().enabled ?? false}
               onChange={(checked) => updateVcp({ enabled: checked })}
               hideLabel
             >
-              Enable VCP Compatibility
+              {language.t("settings.agentBehaviour.vcp.compat.label")}
             </Switch>
           </SettingsRow>
 
-          <SettingsRow title="Context Fold Enabled" description="Parse and render VCP_DYNAMIC_FOLD blocks.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.contextFold.enabled.title")}
+            description={language.t("settings.agentBehaviour.vcp.contextFold.enabled.description")}
+          >
             <Switch
               checked={contextFold().enabled ?? true}
               onChange={(checked) => updateContextFold({ enabled: checked })}
               hideLabel
             >
-              Context Fold Enabled
+              {language.t("settings.agentBehaviour.vcp.contextFold.enabled.label")}
             </Switch>
           </SettingsRow>
 
-          <SettingsRow title="Context Fold Output" description="Render context folds as details or plain markdown.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.contextFold.output.title")}
+            description={language.t("settings.agentBehaviour.vcp.contextFold.output.description")}
+          >
             <Select
               options={foldStyleOptions}
               current={foldStyleOptions.find((o) => o.value === (contextFold().outputStyle ?? "details"))}
@@ -517,7 +526,10 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
             />
           </SettingsRow>
 
-          <SettingsRow title="Context Fold Start Marker" description="Marker used to detect fold block start.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.contextFold.startMarker.title")}
+            description={language.t("settings.agentBehaviour.vcp.contextFold.startMarker.description")}
+          >
             <TextField
               value={contextFold().startMarker ?? ""}
               placeholder="<<<[VCP_DYNAMIC_FOLD]>>>"
@@ -525,7 +537,10 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
             />
           </SettingsRow>
 
-          <SettingsRow title="Context Fold End Marker" description="Marker used to detect fold block end.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.contextFold.endMarker.title")}
+            description={language.t("settings.agentBehaviour.vcp.contextFold.endMarker.description")}
+          >
             <TextField
               value={contextFold().endMarker ?? ""}
               placeholder="<<<[END_VCP_DYNAMIC_FOLD]>>>"
@@ -533,13 +548,23 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
             />
           </SettingsRow>
 
-          <SettingsRow title="VCPInfo Enabled" description="Extract VCPINFO blocks and emit notifications.">
-            <Switch checked={vcpInfo().enabled ?? true} onChange={(checked) => updateVcpInfo({ enabled: checked })} hideLabel>
-              VCPInfo Enabled
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.vcpInfo.enabled.title")}
+            description={language.t("settings.agentBehaviour.vcp.vcpInfo.enabled.description")}
+          >
+            <Switch
+              checked={vcpInfo().enabled ?? true}
+              onChange={(checked) => updateVcpInfo({ enabled: checked })}
+              hideLabel
+            >
+              {language.t("settings.agentBehaviour.vcp.vcpInfo.enabled.label")}
             </Switch>
           </SettingsRow>
 
-          <SettingsRow title="VCPInfo Start Marker" description="Marker used to detect VCPInfo block start.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.vcpInfo.startMarker.title")}
+            description={language.t("settings.agentBehaviour.vcp.vcpInfo.startMarker.description")}
+          >
             <TextField
               value={vcpInfo().startMarker ?? ""}
               placeholder="<<<[VCPINFO]>>>"
@@ -547,7 +572,10 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
             />
           </SettingsRow>
 
-          <SettingsRow title="VCPInfo End Marker" description="Marker used to detect VCPInfo block end.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.vcpInfo.endMarker.title")}
+            description={language.t("settings.agentBehaviour.vcp.vcpInfo.endMarker.description")}
+          >
             <TextField
               value={vcpInfo().endMarker ?? ""}
               placeholder="<<<[END_VCPINFO]>>>"
@@ -555,17 +583,23 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
             />
           </SettingsRow>
 
-          <SettingsRow title="TOOL_REQUEST Enabled" description="Parse TOOL_REQUEST protocol blocks and bridge events.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.toolRequest.enabled.title")}
+            description={language.t("settings.agentBehaviour.vcp.toolRequest.enabled.description")}
+          >
             <Switch
               checked={toolRequest().enabled ?? true}
               onChange={(checked) => updateToolRequest({ enabled: checked })}
               hideLabel
             >
-              TOOL_REQUEST Enabled
+              {language.t("settings.agentBehaviour.vcp.toolRequest.enabled.label")}
             </Switch>
           </SettingsRow>
 
-          <SettingsRow title="TOOL_REQUEST Bridge Mode" description="execute runs matched tools, event only emits protocol events.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.toolRequest.bridgeMode.title")}
+            description={language.t("settings.agentBehaviour.vcp.toolRequest.bridgeMode.description")}
+          >
             <Select
               options={bridgeModeOptions}
               current={bridgeModeOptions.find((o) => o.value === (toolRequest().bridgeMode ?? "execute"))}
@@ -578,44 +612,56 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
             />
           </SettingsRow>
 
-          <SettingsRow title="TOOL_REQUEST Max Per Message" description="Safety cap for auto-executed TOOL_REQUEST blocks.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.toolRequest.maxPerMessage.title")}
+            description={language.t("settings.agentBehaviour.vcp.toolRequest.maxPerMessage.description")}
+          >
             <TextField
               value={toolRequest().maxPerMessage?.toString() ?? ""}
-              placeholder="e.g. 3"
+              placeholder={language.t("settings.agentBehaviour.vcp.toolRequest.maxPerMessage.placeholder")}
               onChange={(value) => updateToolRequest({ maxPerMessage: normalizeInteger(value) })}
             />
           </SettingsRow>
 
           <SettingsRow
-            title="TOOL_REQUEST Allow Tools"
-            description="Comma-separated allowlist. Empty means all tools are allowed unless denied."
+            title={language.t("settings.agentBehaviour.vcp.toolRequest.allowTools.title")}
+            description={language.t("settings.agentBehaviour.vcp.toolRequest.allowTools.description")}
           >
             <TextField
               value={(toolRequest().allowTools ?? []).join(", ")}
-              placeholder="search_memory, read, glob"
+              placeholder={language.t("settings.agentBehaviour.vcp.toolRequest.allowTools.placeholder")}
               onChange={(value) => updateToolRequest({ allowTools: parseCsvList(value) })}
             />
           </SettingsRow>
 
-          <SettingsRow title="TOOL_REQUEST Deny Tools" description="Comma-separated denylist. Takes precedence over allowlist.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.toolRequest.denyTools.title")}
+            description={language.t("settings.agentBehaviour.vcp.toolRequest.denyTools.description")}
+          >
             <TextField
               value={(toolRequest().denyTools ?? []).join(", ")}
-              placeholder="bash"
+              placeholder={language.t("settings.agentBehaviour.vcp.toolRequest.denyTools.placeholder")}
               onChange={(value) => updateToolRequest({ denyTools: parseCsvList(value) })}
             />
           </SettingsRow>
 
-          <SettingsRow title="TOOL_REQUEST Keep In Output" description="Keep TOOL_REQUEST blocks visible in assistant output.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.toolRequest.keepInOutput.title")}
+            description={language.t("settings.agentBehaviour.vcp.toolRequest.keepInOutput.description")}
+          >
             <Switch
               checked={toolRequest().keepBlockInText ?? false}
               onChange={(checked) => updateToolRequest({ keepBlockInText: checked })}
               hideLabel
             >
-              TOOL_REQUEST Keep In Output
+              {language.t("settings.agentBehaviour.vcp.toolRequest.keepInOutput.label")}
             </Switch>
           </SettingsRow>
 
-          <SettingsRow title="TOOL_REQUEST Start Marker" description="Marker used to detect TOOL_REQUEST block start.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.toolRequest.startMarker.title")}
+            description={language.t("settings.agentBehaviour.vcp.toolRequest.startMarker.description")}
+          >
             <TextField
               value={toolRequest().startMarker ?? ""}
               placeholder="<<<[TOOL_REQUEST]>>>"
@@ -623,7 +669,10 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
             />
           </SettingsRow>
 
-          <SettingsRow title="TOOL_REQUEST End Marker" description="Marker used to detect TOOL_REQUEST block end.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.toolRequest.endMarker.title")}
+            description={language.t("settings.agentBehaviour.vcp.toolRequest.endMarker.description")}
+          >
             <TextField
               value={toolRequest().endMarker ?? ""}
               placeholder="<<<[END_TOOL_REQUEST]>>>"
@@ -631,27 +680,47 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
             />
           </SettingsRow>
 
-          <SettingsRow title="Allow HTML Rendering" description="Disable to escape raw HTML in assistant output.">
-            <Switch checked={html().enabled ?? true} onChange={(checked) => updateVcp({ html: { ...html(), enabled: checked } })} hideLabel>
-              Allow HTML Rendering
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.html.enabled.title")}
+            description={language.t("settings.agentBehaviour.vcp.html.enabled.description")}
+          >
+            <Switch
+              checked={html().enabled ?? true}
+              onChange={(checked) => updateVcp({ html: { ...html(), enabled: checked } })}
+              hideLabel
+            >
+              {language.t("settings.agentBehaviour.vcp.html.enabled.label")}
             </Switch>
           </SettingsRow>
 
-          <SettingsRow title="Agent Team Enabled" description="Enable orchestrator wave strategy and team metadata guidance.">
-            <Switch checked={agentTeam().enabled ?? false} onChange={(checked) => updateAgentTeam({ enabled: checked })} hideLabel>
-              Agent Team Enabled
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.agentTeam.enabled.title")}
+            description={language.t("settings.agentBehaviour.vcp.agentTeam.enabled.description")}
+          >
+            <Switch
+              checked={agentTeam().enabled ?? false}
+              onChange={(checked) => updateAgentTeam({ enabled: checked })}
+              hideLabel
+            >
+              {language.t("settings.agentBehaviour.vcp.agentTeam.enabled.label")}
             </Switch>
           </SettingsRow>
 
-          <SettingsRow title="Agent Team Max Parallel" description="Maximum subtasks allowed per wave.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.agentTeam.maxParallel.title")}
+            description={language.t("settings.agentBehaviour.vcp.agentTeam.maxParallel.description")}
+          >
             <TextField
               value={agentTeam().maxParallel?.toString() ?? ""}
-              placeholder="e.g. 3"
+              placeholder={language.t("settings.agentBehaviour.vcp.agentTeam.maxParallel.placeholder")}
               onChange={(value) => updateAgentTeam({ maxParallel: normalizeInteger(value) })}
             />
           </SettingsRow>
 
-          <SettingsRow title="Agent Team Wave Strategy" description="Wave scheduling strategy for orchestrator tasks.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.agentTeam.waveStrategy.title")}
+            description={language.t("settings.agentBehaviour.vcp.agentTeam.waveStrategy.description")}
+          >
             <Select
               options={waveStrategyOptions}
               current={waveStrategyOptions.find((o) => o.value === (agentTeam().waveStrategy ?? "auto"))}
@@ -666,17 +735,24 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
             />
           </SettingsRow>
 
-          <SettingsRow title="Agent Team Require File Separation" description="Only parallelize subtasks when touched files do not overlap.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.agentTeam.requireFileSeparation.title")}
+            description={language.t("settings.agentBehaviour.vcp.agentTeam.requireFileSeparation.description")}
+          >
             <Switch
               checked={agentTeam().requireFileSeparation ?? true}
               onChange={(checked) => updateAgentTeam({ requireFileSeparation: checked })}
               hideLabel
             >
-              Agent Team Require File Separation
+              {language.t("settings.agentBehaviour.vcp.agentTeam.requireFileSeparation.label")}
             </Switch>
           </SettingsRow>
 
-          <SettingsRow title="Agent Team Handoff Format" description="Preferred handoff format for delegated task summaries." last>
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.agentTeam.handoffFormat.title")}
+            description={language.t("settings.agentBehaviour.vcp.agentTeam.handoffFormat.description")}
+            last
+          >
             <Select
               options={handoffFormatOptions}
               current={handoffFormatOptions.find((o) => o.value === (agentTeam().handoffFormat ?? "summary"))}
@@ -690,7 +766,7 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
           </SettingsRow>
         </Card>
 
-        <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>Memory Settings</h4>
+        <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>{language.t("settings.agentBehaviour.vcp.memory.title")}</h4>
         <Card style={{ "margin-bottom": "12px" }}>
           <div
             style={{
@@ -703,9 +779,12 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
           </div>
         </Card>
 
-        <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>vcptoolbox Provider</h4>
+        <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>{language.t("settings.agentBehaviour.vcp.vcptoolbox.title")}</h4>
         <Card>
-          <SettingsRow title="Base URL" description="Provider API base URL.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.vcptoolbox.baseUrl.title")}
+            description={language.t("settings.agentBehaviour.vcp.vcptoolbox.baseUrl.description")}
+          >
             <TextField
               value={vcptoolboxOptions().baseURL ?? ""}
               placeholder="https://api.vcptoolbox.com"
@@ -713,7 +792,10 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
             />
           </SettingsRow>
 
-          <SettingsRow title="Models Path" description="Path segment for models endpoint.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.vcptoolbox.modelsPath.title")}
+            description={language.t("settings.agentBehaviour.vcp.vcptoolbox.modelsPath.description")}
+          >
             <TextField
               value={vcptoolboxOptions().modelsPath ?? ""}
               placeholder="/v1/models"
@@ -721,7 +803,10 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
             />
           </SettingsRow>
 
-          <SettingsRow title="Models URL" description="Absolute URL override for models endpoint.">
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.vcptoolbox.modelsUrl.title")}
+            description={language.t("settings.agentBehaviour.vcp.vcptoolbox.modelsUrl.description")}
+          >
             <TextField
               value={vcptoolboxOptions().modelsURL ?? ""}
               placeholder="https://api.vcptoolbox.com/v1/models"
@@ -729,7 +814,11 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
             />
           </SettingsRow>
 
-          <SettingsRow title="API Key" description="API key override for vcptoolbox provider." last>
+          <SettingsRow
+            title={language.t("settings.agentBehaviour.vcp.vcptoolbox.apiKey.title")}
+            description={language.t("settings.agentBehaviour.vcp.vcptoolbox.apiKey.description")}
+            last
+          >
             <TextField
               value={vcptoolboxOptions().apiKey ?? ""}
               placeholder="sk-..."
@@ -823,7 +912,7 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
           <div style={{ flex: 1 }}>
             <TextField
               value={newSkillPath()}
-              placeholder="e.g. ./skills"
+              placeholder={language.t("settings.agentBehaviour.skillPaths.placeholder")}
               onChange={(val) => setNewSkillPath(val)}
               onKeyDown={(e: KeyboardEvent) => {
                 if (e.key === "Enter") addSkillPath()
@@ -874,7 +963,7 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
           <div style={{ flex: 1 }}>
             <TextField
               value={newSkillUrl()}
-              placeholder="e.g. https://example.com/skills"
+              placeholder={language.t("settings.agentBehaviour.skillUrls.placeholder")}
               onChange={(val) => setNewSkillUrl(val)}
               onKeyDown={(e: KeyboardEvent) => {
                 if (e.key === "Enter") addSkillUrl()
@@ -946,7 +1035,7 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
           <div style={{ flex: 1 }}>
             <TextField
               value={newInstruction()}
-              placeholder="e.g. ./INSTRUCTIONS.md"
+              placeholder={language.t("settings.agentBehaviour.instructionFiles.placeholder")}
               onChange={(val) => setNewInstruction(val)}
               onKeyDown={(e: KeyboardEvent) => {
                 if (e.key === "Enter") addInstruction()
@@ -1057,5 +1146,3 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
 }
 
 export default AgentBehaviourTab
-
-

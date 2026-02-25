@@ -216,10 +216,14 @@ export const SettingsProviders: Component = () => {
               <div class="flex flex-col min-w-0">
                 <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <ProviderIcon id={icon("synthetic")} class="size-5 shrink-0 icon-strong-base" />
-                  <span class="text-14-medium text-text-strong">Custom provider</span>
+                  <span class="text-14-medium text-text-strong">
+                    {language.t("settings.providers.customProvider.title")}
+                  </span>
                   <Tag>{language.t("settings.providers.tag.custom")}</Tag>
                 </div>
-                <span class="text-12-regular text-text-weak pl-8">Add an OpenAI-compatible provider by base URL.</span>
+                <span class="text-12-regular text-text-weak pl-8">
+                  {language.t("settings.providers.customProvider.description")}
+                </span>
               </div>
               <Button
                 size="large"
