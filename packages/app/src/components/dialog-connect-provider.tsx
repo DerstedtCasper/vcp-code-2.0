@@ -273,14 +273,14 @@ export function DialogConnectProvider(props: { provider: string }) {
           {/* kilocode_change start */}
           <Match when={provider().id === "kilo"}>
             <div class="flex flex-col gap-4">
-              <div class="text-14-regular text-text-base">{language.t("provider.connect.VCPGateway.line1")}</div>
-              <div class="text-14-regular text-text-base">{language.t("provider.connect.VCPGateway.line2")}</div>
+              <div class="text-14-regular text-text-base">{language.t("provider.connect.kiloGateway.line1")}</div>
+              <div class="text-14-regular text-text-base">{language.t("provider.connect.kiloGateway.line2")}</div>
               <div class="text-14-regular text-text-base">
-                {language.t("provider.connect.VCPGateway.visit.prefix")}
-                <Link href="https://github.com/DerstedtCasper/vcp-code-2.0" tabIndex={-1}>
-                  {language.t("provider.connect.VCPGateway.visit.link")}
+                {language.t("provider.connect.kiloGateway.visit.prefix")}
+                <Link href="https://kilo.ai" tabIndex={-1}>
+                  {language.t("provider.connect.kiloGateway.visit.link")}
                 </Link>
-                {language.t("provider.connect.VCPGateway.visit.suffix")}
+                {language.t("provider.connect.kiloGateway.visit.suffix")}
               </div>
             </div>
           </Match>

@@ -1,4 +1,4 @@
-﻿import { dict as en } from "./en"
+import { dict as en } from "./en"
 
 type Keys = keyof typeof en
 
@@ -104,7 +104,7 @@ export const dict = {
   "dialog.model.empty": "Keine Modellergebnisse",
   "dialog.model.manage": "Modelle verwalten",
   "dialog.model.manage.description": "Anpassen, welche Modelle in der Modellauswahl erscheinen.",
-  "dialog.model.unpaid.freeModels.title": "Kostenlose Modelle von VCP",
+  "dialog.model.unpaid.freeModels.title": "Kostenlose Modelle von Kilo",
   "dialog.model.unpaid.addMore.title": "Weitere Modelle von beliebten Anbietern hinzufügen",
   "dialog.provider.viewAll": "Mehr Anbieter anzeigen",
   "provider.connect.title": "{{provider}} verbinden",
@@ -115,7 +115,7 @@ export const dict = {
   "provider.connect.status.waiting": "Warten auf Autorisierung...",
   "provider.connect.status.failed": "Autorisierung fehlgeschlagen: {{error}}",
   "provider.connect.apiKey.description":
-    "Geben Sie Ihren {{provider}} API-Schlüssel ein, um Ihr Konto zu verbinden und {{provider}} Modelle in VCP zu nutzen.",
+    "Geben Sie Ihren {{provider}} API-Schlüssel ein, um Ihr Konto zu verbinden und {{provider}} Modelle in Kilo zu nutzen.",
   "provider.connect.apiKey.label": "{{provider}} API-Schlüssel",
   "provider.connect.apiKey.placeholder": "API-Schlüssel",
   "provider.connect.apiKey.required": "API-Schlüssel ist erforderlich",
@@ -129,7 +129,7 @@ export const dict = {
   "provider.connect.oauth.code.visit.prefix": "Besuchen Sie ",
   "provider.connect.oauth.code.visit.link": "diesen Link",
   "provider.connect.oauth.code.visit.suffix":
-    ", um Ihren Autorisierungscode zu erhalten, Ihr Konto zu verbinden und {{provider}} Modelle in VCP zu nutzen.",
+    ", um Ihren Autorisierungscode zu erhalten, Ihr Konto zu verbinden und {{provider}} Modelle in Kilo zu nutzen.",
   "provider.connect.oauth.code.label": "{{method}} Autorisierungscode",
   "provider.connect.oauth.code.placeholder": "Autorisierungscode",
   "provider.connect.oauth.code.required": "Autorisierungscode ist erforderlich",
@@ -137,7 +137,7 @@ export const dict = {
   "provider.connect.oauth.auto.visit.prefix": "Besuchen Sie ",
   "provider.connect.oauth.auto.visit.link": "diesen Link",
   "provider.connect.oauth.auto.visit.suffix":
-    " und geben Sie den untenstehenden Code ein, um Ihr Konto zu verbinden und {{provider}} Modelle in VCP zu nutzen.",
+    " und geben Sie den untenstehenden Code ein, um Ihr Konto zu verbinden und {{provider}} Modelle in Kilo zu nutzen.",
   "provider.connect.oauth.auto.confirmationCode": "Bestätigungscode",
   "provider.connect.toast.connected.title": "{{provider}} verbunden",
   "provider.connect.toast.connected.description": "{{provider}} Modelle sind jetzt verfügbar.",
@@ -279,7 +279,7 @@ export const dict = {
   "dialog.directory.search.placeholder": "Ordner durchsuchen",
   "dialog.directory.empty": "Keine Ordner gefunden",
   "dialog.server.title": "Server",
-  "dialog.server.description": "Wechseln Sie den VCP-Server, mit dem sich diese App verbindet.",
+  "dialog.server.description": "Wechseln Sie den Kilo-Server, mit dem sich diese App verbindet.",
   "dialog.server.search.placeholder": "Server durchsuchen",
   "dialog.server.empty": "Noch keine Server",
   "dialog.server.add.title": "Server hinzufügen",
@@ -389,7 +389,7 @@ export const dict = {
   "toast.session.unshare.failed.description": "Beim Aufheben des Teilens ist ein Fehler aufgetreten",
   "toast.session.listFailed.title": "Sitzungen für {{project}} konnten nicht geladen werden",
   "toast.update.title": "Update verfügbar",
-  "toast.update.description": "Eine neue Version von VCP ({{version}}) ist zur Installation verfügbar.",
+  "toast.update.description": "Eine neue Version von Kilo ({{version}}) ist zur Installation verfügbar.",
   "toast.update.action.installRestart": "Installieren und neu starten",
   "toast.update.action.notYet": "Noch nicht",
   "error.page.title": "Etwas ist schiefgelaufen",
@@ -399,7 +399,7 @@ export const dict = {
   "error.page.action.checking": "Prüfen...",
   "error.page.action.checkUpdates": "Nach Updates suchen",
   "error.page.action.updateTo": "Auf {{version}} aktualisieren",
-  "error.page.report.prefix": "Bitte melden Sie diesen Fehler dem VCP-Team",
+  "error.page.report.prefix": "Bitte melden Sie diesen Fehler dem Kilo-Team",
   "error.page.report.discord": "auf Discord",
   "error.page.version": "Version: {{version}}",
   "error.dev.rootNotFound":
@@ -416,7 +416,7 @@ export const dict = {
   "error.chain.modelNotFound": "Modell nicht gefunden: {{provider}}/{{model}}",
   "error.chain.checkConfig": "Überprüfen Sie Ihre Konfiguration (opencode.json) auf Anbieter-/Modellnamen",
   "error.chain.mcpFailed":
-    'MCP-Server "{{name}}" fehlgeschlagen. Hinweis: VCP unterstützt noch keine MCP-Authentifizierung.',
+    'MCP-Server "{{name}}" fehlgeschlagen. Hinweis: Kilo unterstützt noch keine MCP-Authentifizierung.',
   "error.chain.providerAuthFailed": "Anbieter-Authentifizierung fehlgeschlagen ({{provider}}): {{message}}",
   "error.chain.providerInitFailed":
     'Anbieter "{{provider}}" konnte nicht initialisiert werden. Überprüfen Sie Anmeldeinformationen und Konfiguration.',
@@ -519,31 +519,31 @@ export const dict = {
   "sidebar.workspaces.enable": "Arbeitsbereiche aktivieren",
   "sidebar.workspaces.disable": "Arbeitsbereiche deaktivieren",
   "sidebar.gettingStarted.title": "Erste Schritte",
-  "sidebar.gettingStarted.line1": "VCP enthält kostenlose Modelle, damit Sie sofort loslegen können.",
+  "sidebar.gettingStarted.line1": "Kilo enthält kostenlose Modelle, damit Sie sofort loslegen können.",
   "sidebar.gettingStarted.line2":
     "Verbinden Sie einen beliebigen Anbieter, um Modelle wie Claude, GPT, Gemini usw. zu nutzen.",
   "sidebar.project.recentSessions": "Letzte Sitzungen",
   "sidebar.project.viewAllSessions": "Alle Sitzungen anzeigen",
   "sidebar.project.clearNotifications": "Benachrichtigungen löschen",
-  "app.name.desktop": "VCP Desktop",
+  "app.name.desktop": "Kilo Desktop",
   "settings.section.desktop": "Desktop",
   "settings.section.server": "Server",
   "settings.tab.general": "Allgemein",
   "settings.tab.shortcuts": "Tastenkombinationen",
   "settings.desktop.section.wsl": "WSL",
   "settings.desktop.wsl.title": "WSL-Integration",
-  "settings.desktop.wsl.description": "VCP-Server innerhalb von WSL unter Windows ausführen.",
+  "settings.desktop.wsl.description": "Kilo-Server innerhalb von WSL unter Windows ausführen.",
   "settings.general.section.appearance": "Erscheinungsbild",
   "settings.general.section.notifications": "Systembenachrichtigungen",
   "settings.general.section.updates": "Updates",
   "settings.general.section.sounds": "Soundeffekte",
   "settings.general.section.display": "Anzeige",
   "settings.general.row.language.title": "Sprache",
-  "settings.general.row.language.description": "Die Anzeigesprache für VCP ändern",
+  "settings.general.row.language.description": "Die Anzeigesprache für Kilo ändern",
   "settings.general.row.appearance.title": "Erscheinungsbild",
-  "settings.general.row.appearance.description": "Anpassen, wie VCP auf Ihrem Gerät aussieht",
+  "settings.general.row.appearance.description": "Anpassen, wie Kilo auf Ihrem Gerät aussieht",
   "settings.general.row.theme.title": "Thema",
-  "settings.general.row.theme.description": "Das Thema von VCP anpassen.",
+  "settings.general.row.theme.description": "Das Thema von Kilo anpassen.",
   "settings.general.row.font.title": "Schriftart",
   "settings.general.row.font.description": "Die in Codeblöcken verwendete Monospace-Schriftart anpassen",
   "settings.general.row.wayland.title": "Natives Wayland verwenden",
@@ -553,13 +553,13 @@ export const dict = {
   "settings.general.row.releaseNotes.title": "Versionshinweise",
   "settings.general.row.releaseNotes.description": '"Neuigkeiten"-Pop-ups nach Updates anzeigen',
   "settings.updates.row.startup.title": "Beim Start nach Updates suchen",
-  "settings.updates.row.startup.description": "Beim Start von VCP automatisch nach Updates suchen",
+  "settings.updates.row.startup.description": "Beim Start von Kilo automatisch nach Updates suchen",
   "settings.updates.row.check.title": "Nach Updates suchen",
   "settings.updates.row.check.description": "Manuell nach Updates suchen und installieren, wenn verfügbar",
   "settings.updates.action.checkNow": "Jetzt prüfen",
   "settings.updates.action.checking": "Wird geprüft...",
   "settings.updates.toast.latest.title": "Du bist auf dem neuesten Stand",
-  "settings.updates.toast.latest.description": "Du verwendest die aktuelle Version von VCP.",
+  "settings.updates.toast.latest.description": "Du verwendest die aktuelle Version von Kilo.",
   "font.option.ibmPlexMono": "IBM Plex Mono",
   "font.option.cascadiaCode": "Cascadia Code",
   "font.option.firaCode": "Fira Code",
@@ -734,5 +734,3 @@ export const dict = {
   "workspace.reset.archived.many": "{{count}} Sitzungen werden archiviert.",
   "workspace.reset.note": "Dadurch wird der Arbeitsbereich auf den Standard-Branch zurückgesetzt.",
 } satisfies Partial<Record<Keys, string>>
-
-

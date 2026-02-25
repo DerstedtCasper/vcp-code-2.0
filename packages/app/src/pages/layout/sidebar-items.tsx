@@ -33,9 +33,7 @@ export const ProjectIcon = (props: { project: LocalProject; class?: string; noti
         <Avatar
           fallback={name()}
           src={
-            props.project.id === KILO_PROJECT_ID
-              ? "https://raw.githubusercontent.com/DerstedtCasper/vcp-code-2.0/main/packages/kilo-docs/public/img/logo.svg"
-              : props.project.icon?.override
+            props.project.id === KILO_PROJECT_ID ? "https://kilo.ai/favicon.svg" : props.project.icon?.override
           }
           {...getAvatarColors(props.project.icon?.color)}
           class="size-full rounded"
