@@ -57,10 +57,10 @@
 - [x] `language.tsx`：更新三层合并中的变量名与导入路径
 
 ### 阶段 F — 资源文件替换
-- [ ] 替换 `assets/icons/nova-dark.svg` 为 Nova/VCP logo
-- [ ] 替换 `assets/icons/nova-light.svg` 为 Nova/VCP logo
-- [ ] 替换或删除根目录 `kilo.gif`
-- [ ] 替换根目录 `logo.png`
+- [x] 替换 `assets/icons/nova-dark.svg` 为 Nova/VCP logo
+- [x] 替换 `assets/icons/nova-light.svg` 为 Nova/VCP logo
+- [x] 替换或删除根目录 `kilo.gif`
+- [x] 替换根目录 `logo.png`
 
 ### 阶段 G — 构建验证
 - [x] `bun turbo typecheck` → 0 错误

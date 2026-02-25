@@ -1,15 +1,15 @@
 <p align="center">
-  <a href="https://marketplace.visualstudio.com/items?itemName=kilocode.Kilo-Code"><img src="https://img.shields.io/badge/VS_Code_Marketplace-007ACC?style=flat&logo=visualstudiocode&logoColor=white" alt="VS Code Marketplace"></a>
-  <a href="https://x.com/kilocode"><img src="https://img.shields.io/badge/kilocode-000000?style=flat&logo=x&logoColor=white" alt="X (Twitter)"></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=novacode.Kilo-Code"><img src="https://img.shields.io/badge/VS_Code_Marketplace-007ACC?style=flat&logo=visualstudiocode&logoColor=white" alt="VS Code Marketplace"></a>
+  <a href="https://x.com/novacode"><img src="https://img.shields.io/badge/novacode-000000?style=flat&logo=x&logoColor=white" alt="X (Twitter)"></a>
   <a href="https://blog.kilo.ai"><img src="https://img.shields.io/badge/Blog-555?style=flat&logo=substack&logoColor=white" alt="Substack Blog"></a>
   <a href="https://kilo.ai/discord"><img src="https://img.shields.io/badge/Join%20Discord-5865F2?style=flat&logo=discord&logoColor=white" alt="Discord"></a>
-  <a href="https://www.reddit.com/r/kilocode/"><img src="https://img.shields.io/badge/Join%20r%2Fkilocode-D84315?style=flat&logo=reddit&logoColor=white" alt="Reddit"></a>
+  <a href="https://www.reddit.com/r/novacode/"><img src="https://img.shields.io/badge/Join%20r%2Fnovacode-D84315?style=flat&logo=reddit&logoColor=white" alt="Reddit"></a>
 </p>
 
 # 🚀 Kilo
 
 > Kilo is the all-in-one agentic engineering platform. Build, ship, and iterate faster with the most popular open source coding agent.
-> #1 on OpenRouter. 1.5M+ Kilo Coders. 25T+ tokens processed
+> #1 on OpenRouter. 1.5M+ Nova Coders. 25T+ tokens processed
 
 - ✨ Generate code from natural language
 - ✅ Checks its own work
@@ -21,13 +21,13 @@
 - 💡 **Get $20 in bonus credits when you top-up for the first time** Credits can be used with 500+ models like Gemini 3.1 Pro, Claude 4.6 Sonnet & Opus, and GPT-5.2
 
 <p align="center">
-  <img src="https://media.githubusercontent.com/media/Kilo-Org/kilocode/main/kilo.gif" width="100%" />
+  <img src="https://media.githubusercontent.com/media/Kilo-Org/novacode/main/nova.gif" width="100%" />
 </p>
 
 ## Quick Links
 
 - [VS Code Marketplace](https://kilo.ai/vscode-marketplace?utm_source=Readme) (download)
-- Install CLI: `npm install -g @kilocode/cli`
+- Install CLI: `npm install -g @novacode/cli`
 - [Official Kilo.ai Home page](https://kilo.ai) (learn more)
 
 ## Key Features
@@ -41,7 +41,7 @@
 
 ## Get Started in Visual Studio Code
 
-1. Install the Kilo Code extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=kilocode.Kilo-Code).
+1. Install the Nova Code extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=novacode.Kilo-Code).
 2. Create your account to access 500+ cutting-edge AI models including Gemini 3 Pro, Claude 4.5 Sonnet & Opus, and GPT-5 – with transparent pricing that matches provider rates exactly.
 3. Start coding with AI that adapts to your workflow. Watch our quick-start guide to see Kilo in action:
 
@@ -51,10 +51,10 @@
 
 ```bash
 # npm
-npm install -g @kilocode/cli
+npm install -g @novacode/cli
 
 # Or run directly with npx
-npx @kilocode/cli
+npx @novacode/cli
 ```
 
 Then run `kilo` in any project directory to start.
