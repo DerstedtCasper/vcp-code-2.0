@@ -1,4 +1,4 @@
-﻿import { Component, createEffect, createSignal, on } from "solid-js"
+import { Component, createEffect, createSignal } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { Tabs } from "@kilocode/kilo-ui/tabs"
@@ -30,23 +30,10 @@ const Settings: Component<SettingsProps> = (props) => {
   const language = useLanguage()
   const [activeTab, setActiveTab] = createSignal(props.initialTab ?? "providers")
 
-  createEffect(
-    on(
-      () => props.initialTab,
-      (tab) => {
-        if (!tab) return
-        if (tab === "vcp") {
-          setActiveTab("agentBehaviour")
-          return
-        }
-        if (tab === "aboutKiloCode") {
-          setActiveTab("aboutVCPCode")
-          return
-        }
-        setActiveTab(tab)
-      },
-    ),
-  )
+  createEffect(() => {
+    if (!props.initialTab) return
+    setActiveTab(props.initialTab)
+  })
 
   return (
     <div style={{ display: "flex", "flex-direction": "column", height: "100%" }}>
@@ -73,11 +60,7 @@ const Settings: Component<SettingsProps> = (props) => {
         orientation="vertical"
         variant="settings"
         value={activeTab()}
-        onChange={(value) => {
-          if (typeof value === "string") {
-            setActiveTab(value)
-          }
-        }}
+        onValueChange={(value: string) => setActiveTab(value)}
         style={{ flex: 1, overflow: "hidden" }}
       >
         <Tabs.List>
@@ -205,5 +188,3 @@ const Settings: Component<SettingsProps> = (props) => {
 }
 
 export default Settings
-
-
