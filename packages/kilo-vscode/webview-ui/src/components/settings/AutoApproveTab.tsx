@@ -1,4 +1,4 @@
-﻿import { Component, For, createMemo } from "solid-js"
+import { Component, For, createMemo } from "solid-js"
 import { Select } from "@kilocode/kilo-ui/select"
 import { Card } from "@kilocode/kilo-ui/card"
 import { useConfig } from "../../context/config"
@@ -135,5 +135,3 @@ const AutoApproveTab: Component = () => {
 }
 
 export default AutoApproveTab
-
-

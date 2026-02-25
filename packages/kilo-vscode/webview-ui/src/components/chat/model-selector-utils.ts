@@ -1,4 +1,4 @@
-﻿import type { ModelSelection } from "../../types/messages"
+import type { ModelSelection } from "../../types/messages"
 import type { EnrichedModel } from "../../context/provider"
 
 export const KILO_GATEWAY_ID = "kilo"
@@ -29,4 +29,3 @@ export function buildTriggerLabel(
   if (allowClear) return clearLabel || labels.notSet
   return hasProviders ? labels.select : labels.noProviders
 }
-

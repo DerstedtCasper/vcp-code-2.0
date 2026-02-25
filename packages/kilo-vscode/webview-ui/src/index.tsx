@@ -1,4 +1,4 @@
-﻿/* @refresh reload */
+/* @refresh reload */
 import "@kilocode/kilo-ui/styles"
 import { render } from "solid-js/web"
 import App from "./App"
@@ -10,5 +10,3 @@ if (!root) {
 }
 
 render(() => <App />, root)
-
-

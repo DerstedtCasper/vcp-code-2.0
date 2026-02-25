@@ -1,4 +1,4 @@
-﻿import EventSource from "eventsource"
+import EventSource from "eventsource"
 import type { ServerConfig, SSEEvent } from "./types"
 import { unwrapSSEPayload } from "./sse-utils"
 
@@ -16,7 +16,7 @@ export class SSEClient {
   private handlers: Set<SSEEventHandler> = new Set()
   private errorHandlers: Set<SSEErrorHandler> = new Set()
   private stateHandlers: Set<SSEStateHandler> = new Set()
-  private readonly authUsername = "VCP"
+  private readonly authUsername = "kilo"
 
   constructor(private readonly config: ServerConfig) {}
 
@@ -25,32 +25,32 @@ export class SSEClient {
    * @param directory - The workspace directory to subscribe to events for
    */
   connect(directory: string): void {
-    console.log("[VCP] SSE: 🔌 connect() called with directory:", directory)
+    console.log("[Kilo New] SSE: 🔌 connect() called with directory:", directory)
 
     // Return early if already connected
     if (this.eventSource) {
-      console.log("[VCP] SSE: ⚠️ Already connected, skipping")
+      console.log("[Kilo New] SSE: ⚠️ Already connected, skipping")
       return
     }
 
     // Notify connecting state
-    console.log('[VCP] SSE: 🔄 Setting state to "connecting"')
+    console.log('[Kilo New] SSE: 🔄 Setting state to "connecting"')
     this.notifyState("connecting")
 
     // Use the global event endpoint so we receive events from all directories
     // (including worktree sessions). Events are filtered client-side by trackedSessionIds.
     const url = `${this.config.baseUrl}/global/event?directory=${encodeURIComponent(directory)}`
-    console.log("[VCP] SSE: 🌐 Connecting to URL:", url)
+    console.log("[Kilo New] SSE: 🌐 Connecting to URL:", url)
 
     // Create auth header
     const authHeader = `Basic ${Buffer.from(`${this.authUsername}:${this.config.password}`).toString("base64")}`
-    console.log("[VCP] SSE: 🔑 Auth header created", {
+    console.log("[Kilo New] SSE: 🔑 Auth header created", {
       username: this.authUsername,
       passwordLength: this.config.password.length,
     })
 
     // Create EventSource with headers
-    console.log("[VCP] SSE: 🎬 Creating EventSource...")
+    console.log("[Kilo New] SSE: 🎬 Creating EventSource...")
     this.eventSource = new EventSource(url, {
       headers: {
         Authorization: authHeader,
@@ -59,31 +59,31 @@ export class SSEClient {
 
     // Set up onopen handler
     this.eventSource.onopen = () => {
-      console.log("[VCP] SSE: ✅ EventSource opened successfully")
+      console.log("[Kilo New] SSE: ✅ EventSource opened successfully")
       this.notifyState("connected")
     }
 
     // Set up onmessage handler
     this.eventSource.onmessage = (messageEvent) => {
-      console.log("[VCP] SSE: 📨 Received message event:", messageEvent.data)
+      console.log("[Kilo New] SSE: 📨 Received message event:", messageEvent.data)
       try {
         const raw = JSON.parse(messageEvent.data)
         const event = unwrapSSEPayload(raw)
         if (!event) {
-          console.warn("[VCP] SSE: ⚠️ Received event without type:", raw)
+          console.warn("[Kilo New] SSE: ⚠️ Received event without type:", raw)
           return
         }
-        console.log("[VCP] SSE: 📦 Parsed event type:", event.type)
+        console.log("[Kilo New] SSE: 📦 Parsed event type:", event.type)
         this.notifyEvent(event)
       } catch (error) {
-        console.error("[VCP] SSE: ❌ Failed to parse event:", error)
+        console.error("[Kilo New] SSE: ❌ Failed to parse event:", error)
         this.notifyError(error instanceof Error ? error : new Error(String(error)))
       }
     }
 
     // Set up onerror handler
     this.eventSource.onerror = (errorEvent) => {
-      console.error("[VCP] SSE: ❌ EventSource error:", errorEvent)
+      console.error("[Kilo New] SSE: ❌ EventSource error:", errorEvent)
       this.notifyError(new Error("EventSource connection error"))
       this.notifyState("disconnected")
     }
@@ -144,7 +144,7 @@ export class SSEClient {
       try {
         handler(event)
       } catch (error) {
-        console.error("[VCP] SSE: Error in event handler:", error)
+        console.error("[Kilo New] SSE: Error in event handler:", error)
       }
     }
   }
@@ -157,7 +157,7 @@ export class SSEClient {
       try {
         handler(error)
       } catch (err) {
-        console.error("[VCP] SSE: Error in error handler:", err)
+        console.error("[Kilo New] SSE: Error in error handler:", err)
       }
     }
   }
@@ -170,7 +170,7 @@ export class SSEClient {
       try {
         handler(state)
       } catch (error) {
-        console.error("[VCP] SSE: Error in state handler:", error)
+        console.error("[Kilo New] SSE: Error in state handler:", error)
       }
     }
   }
@@ -185,4 +185,3 @@ export class SSEClient {
     this.stateHandlers.clear()
   }
 }
-

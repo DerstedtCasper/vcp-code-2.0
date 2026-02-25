@@ -1,5 +1,5 @@
-﻿/**
- * Telemetry event names for the VCP VS Code extension.
+/**
+ * Telemetry event names for the Kilo VS Code extension.
  * These are forwarded to the CLI server via POST /telemetry/capture.
  */
 export enum TelemetryEventName {
@@ -60,7 +60,7 @@ export enum TelemetryEventName {
   // Inline Assist
   INLINE_ASSIST_AUTO_TASK = "Inline Assist Auto Task",
 
-  // VCP-specific
+  // Kilo-specific
   COMMIT_MSG_GENERATED = "Commit Message Generated",
   AGENT_MANAGER_OPENED = "Agent Manager Opened",
   AGENT_MANAGER_SESSION_STARTED = "Agent Manager Session Started",
@@ -88,4 +88,3 @@ export enum TelemetryEventName {
 export interface TelemetryPropertiesProvider {
   getTelemetryProperties(): Record<string, unknown>
 }
-

@@ -1,4 +1,4 @@
-﻿# Transplant Plan: `src/services/autocomplete/` → standalone VS Code extension
+# Transplant Plan: `src/services/autocomplete/` → standalone VS Code extension
 
 ## 1. Executive Summary
 
@@ -16,7 +16,7 @@ To transplant this module into a new VS Code extension, you can copy most of the
 - A **telemetry abstraction** for the events the module emits.
 - (Optional) A webview messaging bridge if you want a UI for settings or chat textarea autocomplete.
 
-This plan defines those interfaces and the minimum VS Code extension scaffolding required, without coupling the new extension to VCP Code’s current provider implementations.
+This plan defines those interfaces and the minimum VS Code extension scaffolding required, without coupling the new extension to Kilo Code’s current provider implementations.
 
 ---
 
@@ -323,7 +323,7 @@ This section describes what the new extension must contribute to make the module
 
 #### 3.1.1 Activation events
 
-Current VCP Code activates broadly:
+Current Kilo Code activates broadly:
 
 - `onLanguage`
 - `onStartupFinished`
@@ -334,25 +334,25 @@ For a standalone extension you can keep these, or narrow them (e.g. only `onStar
 
 #### 3.1.2 Commands
 
-Commands declared in VCP Code’s `package.json` (some are placeholders):
+Commands declared in Kilo Code’s `package.json` (some are placeholders):
 
-- `VCP-code.autocomplete.generateSuggestions` (registered)
-- `VCP-code.autocomplete.cancelSuggestions` (declared, not registered)
-- `VCP-code.autocomplete.applyCurrentSuggestions` (declared, not registered)
-- `VCP-code.autocomplete.applyAllSuggestions` (declared, not registered)
-- `VCP-code.autocomplete.goToNextSuggestion` (declared, not registered)
-- `VCP-code.autocomplete.goToPreviousSuggestion` (declared, not registered)
+- `kilo-code.autocomplete.generateSuggestions` (registered)
+- `kilo-code.autocomplete.cancelSuggestions` (declared, not registered)
+- `kilo-code.autocomplete.applyCurrentSuggestions` (declared, not registered)
+- `kilo-code.autocomplete.applyAllSuggestions` (declared, not registered)
+- `kilo-code.autocomplete.goToNextSuggestion` (declared, not registered)
+- `kilo-code.autocomplete.goToPreviousSuggestion` (declared, not registered)
 
 See command table in [`investigation-vscode-integration.md`](src/services/autocomplete/docs/investigation-vscode-integration.md:23).
 
 Commands registered programmatically (must be declared if you want them visible/consistent):
 
-- `VCP-code.autocomplete.reload` ([`index.ts`](src/services/autocomplete/docs/investigation-vscode-integration.md:117))
-- `VCP-code.autocomplete.codeActionQuickFix` (stub)
-- `VCP-code.autocomplete.showIncompatibilityExtensionPopup`
-- `VCP-code.autocomplete.disable`
+- `kilo-code.autocomplete.reload` ([`index.ts`](src/services/autocomplete/docs/investigation-vscode-integration.md:117))
+- `kilo-code.autocomplete.codeActionQuickFix` (stub)
+- `kilo-code.autocomplete.showIncompatibilityExtensionPopup`
+- `kilo-code.autocomplete.disable`
 - `kilocode.autocomplete.inline-completion.accepted` (acceptance callback)
-- `VCP-code.jetbrains.getInlineCompletions` (JetBrains bridge)
+- `kilo-code.jetbrains.getInlineCompletions` (JetBrains bridge)
 
 Recommendation for the new extension:
 
@@ -361,7 +361,7 @@ Recommendation for the new extension:
 
 #### 3.1.3 Keybindings
 
-VCP Code binds:
+Kilo Code binds:
 
 - `Escape` → cancel suggestions (but depends on a context key that is never set)
 - `Ctrl+L` / `Cmd+L` → generate suggestions (with Copilot conflict split)
@@ -378,13 +378,13 @@ Recommendation:
 If you want the Quick Fix entry point (“Suggested edits”), keep:
 
 - `contributes.codeActions` declaration
-- Register a `CodeActionsProvider` programmatically (as VCP Code does)
+- Register a `CodeActionsProvider` programmatically (as Kilo Code does)
 
 See code action registration in [`investigation-vscode-integration.md`](src/services/autocomplete/docs/investigation-vscode-integration.md:72).
 
 #### 3.1.5 Configuration contributions
 
-VCP Code does **not** contribute `configuration` settings; it stores everything in global state.
+Kilo Code does **not** contribute `configuration` settings; it stores everything in global state.
 
 For a new extension you can choose either:
 
@@ -497,7 +497,7 @@ Copy if you have a webview chat UI:
 
 ## 6. Files Requiring Modification
 
-Most modifications are to replace VCP Code specific imports with the new interfaces.
+Most modifications are to replace Kilo Code specific imports with the new interfaces.
 
 ### 6.1 `AutocompleteModel.ts`
 
@@ -560,7 +560,7 @@ File: `src/services/autocomplete/AutocompleteJetbrainsBridge.ts`.
 
 Why:
 
-- Uses internal VCP Code wrapper and webview provider.
+- Uses internal Kilo Code wrapper and webview provider.
 
 Change plan:
 
@@ -568,7 +568,7 @@ Change plan:
 - If you do, implement a dedicated transport layer; keep the bridge logic but replace:
   - `ClineProvider`
   - `getKiloCodeWrapperProperties`
-  - any VCP Code-specific types
+  - any Kilo Code-specific types
 
 ---
 
@@ -578,7 +578,7 @@ There are two separate i18n mechanisms involved.
 
 ### 7.1 `package.nls.json` (command titles)
 
-VCP Code’s `package.json` command titles reference NLS keys like:
+Kilo Code’s `package.json` command titles reference NLS keys like:
 
 - `autocomplete.commands.generateSuggestions`
 - `autocomplete.commands.cancelSuggestions`
@@ -593,7 +593,7 @@ Transplant options:
 
 ### 7.2 Runtime `t()` keys (status bar/tooltips/progress)
 
-Runtime strings are accessed via `t()` from `src/i18n` (VCP Code).
+Runtime strings are accessed via `t()` from `src/i18n` (Kilo Code).
 
 Keys used live under namespace `kilocode:autocomplete.*` (see JSON excerpt in [`investigation-vscode-integration.md`](src/services/autocomplete/docs/investigation-vscode-integration.md:287)).
 
@@ -676,7 +676,7 @@ Use this as the practical step-by-step transplant procedure.
 
 1. Refactor [`AutocompleteModel`](src/services/autocomplete/AutocompleteModel.ts:26) to use the new LLM/provider resolver interfaces.
 2. Refactor service initialization ([`AutocompleteServiceManager`](src/services/autocomplete/docs/investigation-vscode-integration.md:125)) to use the new settings/telemetry/ignore interfaces.
-3. Refactor `index.ts` entry point to accept dependency injection rather than VCP Code’s provider.
+3. Refactor `index.ts` entry point to accept dependency injection rather than Kilo Code’s provider.
 
 ### 10.5 Wire VS Code extension shell
 
@@ -709,13 +709,13 @@ These decisions were made before implementation began and override any conflicti
 
 ### 11.1 LLM Provider Architecture
 
-**Decision: Option A — Via CLI backend (VCP Gateway).**
+**Decision: Option A — Via CLI backend (Kilo Gateway).**
 
-FIM is postponed; only the **holefiller** (chat-completion-based) strategy will be used initially. The LLM provider will route completions through the VCP Gateway backend. The only supported model for now is `mistralai/codestral-2508`.
+FIM is postponed; only the **holefiller** (chat-completion-based) strategy will be used initially. The LLM provider will route completions through the Kilo Gateway backend. The only supported model for now is `mistralai/codestral-2508`.
 
 ### 11.2 Provider & Model Selection
 
-**Decision: Hardcoded to VCP Gateway + `mistralai/codestral-2508`.**
+**Decision: Hardcoded to Kilo Gateway + `mistralai/codestral-2508`.**
 
 No profile resolver is needed in phase 1. The provider and model are fixed.
 
@@ -726,7 +726,7 @@ No profile resolver is needed in phase 1. The provider and model are fixed.
 | JetBrains bridge           | **Exclude permanently** — delete `AutocompleteJetbrainsBridge.ts` and its tests. This will never be implemented this way.                                                                         |
 | Chat textarea autocomplete | **Include**                                                                                                                                                                                       |
 | Code actions               | **Include**                                                                                                                                                                                       |
-| Continuedev LLM adapters   | **Strip to minimum** — remove all adapters not needed for the VCP Gateway / holefiller path. The module uses `AutocompleteModel`, not the continuedev adapters directly, so most can be removed. |
+| Continuedev LLM adapters   | **Strip to minimum** — remove all adapters not needed for the Kilo Gateway / holefiller path. The module uses `AutocompleteModel`, not the continuedev adapters directly, so most can be removed. |
 
 ### 11.4 Settings Storage
 
@@ -738,7 +738,7 @@ No profile resolver is needed in phase 1. The provider and model are fixed.
 
 ### 11.6 i18n
 
-**Decision: Wire into `@kilocode/kilo-i18n`.** Use the translations from `src/services/autocomplete/i18n/`. Keys may differ from what `VCP-i18n` uses, so mapping is required. Discard translations for locales not present in `VCP-i18n`.
+**Decision: Wire into `@kilocode/kilo-i18n`.** Use the translations from `src/services/autocomplete/i18n/`. Keys may differ from what `kilo-i18n` uses, so mapping is required. Discard translations for locales not present in `kilo-i18n`.
 
 ### 11.7 File Ignore / Access Control
 
@@ -746,7 +746,7 @@ No profile resolver is needed in phase 1. The provider and model are fixed.
 
 ### 11.8 Command Prefix
 
-**Decision: Use `VCP-code.new.autocomplete.*`** to be consistent with the existing extension naming convention.
+**Decision: Use `kilo-code.new.autocomplete.*`** to be consistent with the existing extension naming convention.
 
 ### 11.9 NPM Dependencies
 
@@ -759,5 +759,3 @@ No profile resolver is needed in phase 1. The provider and model are fixed.
 ### 11.11 Singleton vs Dependency Injection
 
 **Decision: Deferred** — will be determined during implementation based on what works best with the existing `KiloConnectionService` / `KiloProvider` architecture.
-
-

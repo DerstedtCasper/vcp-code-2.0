@@ -1,10 +1,10 @@
-﻿# Auto-purge (task storage cleanup)
+# Auto-purge (task storage cleanup)
 
 - **What it is**: Scheduled cleanup of old task/history storage to prevent uncontrolled disk growth.
 
 ## Suggested migration
 
-- **VCP CLI availability**: Not present.
+- **Kilo CLI availability**: Not present.
 - **Migration recommendation**:
   - Decide storage ownership (server vs extension) and implement purge accordingly.
   - Until server-side storage is authoritative, keep purge logic in the extension host.
@@ -13,4 +13,3 @@
 ## Primary implementation anchors
 
 - [`src/services/auto-purge/`](../../src/services/auto-purge/)
-

@@ -1,4 +1,4 @@
-﻿# Custom command system
+# Custom command system
 
 - **What it is**: Built-in + user-defined + project-defined reusable commands (often surfaced as slash commands).
 
@@ -10,13 +10,12 @@
 
 ## Suggested migration
 
-- **VCP CLI availability**: Already.
+- **Kilo CLI availability**: Already.
 - **Migration recommendation**:
-  - Prefer VCP CLI's custom command system for definition and execution.
+  - Prefer Kilo CLI's custom command system for definition and execution.
   - Keep VS Code UI entry points (command palette, menus) in the extension host as an adapter.
 - **Reimplementation required?**: Partial.
 
 ## Primary implementation anchors
 
 - [`src/services/command/`](../../src/services/command/)
-

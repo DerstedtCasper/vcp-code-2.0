@@ -1,4 +1,4 @@
-﻿import { Component, createSignal, onCleanup } from "solid-js"
+import { Component, createSignal, onCleanup } from "solid-js"
 import { Switch } from "@kilocode/kilo-ui/switch"
 import { Card } from "@kilocode/kilo-ui/card"
 import { useVSCode } from "../../context/vscode"
@@ -82,5 +82,3 @@ const AutocompleteTab: Component = () => {
 }
 
 export default AutocompleteTab
-
-

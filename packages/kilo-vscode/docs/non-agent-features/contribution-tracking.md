@@ -1,4 +1,4 @@
-﻿# Contribution tracking (AI attribution)
+# Contribution tracking (AI attribution)
 
 - **What it is**: Tracks AI-assisted modifications for organizational reporting.
 
@@ -10,7 +10,7 @@
 
 ## Suggested migration
 
-- **VCP CLI availability**: Not present.
+- **Kilo CLI availability**: Not present.
 - **Migration recommendation**:
   - Keep contribution tracking in the VS Code extension host.
   - If required later, add server-side storage/aggregation, but assume extension ownership for now.
@@ -19,4 +19,3 @@
 ## Primary implementation anchors
 
 - [`src/services/contribution-tracking/`](../../src/services/contribution-tracking/)
-

@@ -1,6 +1,6 @@
-﻿/**
+/**
  * Message component
- * Uses VCP-ui's Message component from @kilocode/kilo-ui/message-part
+ * Uses kilo-ui's Message component from @kilocode/kilo-ui/message-part
  * which handles all part types: text (Markdown), tool (BasicTool + per-tool renderers),
  * reasoning, and more — matching the desktop app's rendering.
  *
@@ -28,5 +28,3 @@ export const Message: Component<MessageProps> = (props) => {
     </Show>
   )
 }
-
-

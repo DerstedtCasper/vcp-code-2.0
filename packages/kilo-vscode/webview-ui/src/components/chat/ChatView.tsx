@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ChatView component
  * Main chat container that combines all chat components
  */
@@ -110,5 +110,3 @@ export const ChatView: Component<ChatViewProps> = (props) => {
     </div>
   )
 }
-
-

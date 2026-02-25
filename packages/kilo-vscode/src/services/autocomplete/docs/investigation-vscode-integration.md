@@ -1,4 +1,4 @@
-﻿# Investigation: VSCode Extension Integration Points for Autocomplete
+# Investigation: VSCode Extension Integration Points for Autocomplete
 
 This document captures every integration point between the autocomplete feature and the
 VSCode extension infrastructure. It's intended for use when recreating the extension shell
@@ -26,23 +26,23 @@ Commands declared in `src/package.json` `contributes.commands`:
 
 | Command ID                                       | Title Key                                        | Registered in Code?                        |
 | ------------------------------------------------ | ------------------------------------------------ | ------------------------------------------ |
-| `VCP-code.autocomplete.generateSuggestions`     | `%autocomplete.commands.generateSuggestions%`    | ✅ `src/services/autocomplete/index.ts:26` |
-| `VCP-code.autocomplete.cancelSuggestions`       | `%autocomplete.commands.cancelSuggestions%`      | ❌ Never registered — placeholder          |
-| `VCP-code.autocomplete.applyCurrentSuggestions` | `%autocomplete.commands.applyCurrentSuggestion%` | ❌ Never registered — placeholder          |
-| `VCP-code.autocomplete.applyAllSuggestions`     | `%autocomplete.commands.applyAllSuggestions%`    | ❌ Never registered — placeholder          |
-| `VCP-code.autocomplete.goToNextSuggestion`      | `%autocomplete.commands.goToNextSuggestion%`     | ❌ Never registered — placeholder          |
-| `VCP-code.autocomplete.goToPreviousSuggestion`  | `%autocomplete.commands.goToPreviousSuggestion%` | ❌ Never registered — placeholder          |
+| `kilo-code.autocomplete.generateSuggestions`     | `%autocomplete.commands.generateSuggestions%`    | ✅ `src/services/autocomplete/index.ts:26` |
+| `kilo-code.autocomplete.cancelSuggestions`       | `%autocomplete.commands.cancelSuggestions%`      | ❌ Never registered — placeholder          |
+| `kilo-code.autocomplete.applyCurrentSuggestions` | `%autocomplete.commands.applyCurrentSuggestion%` | ❌ Never registered — placeholder          |
+| `kilo-code.autocomplete.applyAllSuggestions`     | `%autocomplete.commands.applyAllSuggestions%`    | ❌ Never registered — placeholder          |
+| `kilo-code.autocomplete.goToNextSuggestion`      | `%autocomplete.commands.goToNextSuggestion%`     | ❌ Never registered — placeholder          |
+| `kilo-code.autocomplete.goToPreviousSuggestion`  | `%autocomplete.commands.goToPreviousSuggestion%` | ❌ Never registered — placeholder          |
 
 Additional commands registered **programmatically** but NOT declared in package.json:
 
 | Command ID                                                 | Registered in                                                                                 | Notes                                       |
 | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `VCP-code.autocomplete.reload`                            | `src/services/autocomplete/index.ts:16`                                                       | Reloads settings and model                  |
-| `VCP-code.autocomplete.codeActionQuickFix`                | `src/services/autocomplete/index.ts:21`                                                       | No-op stub                                  |
-| `VCP-code.autocomplete.showIncompatibilityExtensionPopup` | `src/services/autocomplete/index.ts:31`                                                       | Shows Copilot conflict dialog               |
-| `VCP-code.autocomplete.disable`                           | `src/services/autocomplete/index.ts:36`                                                       | Disables autocomplete                       |
+| `kilo-code.autocomplete.reload`                            | `src/services/autocomplete/index.ts:16`                                                       | Reloads settings and model                  |
+| `kilo-code.autocomplete.codeActionQuickFix`                | `src/services/autocomplete/index.ts:21`                                                       | No-op stub                                  |
+| `kilo-code.autocomplete.showIncompatibilityExtensionPopup` | `src/services/autocomplete/index.ts:31`                                                       | Shows Copilot conflict dialog               |
+| `kilo-code.autocomplete.disable`                           | `src/services/autocomplete/index.ts:36`                                                       | Disables autocomplete                       |
 | `kilocode.autocomplete.inline-completion.accepted`         | `src/services/autocomplete/classic-auto-complete/AutocompleteInlineCompletionProvider.ts:313` | Telemetry callback when suggestion accepted |
-| `VCP-code.jetbrains.getInlineCompletions`                 | `src/services/autocomplete/AutocompleteJetbrainsBridge.ts:289`                                | JetBrains bridge                            |
+| `kilo-code.jetbrains.getInlineCompletions`                 | `src/services/autocomplete/AutocompleteJetbrainsBridge.ts:289`                                | JetBrains bridge                            |
 
 ### 1.3 Keybindings
 
@@ -50,9 +50,9 @@ From `src/package.json` `contributes.keybindings`:
 
 | Command                                                    | Key      | Mac     | When Clause                                                                                                                                                 |
 | ---------------------------------------------------------- | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `VCP-code.autocomplete.cancelSuggestions`                 | `Escape` | same    | `editorTextFocus && !editorTabMovesFocus && !inSnippetMode && kilocode.autocomplete.hasSuggestions`                                                         |
-| `VCP-code.autocomplete.generateSuggestions`               | `Ctrl+L` | `Cmd+L` | `editorTextFocus && !editorTabMovesFocus && !inSnippetMode && kilocode.autocomplete.enableSmartInlineTaskKeybinding && !github.copilot.completions.enabled` |
-| `VCP-code.autocomplete.showIncompatibilityExtensionPopup` | `Ctrl+L` | `Cmd+L` | `editorTextFocus && !editorTabMovesFocus && !inSnippetMode && kilocode.autocomplete.enableSmartInlineTaskKeybinding && github.copilot.completions.enabled`  |
+| `kilo-code.autocomplete.cancelSuggestions`                 | `Escape` | same    | `editorTextFocus && !editorTabMovesFocus && !inSnippetMode && kilocode.autocomplete.hasSuggestions`                                                         |
+| `kilo-code.autocomplete.generateSuggestions`               | `Ctrl+L` | `Cmd+L` | `editorTextFocus && !editorTabMovesFocus && !inSnippetMode && kilocode.autocomplete.enableSmartInlineTaskKeybinding && !github.copilot.completions.enabled` |
+| `kilo-code.autocomplete.showIncompatibilityExtensionPopup` | `Ctrl+L` | `Cmd+L` | `editorTextFocus && !editorTabMovesFocus && !inSnippetMode && kilocode.autocomplete.enableSmartInlineTaskKeybinding && github.copilot.completions.enabled`  |
 
 **Note**: The `Escape` keybinding references `kilocode.autocomplete.hasSuggestions` which is
 **never set** in code via `setContext`. This means the keybinding is currently inert
@@ -90,7 +90,7 @@ vscode.languages.registerCodeActionsProvider("*", autocompleteManager.codeAction
 ```
 
 The `AutocompleteCodeActionProvider` (`src/services/autocomplete/AutocompleteCodeActionProvider.ts`)
-provides a QuickFix action that triggers `VCP-code.autocomplete.generateSuggestions`.
+provides a QuickFix action that triggers `kilo-code.autocomplete.generateSuggestions`.
 
 ---
 
@@ -177,7 +177,7 @@ Three autocomplete-related message types are handled:
      const validatedSettings = autocompleteServiceSettingsSchema.parse(message.values)
      await updateGlobalState("ghostServiceSettings", validatedSettings)
      await provider.postStateToWebview()
-     vscode.commands.executeCommand("VCP-code.autocomplete.reload")
+     vscode.commands.executeCommand("kilo-code.autocomplete.reload")
    ```
 
    This is the primary way the webview UI writes autocomplete settings.
@@ -198,7 +198,7 @@ Three autocomplete-related message types are handled:
 
 ### 4.3 Autocomplete reload triggered from webview
 
-The `VCP-code.autocomplete.reload` command is also triggered when API profiles change:
+The `kilo-code.autocomplete.reload` command is also triggered when API profiles change:
 
 - `saveApiConfiguration` (line 2231)
 - `upsertApiConfiguration` (lines 2294, 2303)
@@ -271,7 +271,7 @@ The inline completion provider is conditionally registered/disposed based on
 - Alignment: `vscode.StatusBarAlignment.Right`, priority 100
 - Shows/hides based on `enableAutoTrigger` setting
 - Displays completion count, cost, provider info, and snoozed state
-- Uses `$(VCP-logo)` codicon (custom icon font)
+- Uses `$(kilo-logo)` codicon (custom icon font)
 
 ---
 
@@ -303,12 +303,12 @@ Namespace: `kilocode:autocomplete.*`
 {
   "autocomplete": {
     "statusBar": {
-      "enabled": "$(VCP-logo) Autocomplete",
+      "enabled": "$(kilo-logo) Autocomplete",
       "snoozed": "snoozed",
       "warning": "$(warning) Autocomplete",
       "tooltip": {
-        "basic": "VCP Code Autocomplete",
-        "disabled": "VCP Code Autocomplete (disabled)",
+        "basic": "Kilo Code Autocomplete",
+        "disabled": "Kilo Code Autocomplete (disabled)",
         "noCredits": "...",
         "noUsableProvider": "...",
         "sessionTotal": "Session total cost:",
@@ -324,36 +324,36 @@ Namespace: `kilocode:autocomplete.*`
         "lessThanCent": "<$0.01",
       },
     },
-    "toggleMessage": "VCP Code Autocomplete {{status}}",
+    "toggleMessage": "Kilo Code Autocomplete {{status}}",
     "progress": {
-      "title": "VCP Code",
+      "title": "Kilo Code",
       "analyzing": "Analyzing your code...",
       "generating": "Generating suggested edits...",
       "processing": "Processing suggested edits...",
       "showing": "Displaying suggested edits...",
     },
     "input": {
-      "title": "VCP Code: Quick Task",
+      "title": "Kilo Code: Quick Task",
       "placeholder": "e.g., 'refactor this function to be more efficient'",
     },
     "commands": {
-      "generateSuggestions": "VCP Code: Generate Suggested Edits",
+      "generateSuggestions": "Kilo Code: Generate Suggested Edits",
       "displaySuggestions": "Display Suggested Edits",
       "cancelSuggestions": "Cancel Suggested Edits",
       "applyCurrentSuggestion": "Apply Current Suggested Edit",
       "applyAllSuggestions": "Apply All Suggested Edits",
-      "category": "VCP Code",
+      "category": "Kilo Code",
     },
     "codeAction": {
-      "title": "VCP Code: Suggested Edits",
+      "title": "Kilo Code: Suggested Edits",
     },
     "chatParticipant": {
-      "fullName": "VCP Code Agent",
+      "fullName": "Kilo Code Agent",
       "name": "Agent",
       "description": "I can help you with quick tasks and suggested edits.",
     },
     "incompatibilityExtensionPopup": {
-      "message": "The VCP Code Autocomplete is being blocked by a conflict with GitHub Copilot. To fix this, you must disable Copilot's inline suggestions.",
+      "message": "The Kilo Code Autocomplete is being blocked by a conflict with GitHub Copilot. To fix this, you must disable Copilot's inline suggestions.",
       "disableCopilot": "Disable Copilot",
       "disableInlineAssist": "Disable Autocomplete",
     },
@@ -383,7 +383,7 @@ The autocomplete service depends on:
 2. **`ContextProxy`** — singleton for global state read/write
 3. **`vscode.ExtensionContext`** — for `subscriptions` (disposable management), `globalState`
 4. **Webview messaging** — bidirectional communication for settings changes
-5. **Custom icon font** — `$(VCP-logo)` codicon from `assets/icons/VCP-icon-font.woff2`
+5. **Custom icon font** — `$(kilo-logo)` codicon from `assets/icons/kilo-icon-font.woff2`
 
 ---
 
@@ -410,4 +410,3 @@ To recreate the autocomplete as a standalone extension:
 7. **Webview communication**: Message types `ghostServiceSettings`, `snoozeAutocomplete`, `requestChatCompletion`, `chatCompletionAccepted`
 8. **i18n**: ~10 NLS keys in package.nls.json + ~30 runtime keys in kilocode.json
 9. **Telemetry**: 2 primary event types
-

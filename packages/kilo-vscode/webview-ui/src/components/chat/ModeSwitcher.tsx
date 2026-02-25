@@ -1,35 +1,29 @@
-﻿/**
+/**
  * ModeSwitcher component
  * Popover-based selector for choosing an agent/mode in the chat prompt area.
- * Includes Agent Team mapping to vcp.agentTeam.enabled.
+ * Uses kilo-ui Popover component (Phase 4.5 of UI implementation plan).
+ *
+ * ModeSwitcherBase — reusable core that accepts agents/value/onSelect props.
+ * ModeSwitcher     — thin wrapper wired to session context for chat usage.
  */
 
-import { Component, createMemo, createSignal, For, Show } from "solid-js"
+import { Component, createSignal, For, Show } from "solid-js"
 import { Popover } from "@kilocode/kilo-ui/popover"
 import { Button } from "@kilocode/kilo-ui/button"
-import { showToast } from "@kilocode/kilo-ui/toast"
 import { useSession } from "../../context/session"
-import { useConfig } from "../../context/config"
-import { useLanguage } from "../../context/language"
 import type { AgentInfo } from "../../types/messages"
 
-const AGENT_TEAM_MODE = "__vcp_agent_team__"
+// ---------------------------------------------------------------------------
+// Reusable base component
+// ---------------------------------------------------------------------------
 
 export interface ModeSwitcherBaseProps {
+  /** Available agents to pick from */
   agents: AgentInfo[]
+  /** Currently selected agent name */
   value: string
+  /** Called when the user picks an agent */
   onSelect: (name: string) => void
-  teamModeLabel?: string
-}
-
-function formatModeLabel(name: string, teamModeLabel: string): string {
-  if (name === AGENT_TEAM_MODE) {
-    return teamModeLabel
-  }
-  if (!name) {
-    return "Code"
-  }
-  return name.charAt(0).toUpperCase() + name.slice(1)
 }
 
 export const ModeSwitcherBase: Component<ModeSwitcherBaseProps> = (props) => {
@@ -43,9 +37,11 @@ export const ModeSwitcherBase: Component<ModeSwitcherBaseProps> = (props) => {
   }
 
   const triggerLabel = () => {
-    const current = props.agents.find((a) => a.name === props.value)
-    const label = current?.name ?? props.value
-    return formatModeLabel(label, props.teamModeLabel ?? "Agent Team")
+    const agent = props.agents.find((a) => a.name === props.value)
+    if (agent) {
+      return agent.name.charAt(0).toUpperCase() + agent.name.slice(1)
+    }
+    return props.value || "Code"
   }
 
   return (
@@ -74,7 +70,7 @@ export const ModeSwitcherBase: Component<ModeSwitcherBaseProps> = (props) => {
                 aria-selected={agent.name === props.value}
                 onClick={() => pick(agent.name)}
               >
-                <span class="mode-switcher-item-name">{formatModeLabel(agent.name, props.teamModeLabel ?? "Agent Team")}</span>
+                <span class="mode-switcher-item-name">{agent.name.charAt(0).toUpperCase() + agent.name.slice(1)}</span>
                 <Show when={agent.description}>
                   <span class="mode-switcher-item-desc">{agent.description}</span>
                 </Show>
@@ -87,93 +83,12 @@ export const ModeSwitcherBase: Component<ModeSwitcherBaseProps> = (props) => {
   )
 }
 
+// ---------------------------------------------------------------------------
+// Chat-specific wrapper (backwards-compatible)
+// ---------------------------------------------------------------------------
+
 export const ModeSwitcher: Component = () => {
   const session = useSession()
-  const { config, updateConfig } = useConfig()
-  const language = useLanguage()
 
-  const isAgentTeamEnabled = () => config().vcp?.agentTeam?.enabled ?? false
-
-  const fallbackAgent = createMemo<AgentInfo | null>(() => {
-    const selected = session.selectedAgent()?.trim()
-    if (!selected) return null
-    return {
-      name: selected,
-      description: "",
-      mode: "all",
-      native: true,
-    }
-  })
-
-  const modeAgents = createMemo<AgentInfo[]>(() => {
-    const team: AgentInfo = {
-      name: AGENT_TEAM_MODE,
-      description: "Enable multi-agent orchestration for this chat.",
-      mode: "all",
-      native: true,
-    }
-    const agents = session.agents()
-    if (agents.length > 0) {
-      return [team, ...agents]
-    }
-    const fallback = fallbackAgent()
-    return fallback ? [team, fallback] : [team]
-  })
-
-  const selectedMode = createMemo(() => (isAgentTeamEnabled() ? AGENT_TEAM_MODE : session.selectedAgent()))
-
-  const selectMode = (name: string) => {
-    if (name === AGENT_TEAM_MODE) {
-      updateConfig({
-        vcp: {
-          ...(config().vcp ?? {}),
-          agentTeam: {
-            ...(config().vcp?.agentTeam ?? {}),
-            enabled: true,
-          },
-        },
-      })
-      showToast({
-        variant: "success",
-        icon: "circle-check",
-        title: language.t("toast.agentTeam.enabled.title"),
-        description: language.t("toast.agentTeam.enabled.description"),
-      })
-      return
-    }
-
-    const wasAgentTeamEnabled = isAgentTeamEnabled()
-    if (isAgentTeamEnabled()) {
-      updateConfig({
-        vcp: {
-          ...(config().vcp ?? {}),
-          agentTeam: {
-            ...(config().vcp?.agentTeam ?? {}),
-            enabled: false,
-          },
-        },
-      })
-    }
-
-    session.selectAgent(name)
-    if (wasAgentTeamEnabled) {
-      showToast({
-        variant: "success",
-        icon: "circle-check",
-        title: language.t("toast.agentTeam.disabled.title"),
-        description: language.t("toast.agentTeam.disabled.description", { mode: formatModeLabel(name, language.t("vcp.view.protocol.agentTeam")) }),
-      })
-    }
-  }
-
-  return (
-    <ModeSwitcherBase
-      agents={modeAgents()}
-      value={selectedMode()}
-      onSelect={selectMode}
-      teamModeLabel={language.t("vcp.view.protocol.agentTeam")}
-    />
-  )
+  return <ModeSwitcherBase agents={session.agents()} value={session.selectedAgent()} onSelect={session.selectAgent} />
 }
-
-

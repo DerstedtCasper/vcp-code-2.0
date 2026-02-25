@@ -1,4 +1,4 @@
-﻿/**
+/**
  * MessageList component
  * Scrollable list of messages with auto-scroll behavior.
  * Shows recent sessions in the empty state for quick resumption.
@@ -56,11 +56,11 @@ const KiloLogo = (): JSX.Element => {
   const iconsBaseUri = (window as { ICONS_BASE_URI?: string }).ICONS_BASE_URI || ""
   const isLight =
     document.body.classList.contains("vscode-light") || document.body.classList.contains("vscode-high-contrast-light")
-  const iconFile = isLight ? "VCP-light.svg" : "VCP-dark.svg"
+  const iconFile = isLight ? "kilo-light.svg" : "kilo-dark.svg"
 
   return (
-    <div class="VCP-logo">
-      <img src={`${iconsBaseUri}/${iconFile}`} alt="VCP Code" />
+    <div class="kilo-logo">
+      <img src={`${iconsBaseUri}/${iconFile}`} alt="Kilo Code" />
     </div>
   )
 }
@@ -167,7 +167,7 @@ export const MessageList: Component<MessageListProps> = (props) => {
         <Show when={isEmpty()}>
           <div class="message-list-empty">
             <KiloLogo />
-            <p class="VCP-about-text">{language.t("session.messages.welcome")}</p>
+            <p class="kilo-about-text">{language.t("session.messages.welcome")}</p>
             <Show when={recent().length > 0 && props.onSelectSession}>
               <div class="recent-sessions">
                 <span class="recent-sessions-label">{language.t("session.recent")}</span>
@@ -201,5 +201,3 @@ export const MessageList: Component<MessageListProps> = (props) => {
     </div>
   )
 }
-
-

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Generate a valid git branch name from a prompt.
  */
 export function generateBranchName(prompt: string): string {
@@ -9,7 +9,7 @@ export function generateBranchName(prompt: string): string {
     .replace(/^-+|-+$/g, "")
     .replace(/-+/g, "-")
 
-  return `${sanitized || "VCP"}-${Date.now()}`
+  return `${sanitized || "kilo"}-${Date.now()}`
 }
 
 /**
@@ -30,4 +30,3 @@ export function versionedName(
   }
   return { branch: base, label: base }
 }
-

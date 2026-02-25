@@ -1,4 +1,4 @@
-﻿import * as vscode from "vscode"
+import * as vscode from "vscode"
 import type { KiloConnectionService } from "../cli-backend/connection-service"
 import type { HttpClient } from "../cli-backend/http-client"
 
@@ -44,11 +44,11 @@ export function registerCommitMessageService(
     try {
       client = connectionService.getHttpClient()
     } catch {
-      vscode.window.showErrorMessage("VCP backend is not connected. Please wait for the connection to establish.")
+      vscode.window.showErrorMessage("Kilo backend is not connected. Please wait for the connection to establish.")
       return
     }
     if (!client) {
-      vscode.window.showErrorMessage("VCP backend is not connected. Please wait for the connection to establish.")
+      vscode.window.showErrorMessage("Kilo backend is not connected. Please wait for the connection to establish.")
       return
     }
 
@@ -64,12 +64,12 @@ export function registerCommitMessageService(
           repository.inputBox.value = message
           lastGeneratedMessage = message
           lastWorkspacePath = path
-          console.log("[VCP] Commit message generated successfully")
+          console.log("[Kilo New] Commit message generated successfully")
         },
       )
       .then(undefined, (error: unknown) => {
         const msg = error instanceof Error ? error.message : String(error)
-        console.error("[VCP] Failed to generate commit message:", msg)
+        console.error("[Kilo New] Failed to generate commit message:", msg)
         vscode.window.showErrorMessage(`Failed to generate commit message: ${msg}`)
       })
   })
@@ -77,4 +77,3 @@ export function registerCommitMessageService(
   context.subscriptions.push(command)
   return [command]
 }
-

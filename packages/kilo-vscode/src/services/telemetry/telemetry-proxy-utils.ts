@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Build the merged properties object for a telemetry event.
  * Provider properties are included first so event-specific properties can override them.
  */
@@ -17,6 +17,5 @@ export function buildTelemetryPayload(
  * Build the Authorization header value for the telemetry endpoint.
  */
 export function buildTelemetryAuthHeader(password: string): string {
-  return `Basic ${Buffer.from(`VCP:${password}`).toString("base64")}`
+  return `Basic ${Buffer.from(`kilo:${password}`).toString("base64")}`
 }
-

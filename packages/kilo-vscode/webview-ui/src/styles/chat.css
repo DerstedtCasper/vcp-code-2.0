@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Chat component styles
  * Uses VS Code CSS variables for theming
  */
@@ -87,22 +87,22 @@
 }
 
 /* ============================================
-   VCP Logo (empty state)
+   Kilo Logo (empty state)
    ============================================ */
 
-.VCP-logo {
+.kilo-logo {
   width: 48px;
   height: 48px;
   opacity: 0.85;
 }
 
-.VCP-logo img {
+.kilo-logo img {
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
 
-.VCP-about-text {
+.kilo-about-text {
   max-width: 260px;
   font-size: 13px;
   line-height: 1.4;
@@ -453,16 +453,6 @@
   height: 16px;
 }
 
-.file-mention-agent-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
-  border-radius: 50%;
-  border: 1px solid currentColor;
-}
-
 .file-mention-name {
   flex-shrink: 0;
   font-weight: 500;
@@ -482,11 +472,6 @@
   text-align: right;
 }
 
-.file-mention-dir--kind {
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
 .file-mention-empty {
   padding: 8px 10px;
   font-size: 12px;
@@ -494,62 +479,8 @@
   text-align: center;
 }
 
-.slash-command-dropdown {
-  position: absolute;
-  bottom: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  z-index: 11;
-  background: var(--vscode-editorWidget-background, var(--vscode-input-background));
-  border: 1px solid var(--vscode-editorWidget-border, var(--vscode-input-border));
-  border-radius: 4px;
-  overflow: hidden;
-  max-height: 240px;
-  overflow-y: auto;
-}
-
-.slash-command-item {
-  display: grid;
-  grid-template-columns: auto auto 1fr;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  cursor: pointer;
-  font-size: 12px;
-  color: var(--vscode-foreground);
-}
-
-.slash-command-item--active {
-  background: var(--vscode-list-activeSelectionBackground);
-  color: var(--vscode-list-activeSelectionForeground);
-}
-
-.slash-command-trigger {
-  color: var(--vscode-textLink-foreground, #3794ff);
-  font-weight: 600;
-}
-
-.slash-command-title {
-  font-weight: 500;
-}
-
-.slash-command-description {
-  opacity: 0.8;
-  font-size: 11px;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.slash-command-empty {
-  padding: 8px 10px;
-  font-size: 12px;
-  color: var(--vscode-descriptionForeground);
-  text-align: center;
-}
-
 /* ============================================
-   Model Selector (uses VCP-ui Popover)
+   Model Selector (uses kilo-ui Popover)
    ============================================ */
 
 .model-selector-popover {
@@ -655,7 +586,7 @@
 }
 
 /* ============================================
-   Thinking Selector (uses VCP-ui Popover)
+   Thinking Selector (uses kilo-ui Popover)
    ============================================ */
 
 .thinking-selector-trigger-label {
@@ -691,7 +622,7 @@
 }
 
 /* ============================================
-   Mode Switcher (uses VCP-ui Popover)
+   Mode Switcher (uses kilo-ui Popover)
    ============================================ */
 
 .mode-switcher-trigger-label {
@@ -834,10 +765,10 @@
 }
 
 /* ============================================
-   VCP Notifications
+   Kilo Notifications
    ============================================ */
 
-.VCP-notifications {
+.kilo-notifications {
   position: absolute;
   top: 0;
   left: 0;
@@ -846,10 +777,10 @@
   display: flex;
   flex-direction: column;
   border-bottom: 1px solid var(--vscode-panel-border);
-  animation: VCP-notifications-slide-in 0.3s ease-out;
+  animation: kilo-notifications-slide-in 0.3s ease-out;
 }
 
-@keyframes VCP-notifications-slide-in {
+@keyframes kilo-notifications-slide-in {
   from {
     transform: translateY(-100%);
     opacity: 0;
@@ -860,7 +791,7 @@
   }
 }
 
-.VCP-notifications-card {
+.kilo-notifications-card {
   background-color: var(--vscode-editor-background);
   padding: 12px;
   display: flex;
@@ -869,41 +800,41 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.VCP-notifications-header {
+.kilo-notifications-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.VCP-notifications-title {
+.kilo-notifications-title {
   font-weight: 600;
   color: var(--vscode-foreground);
   font-size: 13px;
   flex: 1;
 }
 
-.VCP-notifications-message {
+.kilo-notifications-message {
   margin: 0;
   color: var(--vscode-descriptionForeground);
   font-size: 12px;
   line-height: 1.5;
 }
 
-.VCP-notifications-footer {
+.kilo-notifications-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   min-height: 28px;
 }
 
-.VCP-notifications-nav {
+.kilo-notifications-nav {
   display: flex;
   align-items: center;
   gap: 2px;
 }
 
-.VCP-notifications-nav-btn {
+.kilo-notifications-nav-btn {
   background: none;
   border: none;
   cursor: pointer;
@@ -913,106 +844,13 @@
   align-items: center;
 }
 
-.VCP-notifications-nav-btn:hover {
+.kilo-notifications-nav-btn:hover {
   color: var(--vscode-foreground);
 }
 
-.VCP-notifications-nav-count {
+.kilo-notifications-nav-count {
   font-size: 12px;
   color: var(--vscode-descriptionForeground);
   white-space: nowrap;
   padding: 0 4px;
 }
-
-[data-radix-popper-content-wrapper],
-[data-kb-popper-content-wrapper] {
-  z-index: 9999 !important;
-}
-
-.sticky-save-bar {
-  position: sticky;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 8px 12px;
-  margin-top: 8px;
-  background: var(--surface-base, var(--vscode-editor-background));
-  border-top: 1px solid var(--border-base, var(--vscode-panel-border));
-  z-index: 10;
-}
-
-.vcp-control-center {
-  display: grid;
-  gap: 12px;
-  padding: 12px;
-}
-
-.vcp-control-center__rows {
-  display: grid;
-  gap: 8px;
-}
-
-.vcp-control-center__row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border-weak-base);
-}
-
-.vcp-control-center__row:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.vcp-control-center__metrics {
-  display: grid;
-  gap: 6px;
-  font-size: 12px;
-}
-
-.vcp-control-center__actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 10px;
-}
-
-.vcp-status-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 10px;
-  border: 1px solid var(--border-weak-base);
-  color: var(--vscode-testing-iconPassed);
-  background: color-mix(in srgb, var(--vscode-testing-iconPassed) 12%, transparent);
-}
-
-.vcp-status-tag--disabled {
-  color: var(--vscode-errorForeground);
-  background: color-mix(in srgb, var(--vscode-errorForeground) 12%, transparent);
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  display: inline-block;
-}
-
-.status-dot--ok {
-  background: var(--vscode-testing-iconPassed);
-}
-
-.status-dot--warn {
-  background: var(--vscode-testing-iconQueued);
-}
-
-.status-dot--error {
-  background: var(--vscode-errorForeground);
-}
-

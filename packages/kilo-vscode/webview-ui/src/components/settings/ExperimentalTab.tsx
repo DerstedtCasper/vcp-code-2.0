@@ -1,4 +1,4 @@
-﻿import { Component, For, Show, createMemo } from "solid-js"
+import { Component, For, Show, createMemo } from "solid-js"
 import { Switch } from "@kilocode/kilo-ui/switch"
 import { Select } from "@kilocode/kilo-ui/select"
 import { TextField } from "@kilocode/kilo-ui/text-field"
@@ -141,11 +141,7 @@ const ExperimentalTab: Component = () => {
         <Card>
           <For each={Object.entries(config().tools ?? {})}>
             {([name, enabled], index) => (
-              <SettingsRow
-                title={language.t("settings.experimental.toolToggle.title", { name })}
-                description={language.t("settings.experimental.toolToggle.description")}
-                last={index() >= Object.keys(config().tools ?? {}).length - 1}
-              >
+              <SettingsRow title={name} description="" last={index() >= Object.keys(config().tools ?? {}).length - 1}>
                 <Switch
                   checked={enabled}
                   onChange={(checked) => updateConfig({ tools: { ...config().tools, [name]: checked } })}
@@ -163,5 +159,3 @@ const ExperimentalTab: Component = () => {
 }
 
 export default ExperimentalTab
-
-

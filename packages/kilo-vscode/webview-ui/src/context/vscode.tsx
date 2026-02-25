@@ -1,4 +1,4 @@
-﻿/**
+/**
  * VS Code API context provider
  * Provides access to the VS Code webview API for posting messages
  */
@@ -16,9 +16,9 @@ export function getVSCodeAPI(): VSCodeAPI {
       vscodeApi = acquireVsCodeApi()
     } else {
       // Mock for development/testing outside VS Code
-      console.warn("[VCP] Running outside VS Code, using mock API")
+      console.warn("[Kilo New] Running outside VS Code, using mock API")
       vscodeApi = {
-        postMessage: (msg) => console.log("[VCP] Mock postMessage:", msg),
+        postMessage: (msg) => console.log("[Kilo New] Mock postMessage:", msg),
         getState: () => undefined,
         setState: () => {},
       }
@@ -76,4 +76,3 @@ export function useVSCode(): VSCodeContextValue {
   }
   return context
 }
-

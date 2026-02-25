@@ -1,4 +1,4 @@
-﻿# Connection State UI (Loading / Error / Reconnecting)
+# Connection State UI (Loading / Error / Reconnecting)
 
 **Priority:** P0
 **Status:** ❌ Not started
@@ -10,7 +10,7 @@ The chat view renders regardless of connection state. When the extension is conn
 
 ## Requirements
 
-- Show a loading spinner with "Connecting to VCP..." when connection state is `"connecting"`
+- Show a loading spinner with "Connecting to Kilo..." when connection state is `"connecting"`
 - Show a reconnecting indicator when connection state is `"reconnecting"` (depends on [SSE Auto-Reconnect](../infrastructure/sse-auto-reconnect.md))
 - Show an error panel with message and "Retry" button when connection state is `"error"`
 - Show an initializing state while server is starting
@@ -34,7 +34,7 @@ The chat view renders regardless of connection state. When the extension is conn
 // In App.tsx or ChatView.tsx:
 <Switch fallback={<ChatInterface />}>
   <Match when={server.connectionState() === "connecting"}>
-    <LoadingPanel message="Connecting to VCP..." />
+    <LoadingPanel message="Connecting to Kilo..." />
   </Match>
   <Match when={server.connectionState() === "reconnecting"}>
     <LoadingPanel message="Reconnecting..." showSpinner />
@@ -51,4 +51,3 @@ Files to change:
 - New file `webview-ui/src/components/LoadingPanel.tsx` — loading spinner component
 - New file `webview-ui/src/components/ErrorPanel.tsx` — error display with retry
 - [`webview-ui/src/styles/chat.css`](../../webview-ui/src/styles/chat.css) — styles for loading/error states
-

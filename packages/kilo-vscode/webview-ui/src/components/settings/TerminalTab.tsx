@@ -1,4 +1,4 @@
-﻿import { Component, createMemo } from "solid-js"
+import { Component, createMemo } from "solid-js"
 import { Select } from "@kilocode/kilo-ui/select"
 import { TextField } from "@kilocode/kilo-ui/text-field"
 import { Card } from "@kilocode/kilo-ui/card"
@@ -82,7 +82,7 @@ const TerminalTab: Component = () => {
   return (
     <div>
       <Card>
-        <SettingsRow title={language.t("settings.terminal.bashPermission.title")} description={language.t("settings.terminal.bashPermission.description")}>
+        <SettingsRow title="Bash Permission" description="Default permission policy when terminal tools request command execution.">
           <Select
             options={permissionOptions}
             current={permissionOptions.find((option) => option.value === bashPermission())}
@@ -95,7 +95,7 @@ const TerminalTab: Component = () => {
           />
         </SettingsRow>
 
-        <SettingsRow title={language.t("settings.terminal.suspendKeybind.title")} description={language.t("settings.terminal.suspendKeybind.description")}>
+        <SettingsRow title="Terminal Suspend Keybind" description="Keybind used to suspend terminal in TUI mode.">
           <TextField
             value={config().keybinds?.terminal_suspend ?? ""}
             placeholder="ctrl+z"
@@ -103,7 +103,7 @@ const TerminalTab: Component = () => {
           />
         </SettingsRow>
 
-        <SettingsRow title={language.t("settings.terminal.titleToggleKeybind.title")} description={language.t("settings.terminal.titleToggleKeybind.description")}>
+        <SettingsRow title="Terminal Title Toggle Keybind" description="Keybind used to toggle terminal title in TUI mode.">
           <TextField
             value={config().keybinds?.terminal_title_toggle ?? ""}
             placeholder="none"
@@ -111,7 +111,7 @@ const TerminalTab: Component = () => {
           />
         </SettingsRow>
 
-        <SettingsRow title={language.t("settings.terminal.diffStyle.title")} description={language.t("settings.terminal.diffStyle.description")}>
+        <SettingsRow title="Diff Style" description="How terminal diff blocks are rendered in the TUI.">
           <Select
             options={diffStyleOptions}
             current={diffStyleOptions.find((option) => option.value === (config().tui?.diff_style ?? "auto"))}
@@ -124,7 +124,7 @@ const TerminalTab: Component = () => {
           />
         </SettingsRow>
 
-        <SettingsRow title={language.t("settings.terminal.scrollSpeed.title")} description={language.t("settings.terminal.scrollSpeed.description")} last>
+        <SettingsRow title="Scroll Speed" description="Base terminal scroll speed in TUI mode." last>
           <TextField
             value={config().tui?.scroll_speed?.toString() ?? ""}
             placeholder="0.2"
@@ -137,5 +137,3 @@ const TerminalTab: Component = () => {
 }
 
 export default TerminalTab
-
-

@@ -1,4 +1,4 @@
-﻿import * as vscode from "vscode"
+import * as vscode from "vscode"
 import type { KiloConnectionService, SessionInfo, HttpClient } from "../services/cli-backend"
 import { KiloProvider } from "../KiloProvider"
 import { buildWebviewHtml } from "../utils"
@@ -34,7 +34,7 @@ export class AgentManagerProvider implements vscode.Disposable {
     private readonly extensionUri: vscode.Uri,
     private readonly connectionService: KiloConnectionService,
   ) {
-    this.outputChannel = vscode.window.createOutputChannel("VCP Agent Manager")
+    this.outputChannel = vscode.window.createOutputChannel("Kilo Agent Manager")
     this.terminalManager = new SessionTerminalManager((msg) =>
       this.outputChannel.appendLine(`[SessionTerminal] ${msg}`),
     )
@@ -65,8 +65,8 @@ export class AgentManagerProvider implements vscode.Disposable {
     )
 
     this.panel.iconPath = {
-      light: vscode.Uri.joinPath(this.extensionUri, "assets", "icons", "VCP-light.svg"),
-      dark: vscode.Uri.joinPath(this.extensionUri, "assets", "icons", "VCP-dark.svg"),
+      light: vscode.Uri.joinPath(this.extensionUri, "assets", "icons", "kilo-light.svg"),
+      dark: vscode.Uri.joinPath(this.extensionUri, "assets", "icons", "kilo-dark.svg"),
     }
 
     this.panel.webview.html = this.getHtml(this.panel.webview)
@@ -237,7 +237,7 @@ export class AgentManagerProvider implements vscode.Disposable {
 
     let result: CreateWorktreeResult
     try {
-      result = await manager.createWorktree({ prompt: name || "VCP" })
+      result = await manager.createWorktree({ prompt: name || "kilo" })
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error)
       this.postToWebview({
@@ -812,4 +812,3 @@ export class AgentManagerProvider implements vscode.Disposable {
     this.outputChannel.dispose()
   }
 }
-

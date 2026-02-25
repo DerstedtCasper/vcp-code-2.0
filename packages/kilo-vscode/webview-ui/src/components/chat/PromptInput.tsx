@@ -3,19 +3,18 @@
  * Text input with send/abort buttons, ghost-text autocomplete, and @ file mention support
  */
 
-import { Component, createSignal, createEffect, on, For, Index, onCleanup, Show, untrack, createMemo } from "solid-js"
+import { Component, createSignal, createEffect, on, For, Index, onCleanup, Show, untrack } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { Tooltip } from "@kilocode/kilo-ui/tooltip"
 import { FileIcon } from "@kilocode/kilo-ui/file-icon"
 import { useSession } from "../../context/session"
 import { useServer } from "../../context/server"
-import { useConfig } from "../../context/config"
 import { useLanguage } from "../../context/language"
 import { useVSCode } from "../../context/vscode"
 import { ModelSelector } from "./ModelSelector"
 import { ModeSwitcher } from "./ModeSwitcher"
 import { ThinkingSelector } from "./ThinkingSelector"
-import { decodeAgentMentionResult, isAgentMentionResult, useFileMention } from "../../hooks/useFileMention"
+import { useFileMention } from "../../hooks/useFileMention"
 import { useImageAttachments } from "../../hooks/useImageAttachments"
 import { fileName, dirName, buildHighlightSegments } from "./prompt-input-utils"
 
@@ -28,16 +27,9 @@ const drafts = new Map<string, string>()
 export const PromptInput: Component = () => {
   const session = useSession()
   const server = useServer()
-  const { config, updateConfig } = useConfig()
   const language = useLanguage()
   const vscode = useVSCode()
-  const agentMentionNames = createMemo(() =>
-    session
-      .agents()
-      .map((agent) => agent.name?.trim())
-      .filter((name): name is string => Boolean(name)),
-  )
-  const mention = useFileMention(vscode, agentMentionNames)
+  const mention = useFileMention(vscode)
   const imageAttach = useImageAttachments()
 
   const sessionKey = () => session.currentSessionID() ?? "__new__"
@@ -45,14 +37,10 @@ export const PromptInput: Component = () => {
   const [text, setText] = createSignal("")
   const [ghostText, setGhostText] = createSignal("")
   const [showBusyActions, setShowBusyActions] = createSignal(false)
-  const [showSlash, setShowSlash] = createSignal(false)
-  const [slashQuery, setSlashQuery] = createSignal("")
-  const [slashIndex, setSlashIndex] = createSignal(0)
 
   let textareaRef: HTMLTextAreaElement | undefined
   let highlightRef: HTMLDivElement | undefined
   let dropdownRef: HTMLDivElement | undefined
-  let slashDropdownRef: HTMLDivElement | undefined
   let debounceTimer: ReturnType<typeof setTimeout> | undefined
   let requestCounter = 0
   // Save/restore input text when switching sessions.
@@ -154,266 +142,6 @@ export const PromptInput: Component = () => {
     if (active) active.scrollIntoView({ block: "nearest" })
   }
 
-  type SlashCommandOption = { trigger: string; title: string; description?: string; type: "custom" | "builtin" }
-  const AGENT_TEAM_MODE = "__vcp_agent_team__"
-
-  const cycleAgentMode = () => {
-    const modes = session
-      .agents()
-      .map((agent) => agent.name?.trim())
-      .filter((name): name is string => Boolean(name))
-    const currentAgent = session.selectedAgent()?.trim()
-    if (modes.length === 0 && currentAgent) {
-      modes.push(currentAgent)
-    }
-    if (modes.length === 0) return
-
-    const isTeamEnabled = config().vcp?.agentTeam?.enabled ?? false
-    const order = [AGENT_TEAM_MODE, ...modes]
-    const current = isTeamEnabled ? AGENT_TEAM_MODE : session.selectedAgent()
-    const index = order.indexOf(current)
-    const next = order[(index + 1 + order.length) % order.length]
-
-    if (next === AGENT_TEAM_MODE) {
-      updateConfig({
-        vcp: {
-          ...(config().vcp ?? {}),
-          agentTeam: {
-            ...(config().vcp?.agentTeam ?? {}),
-            enabled: true,
-          },
-        },
-      })
-      return
-    }
-
-    if (isTeamEnabled) {
-      updateConfig({
-        vcp: {
-          ...(config().vcp ?? {}),
-          agentTeam: {
-            ...(config().vcp?.agentTeam ?? {}),
-            enabled: false,
-          },
-        },
-      })
-    }
-    session.selectAgent(next)
-  }
-
-  const builtinSlashCommands = createMemo<SlashCommandOption[]>(() => [
-    { trigger: "new", title: language.t("command.session.new"), type: "builtin" },
-    {
-      trigger: "undo",
-      title: language.t("command.session.undo"),
-      description: language.t("command.session.undo.description"),
-      type: "builtin",
-    },
-    {
-      trigger: "redo",
-      title: language.t("command.session.redo"),
-      description: language.t("command.session.redo.description"),
-      type: "builtin",
-    },
-    {
-      trigger: "compact",
-      title: language.t("command.session.compact"),
-      description: language.t("command.session.compact.description"),
-      type: "builtin",
-    },
-    {
-      trigger: "fork",
-      title: language.t("command.session.fork"),
-      description: language.t("command.session.fork.description"),
-      type: "builtin",
-    },
-    {
-      trigger: "share",
-      title: language.t("command.session.share"),
-      description: language.t("command.session.share.description"),
-      type: "builtin",
-    },
-    {
-      trigger: "unshare",
-      title: language.t("command.session.unshare"),
-      description: language.t("command.session.unshare.description"),
-      type: "builtin",
-    },
-    {
-      trigger: "provider",
-      title: language.t("command.provider.connect"),
-      description: language.t("settings.providers.title"),
-      type: "builtin",
-    },
-    {
-      trigger: "vcp",
-      title: language.t("vcp.view.title"),
-      description: language.t("vcp.view.protocol.title"),
-      type: "builtin",
-    },
-    {
-      trigger: "model",
-      title: language.t("command.model.choose"),
-      description: language.t("command.model.choose.description"),
-      type: "builtin",
-    },
-    {
-      trigger: "agent",
-      title: language.t("command.agent.cycle"),
-      description: language.t("command.agent.cycle.description"),
-      type: "builtin",
-    },
-    { trigger: "settings", title: language.t("command.settings.open"), type: "builtin" },
-    { trigger: "project", title: language.t("command.project.open"), type: "builtin" },
-    { trigger: "terminal", title: language.t("command.terminal.toggle"), type: "builtin" },
-  ])
-
-  const slashCommands = createMemo<SlashCommandOption[]>(() => {
-    const custom = Object.entries(config().command ?? {}).map(([name, cmd]) => ({
-      trigger: name,
-      title: name,
-      description: cmd.description,
-      type: "custom" as const,
-    }))
-    const seen = new Set(custom.map((item) => item.trigger.toLowerCase()))
-    const builtins = builtinSlashCommands().filter((item) => !seen.has(item.trigger.toLowerCase()))
-    return [...custom, ...builtins]
-  })
-
-  const filteredSlashCommands = createMemo(() => {
-    const query = slashQuery().trim().toLowerCase()
-    if (!query) return slashCommands()
-    return slashCommands().filter(
-      (item) => item.trigger.toLowerCase().includes(query) || item.title.toLowerCase().includes(query),
-    )
-  })
-
-  const closeSlash = () => {
-    setShowSlash(false)
-    setSlashQuery("")
-    setSlashIndex(0)
-  }
-
-  const extractSlashQuery = (value: string, cursor: number) => {
-    const beforeCursor = value.slice(0, cursor)
-    const lineStart = beforeCursor.lastIndexOf("\n") + 1
-    const fragment = beforeCursor.slice(lineStart)
-    if (!fragment.startsWith("/")) return
-    if (fragment.includes(" ")) return
-    return {
-      lineStart,
-      fragmentEnd: lineStart + fragment.length,
-      query: fragment.slice(1),
-    }
-  }
-
-  const syncSlashState = (value: string, cursor: number) => {
-    if (mention.showMention()) {
-      closeSlash()
-      return
-    }
-    const slashContext = extractSlashQuery(value, cursor)
-    if (!slashContext) {
-      closeSlash()
-      return
-    }
-    setSlashQuery(slashContext.query)
-    setShowSlash(true)
-    setSlashIndex(0)
-  }
-
-  const syncSlashFromTextarea = () => {
-    if (!textareaRef) return
-    const value = textareaRef.value
-    const cursor = textareaRef.selectionStart ?? value.length
-    syncSlashState(value, cursor)
-  }
-
-  const applySlashCommand = (command: SlashCommandOption) => {
-    if (command.type === "builtin") {
-      switch (command.trigger) {
-        case "new":
-          session.createSession()
-          closeSlash()
-          return
-        case "undo":
-          session.undo()
-          closeSlash()
-          return
-        case "redo":
-          session.redo()
-          closeSlash()
-          return
-        case "fork":
-          session.fork()
-          closeSlash()
-          return
-        case "compact":
-          session.compact()
-          closeSlash()
-          return
-        case "share":
-          session.share()
-          closeSlash()
-          return
-        case "unshare":
-          session.unshare()
-          closeSlash()
-          return
-        case "provider":
-          window.postMessage({ type: "action", action: "providersButtonClicked" }, "*")
-          closeSlash()
-          return
-        case "vcp":
-          window.postMessage({ type: "action", action: "vcpButtonClicked" }, "*")
-          closeSlash()
-          return
-        case "settings":
-          window.postMessage({ type: "action", action: "settingsButtonClicked" }, "*")
-          closeSlash()
-          return
-        case "model":
-          window.postMessage({ type: "action", action: "providersButtonClicked" }, "*")
-          closeSlash()
-          return
-        case "terminal":
-          window.postMessage({ type: "action", action: "terminalButtonClicked" }, "*")
-          closeSlash()
-          return
-        case "project":
-          window.postMessage({ type: "action", action: "historyButtonClicked" }, "*")
-          closeSlash()
-          return
-        case "agent":
-          cycleAgentMode()
-          closeSlash()
-          return
-      }
-    }
-
-    if (!textareaRef) return
-    const selectionEnd = textareaRef.selectionEnd ?? text().length
-    const context = extractSlashQuery(text(), selectionEnd)
-    if (!context) return
-
-    const replacement = `/${command.trigger} `
-    const nextText = text().slice(0, context.lineStart) + replacement + text().slice(context.fragmentEnd)
-    setText(nextText)
-    textareaRef.value = nextText
-    const nextCursor = context.lineStart + replacement.length
-    textareaRef.setSelectionRange(nextCursor, nextCursor)
-    adjustHeight()
-    syncHighlightScroll()
-    closeSlash()
-  }
-
-  const scrollToActiveSlash = () => {
-    if (!slashDropdownRef) return
-    const items = slashDropdownRef.querySelectorAll(".slash-command-item")
-    const active = items[slashIndex()] as HTMLElement | undefined
-    if (active) active.scrollIntoView({ block: "nearest" })
-  }
-
   const syncHighlightScroll = () => {
     if (highlightRef && textareaRef) {
       highlightRef.scrollTop = textareaRef.scrollTop
@@ -440,21 +168,18 @@ export const PromptInput: Component = () => {
   const handleInput = (e: InputEvent) => {
     const target = e.target as HTMLTextAreaElement
     const val = target.value
-    const cursor = target.selectionStart ?? val.length
     setText(val)
     adjustHeight()
     setGhostText("")
     syncHighlightScroll()
 
-    mention.onInput(val, cursor)
+    mention.onInput(val, target.selectionStart ?? val.length)
 
     if (mention.showMention()) {
-      closeSlash()
       setGhostText("")
       if (debounceTimer) clearTimeout(debounceTimer)
       return
     }
-    syncSlashState(val, cursor)
 
     if (debounceTimer) clearTimeout(debounceTimer)
     debounceTimer = setTimeout(() => requestAutocomplete(val), AUTOCOMPLETE_DEBOUNCE_MS)
@@ -462,47 +187,9 @@ export const PromptInput: Component = () => {
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (mention.onKeyDown(e, textareaRef, setText, adjustHeight)) {
-      closeSlash()
       setGhostText("")
       queueMicrotask(scrollToActiveItem)
       return
-    }
-
-    if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey) {
-      queueMicrotask(syncSlashFromTextarea)
-    }
-
-    if (showSlash()) {
-      const items = filteredSlashCommands()
-      if (e.key === "ArrowDown") {
-        e.preventDefault()
-        if (items.length > 0) {
-          setSlashIndex((idx) => (idx + 1) % items.length)
-          queueMicrotask(scrollToActiveSlash)
-        }
-        return
-      }
-      if (e.key === "ArrowUp") {
-        e.preventDefault()
-        if (items.length > 0) {
-          setSlashIndex((idx) => (idx - 1 + items.length) % items.length)
-          queueMicrotask(scrollToActiveSlash)
-        }
-        return
-      }
-      if (e.key === "Tab" || e.key === "Enter") {
-        if (items.length > 0) {
-          e.preventDefault()
-          applySlashCommand(items[Math.min(slashIndex(), items.length - 1)])
-        }
-        return
-      }
-      if (e.key === "Escape") {
-        e.preventDefault()
-        e.stopPropagation()
-        closeSlash()
-        return
-      }
     }
 
     if ((e.key === "Tab" || e.key === "ArrowRight") && ghostText()) {
@@ -554,7 +241,6 @@ export const PromptInput: Component = () => {
     imageAttach.clear()
     if (debounceTimer) clearTimeout(debounceTimer)
     mention.closeMention()
-    closeSlash()
     drafts.delete(sessionKey())
     if (textareaRef) textareaRef.style.height = "auto"
   }
@@ -617,63 +303,22 @@ export const PromptInput: Component = () => {
         <div class="file-mention-dropdown" ref={dropdownRef}>
           <Show
             when={mention.mentionResults().length > 0}
-            fallback={<div class="file-mention-empty">{language.t("prompt.popover.emptyResults")}</div>}
+            fallback={<div class="file-mention-empty">No files found</div>}
           >
             <For each={mention.mentionResults()}>
-              {(item, index) => {
-                const isAgent = isAgentMentionResult(item)
-                const title = isAgent ? `@${decodeAgentMentionResult(item)}` : fileName(item)
-                const detail = isAgent ? language.t("settings.agentBehaviour.title") : dirName(item)
-
-                return (
-                  <div
-                    class="file-mention-item"
-                    classList={{ "file-mention-item--active": index() === mention.mentionIndex() }}
-                    onMouseDown={(e) => {
-                      e.preventDefault()
-                      if (textareaRef) mention.selectFile(item, textareaRef, setText, adjustHeight)
-                    }}
-                    onMouseEnter={() => mention.setMentionIndex(index())}
-                  >
-                    <Show
-                      when={isAgent}
-                      fallback={<FileIcon node={{ path: item, type: "file" }} class="file-mention-icon" />}
-                    >
-                      <span class="file-mention-icon file-mention-agent-icon">@</span>
-                    </Show>
-                    <span class="file-mention-name">{title}</span>
-                    <span class="file-mention-dir" classList={{ "file-mention-dir--kind": isAgent }}>
-                      {detail}
-                    </span>
-                  </div>
-                )
-              }}
-            </For>
-          </Show>
-        </div>
-      </Show>
-      <Show when={showSlash() && !mention.showMention()}>
-        <div class="slash-command-dropdown" ref={slashDropdownRef}>
-          <Show
-            when={filteredSlashCommands().length > 0}
-            fallback={<div class="slash-command-empty">{language.t("prompt.popover.emptyCommands")}</div>}
-          >
-            <For each={filteredSlashCommands()}>
-              {(item, index) => (
+              {(path, index) => (
                 <div
-                  class="slash-command-item"
-                  classList={{ "slash-command-item--active": index() === slashIndex() }}
+                  class="file-mention-item"
+                  classList={{ "file-mention-item--active": index() === mention.mentionIndex() }}
                   onMouseDown={(e) => {
                     e.preventDefault()
-                    applySlashCommand(item)
+                    if (textareaRef) mention.selectFile(path, textareaRef, setText, adjustHeight)
                   }}
-                  onMouseEnter={() => setSlashIndex(index())}
+                  onMouseEnter={() => mention.setMentionIndex(index())}
                 >
-                  <span class="slash-command-trigger">/{item.trigger}</span>
-                  <span class="slash-command-title">{item.title}</span>
-                  <Show when={item.description}>
-                    <span class="slash-command-description">{item.description}</span>
-                  </Show>
+                  <FileIcon node={{ path, type: "file" }} class="file-mention-icon" />
+                  <span class="file-mention-name">{fileName(path)}</span>
+                  <span class="file-mention-dir">{dirName(path)}</span>
                 </div>
               )}
             </For>
@@ -690,9 +335,9 @@ export const PromptInput: Component = () => {
                   type="button"
                   class="image-attachment-remove"
                   onClick={() => imageAttach.remove(img.id)}
-                  aria-label={language.t("prompt.attachment.remove")}
+                  aria-label="Remove image"
                 >
-                  x
+                  脳
                 </button>
               </div>
             )}
@@ -722,10 +367,6 @@ export const PromptInput: Component = () => {
             value={text()}
             onInput={handleInput}
             onKeyDown={handleKeyDown}
-            onKeyUp={syncSlashFromTextarea}
-            onClick={syncSlashFromTextarea}
-            onFocus={syncSlashFromTextarea}
-            onBlur={() => closeSlash()}
             onPaste={handlePaste}
             onScroll={syncHighlightScroll}
             disabled={isDisabled()}
@@ -736,16 +377,15 @@ export const PromptInput: Component = () => {
       <Show when={showBusyActions()}>
         <div style={{ display: "flex", gap: "8px", "align-items": "center", "margin-top": "8px", "flex-wrap": "wrap" }}>
           <Button size="small" variant="secondary" onClick={() => handleBusySend("guide")}>
-            {language.t("prompt.busy.sendNow")}
+            绔嬪嵆鎻掑叆
           </Button>
           <Button size="small" variant="secondary" onClick={() => handleBusySend("queue")}>
-            {language.t("prompt.busy.queue")}
+            鍔犲叆闃熷垪
           </Button>
           <Button size="small" variant="ghost" onClick={() => handleBusySend("interrupt")}>
-            {language.t("prompt.busy.interruptSend")}
-          </Button>
+            涓柇骞跺彂閫?          </Button>
           <Button size="small" variant="ghost" onClick={() => setShowBusyActions(false)}>
-            {language.t("common.cancel")}
+            鍙栨秷
           </Button>
         </div>
       </Show>
@@ -757,7 +397,7 @@ export const PromptInput: Component = () => {
                 <span style={{ "font-size": "11px", opacity: 0.85 }}>{item.text.slice(0, 60)}</span>
                 <div style={{ display: "flex", gap: "4px", "align-items": "center" }}>
                   <Button size="small" variant="ghost" onClick={() => reorderQueueItem(index(), 0)} disabled={index() === 0}>
-                    {language.t("common.top")}
+                    Top
                   </Button>
                   <Button
                     size="small"
@@ -765,7 +405,7 @@ export const PromptInput: Component = () => {
                     onClick={() => reorderQueueItem(index(), index() - 1)}
                     disabled={index() === 0}
                   >
-                    {language.t("common.up")}
+                    Up
                   </Button>
                   <Button
                     size="small"
@@ -773,10 +413,10 @@ export const PromptInput: Component = () => {
                     onClick={() => reorderQueueItem(index(), index() + 1)}
                     disabled={index() >= session.promptQueue().length - 1}
                   >
-                    {language.t("common.down")}
+                    Down
                   </Button>
                   <Button size="small" variant="ghost" onClick={() => session.dequeuePrompt(item.id)}>
-                    {language.t("common.remove")}
+                    Remove
                   </Button>
                 </div>
               </div>
@@ -823,6 +463,4 @@ export const PromptInput: Component = () => {
     </div>
   )
 }
-
-
 

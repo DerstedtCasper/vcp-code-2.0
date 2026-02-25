@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   ServerConfig,
   SessionInfo,
   SessionStatusInfo,
@@ -8,7 +8,6 @@
   SkillInfo,
   ProfileData,
   ProviderAuthAuthorization,
-  ProviderAuthResponse,
   ProviderListResponse,
   McpStatus,
   McpConfig,
@@ -39,17 +38,17 @@ export class ConfigConflictError extends Error {
 export class HttpClient {
   private readonly baseUrl: string
   private readonly authHeader: string
-  private readonly authUsername = "VCP"
+  private readonly authUsername = "kilo"
 
   constructor(config: ServerConfig) {
     this.baseUrl = config.baseUrl
-    // Auth header format: Basic base64("VCP:password")
-    // NOTE: The CLI server expects a non-empty username ("VCP"). Using an empty username
+    // Auth header format: Basic base64("kilo:password")
+    // NOTE: The CLI server expects a non-empty username ("kilo"). Using an empty username
     // (":password") results in 401 for both REST and SSE endpoints.
     this.authHeader = `Basic ${Buffer.from(`${this.authUsername}:${config.password}`).toString("base64")}`
 
     // Safe debug logging: no secrets.
-    console.log("[VCP] HTTP: 🔐 Auth configured", {
+    console.log("[Kilo New] HTTP: 🔐 Auth configured", {
       username: this.authUsername,
       passwordLength: config.password.length,
     })
@@ -90,7 +89,7 @@ export class HttpClient {
       const errorMessage = extractHttpErrorMessage(response.statusText, rawText)
 
       if (!options?.silent) {
-        console.error("[VCP] HTTP: ❌ Request failed", {
+        console.error("[Kilo New] HTTP: ❌ Request failed", {
           method,
           path,
           status: response.status,
@@ -108,7 +107,7 @@ export class HttpClient {
         return undefined as T
       }
 
-      console.error("[VCP] HTTP: ❌ Empty response body", {
+      console.error("[Kilo New] HTTP: ❌ Empty response body", {
         method,
         path,
         status: response.status,
@@ -119,7 +118,7 @@ export class HttpClient {
     try {
       return JSON.parse(rawText) as T
     } catch (error) {
-      console.error("[VCP] HTTP: ❌ Invalid JSON response", {
+      console.error("[Kilo New] HTTP: ❌ Invalid JSON response", {
         method,
         path,
         status: response.status,
@@ -186,13 +185,6 @@ export class HttpClient {
    */
   async listProviders(directory: string): Promise<ProviderListResponse> {
     return this.request<ProviderListResponse>("GET", "/provider", undefined, { directory })
-  }
-
-  /**
-   * List auth methods for providers (OAuth/API key).
-   */
-  async listProviderAuthMethods(directory: string): Promise<ProviderAuthResponse> {
-    return this.request<ProviderAuthResponse>("GET", "/provider/auth", undefined, { directory })
   }
 
   // ============================================
@@ -396,52 +388,6 @@ export class HttpClient {
     )
   }
 
-  /**
-   * Revert a session to a previous user message.
-   * If messageID is omitted, backend will decide default revert point.
-   */
-  async revertSession(sessionId: string, directory: string, messageID?: string): Promise<SessionInfo> {
-    return this.request<SessionInfo>(
-      "POST",
-      `/session/${sessionId}/revert`,
-      messageID ? { messageID } : {},
-      { directory },
-    )
-  }
-
-  /**
-   * Restore reverted messages for a session.
-   */
-  async unrevertSession(sessionId: string, directory: string): Promise<SessionInfo> {
-    return this.request<SessionInfo>("POST", `/session/${sessionId}/unrevert`, {}, { directory })
-  }
-
-  /**
-   * Fork a session at a specific message.
-   */
-  async forkSession(sessionId: string, directory: string, messageID?: string): Promise<SessionInfo> {
-    return this.request<SessionInfo>(
-      "POST",
-      `/session/${sessionId}/fork`,
-      messageID ? { messageID } : {},
-      { directory },
-    )
-  }
-
-  /**
-   * Share a session and return updated session info with share URL.
-   */
-  async shareSession(sessionId: string, directory: string): Promise<SessionInfo> {
-    return this.request<SessionInfo>("POST", `/session/${sessionId}/share`, {}, { directory })
-  }
-
-  /**
-   * Unshare a session (remove public URL).
-   */
-  async unshareSession(sessionId: string, directory: string): Promise<SessionInfo> {
-    return this.request<SessionInfo>("DELETE", `/session/${sessionId}/share`, undefined, { directory })
-  }
-
   // ============================================
   // Question Methods
   // ============================================
@@ -487,26 +433,26 @@ export class HttpClient {
   // ============================================
 
   /**
-   * Get the current user's profile from the VCP-gateway.
+   * Get the current user's profile from the kilo-gateway.
    * Returns null if not logged in or if the request fails.
    */
   async getProfile(): Promise<ProfileData | null> {
     try {
-      return await this.request<ProfileData>("GET", "/VCP/profile")
+      return await this.request<ProfileData>("GET", "/kilo/profile")
     } catch {
       return null
     }
   }
 
   /**
-   * Fetch VCP notifications for the current user from the VCP-gateway.
+   * Fetch Kilo notifications for the current user from the kilo-gateway.
    * Returns an empty array if not logged in or if the request fails.
    */
   async getNotifications(): Promise<KilocodeNotification[]> {
     try {
-      return await this.request<KilocodeNotification[]>("GET", "/VCP/notifications")
+      return await this.request<KilocodeNotification[]>("GET", "/kilo/notifications")
     } catch (err) {
-      console.warn("[VCP] Failed to fetch notifications:", err)
+      console.warn("[Kilo] Failed to fetch notifications:", err)
       return []
     }
   }
@@ -516,7 +462,7 @@ export class HttpClient {
    * Pass null to switch back to personal account.
    */
   async setOrganization(organizationId: string | null): Promise<void> {
-    await this.request<boolean>("POST", "/VCP/organization", { organizationId })
+    await this.request<boolean>("POST", "/kilo/organization", { organizationId })
   }
 
   // ============================================
@@ -524,7 +470,7 @@ export class HttpClient {
   // ============================================
 
   /**
-   * Stream a FIM (Fill-in-the-Middle) completion from the VCP Gateway via the CLI backend.
+   * Stream a FIM (Fill-in-the-Middle) completion from the Kilo Gateway via the CLI backend.
    * The CLI backend handles auth — no API key needed in the extension.
    *
    * @param prefix - Code before the cursor
@@ -539,7 +485,7 @@ export class HttpClient {
     onChunk: (text: string) => void,
     options?: { model?: string; maxTokens?: number; temperature?: number },
   ): Promise<{ cost: number; inputTokens: number; outputTokens: number }> {
-    const url = `${this.baseUrl}/VCP/fim`
+    const url = `${this.baseUrl}/kilo/fim`
 
     const response = await fetch(url, {
       method: "POST",
@@ -605,17 +551,10 @@ export class HttpClient {
 
   /**
    * Remove authentication credentials for a provider.
-   * Used for logout when called with "VCP".
+   * Used for logout when called with "kilo".
    */
   async removeAuth(providerId: string): Promise<boolean> {
     return this.request<boolean>("DELETE", `/auth/${providerId}`)
-  }
-
-  /**
-   * Set API key auth credentials for a provider.
-   */
-  async setApiAuth(providerId: string, key: string): Promise<boolean> {
-    return this.request<boolean>("PUT", `/auth/${providerId}`, { type: "api", key })
   }
 
   /**
@@ -633,10 +572,10 @@ export class HttpClient {
 
   /**
    * Complete OAuth callback for a provider.
-   * For "auto" method providers (like VCP), this blocks until polling completes.
+   * For "auto" method providers (like kilo), this blocks until polling completes.
    */
-  async oauthCallback(providerId: string, method: number, directory: string, code?: string): Promise<boolean> {
-    return this.request<boolean>("POST", `/provider/${providerId}/oauth/callback`, { method, code }, { directory })
+  async oauthCallback(providerId: string, method: number, directory: string): Promise<boolean> {
+    return this.request<boolean>("POST", `/provider/${providerId}/oauth/callback`, { method }, { directory })
   }
 
   // ============================================
@@ -696,4 +635,3 @@ export class HttpClient {
     return this.request<boolean>("POST", `/mcp/${encodeURIComponent(name)}/disconnect`, undefined, { directory })
   }
 }
-

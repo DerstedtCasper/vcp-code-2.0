@@ -1,11 +1,11 @@
-﻿# Repository Initialization
+# Repository Initialization
 
 **Priority:** P3
 **Status:** ❌ Not started
 
 ## Description
 
-Support for the `/init` command — initialize a repository for agentic engineering. This sets up the project with appropriate configuration files, rules, and conventions for working with VCP Code.
+Support for the `/init` command — initialize a repository for agentic engineering. This sets up the project with appropriate configuration files, rules, and conventions for working with Kilo Code.
 
 ## Requirements
 
@@ -25,4 +25,3 @@ No initialization support exists in the extension. The CLI supports `/init`.
 - No UI for triggering initialization
 - Need to determine if this calls a CLI endpoint or replicates CLI logic
 - No progress/status feedback during initialization
-

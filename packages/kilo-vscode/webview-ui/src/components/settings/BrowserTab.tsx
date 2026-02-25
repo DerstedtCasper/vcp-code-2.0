@@ -1,4 +1,4 @@
-﻿import { Component, createSignal, onCleanup, onMount } from "solid-js"
+import { Component, createSignal, onCleanup, onMount } from "solid-js"
 import { Switch } from "@kilocode/kilo-ui/switch"
 import { Card } from "@kilocode/kilo-ui/card"
 import { useVSCode } from "../../context/vscode"
@@ -94,5 +94,3 @@ const BrowserTab: Component = () => {
 }
 
 export default BrowserTab
-
-

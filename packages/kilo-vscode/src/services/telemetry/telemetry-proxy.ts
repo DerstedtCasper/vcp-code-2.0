@@ -1,4 +1,4 @@
-﻿import * as vscode from "vscode"
+import * as vscode from "vscode"
 import { TelemetryEventName, type TelemetryPropertiesProvider } from "./types"
 import { buildTelemetryPayload, buildTelemetryAuthHeader } from "./telemetry-proxy-utils"
 
@@ -57,7 +57,7 @@ export class TelemetryProxy {
         "Content-Type": "application/json",
       },
       body: payload,
-    }).catch((err) => console.error("[VCP] Telemetry capture failed:", err))
+    }).catch((err) => console.error("[Kilo New] Telemetry capture failed:", err))
   }
 
   /**
@@ -65,4 +65,3 @@ export class TelemetryProxy {
    */
   shutdown() {}
 }
-

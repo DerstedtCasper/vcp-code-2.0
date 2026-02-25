@@ -1,7 +1,7 @@
-﻿/**
+/**
  * Language context
- * Provides i18n translations for VCP-ui components.
- * Merges UI translations from @opencode-ai/ui and VCP overrides from @kilocode/kilo-i18n.
+ * Provides i18n translations for kilo-ui components.
+ * Merges UI translations from @opencode-ai/ui and Kilo overrides from @kilocode/kilo-i18n.
  *
  * Locale priority: user override → VS Code display language → browser language → "en"
  */
@@ -84,7 +84,7 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   bs: "Bosanski",
 }
 
-// Merge all 3 dict layers: app + ui + VCP (VCP overrides last, English base always present)
+// Merge all 3 dict layers: app + ui + kilo (kilo overrides last, English base always present)
 const base = { ...appEn, ...uiEn, ...kiloEn }
 const dicts: Record<Locale, Record<string, string>> = {
   en: base,
@@ -186,5 +186,3 @@ export function useLanguage() {
   }
   return ctx
 }
-
-

@@ -1,4 +1,4 @@
-﻿# Internal Architecture of the Autocomplete Module
+# Internal Architecture of the Autocomplete Module
 
 > Investigation date: 2026-02-12  
 > Scope: `src/services/autocomplete/` — all subdirectories and root-level files
@@ -76,7 +76,7 @@ Entry point. Registers the `AutocompleteServiceManager`, JetBrains bridge, and a
 
 ### [`AutocompleteModel.ts`](../AutocompleteModel.ts)
 
-**LLM abstraction layer** — bridges autocomplete requests to the VCP Code API system.
+**LLM abstraction layer** — bridges autocomplete requests to the Kilo Code API system.
 
 - `reload(providerSettingsManager)`: Scans configured profiles to find a usable autocomplete provider. Supports dedicated `"autocomplete"` profiles and fallback to general profiles matching `AUTOCOMPLETE_PROVIDER_MODELS`.
 - `supportsFim()`: Checks if the current API handler has a FIM endpoint.
@@ -299,7 +299,7 @@ VS Code triggers provideInlineCompletionItems()
 
 ### Purpose
 
-Provides **autocomplete for the chat input text area** in the VCP Code webview. When the user is typing a message in the chat panel, this module suggests completions for natural language text.
+Provides **autocomplete for the chat input text area** in the Kilo Code webview. When the user is typing a message in the chat panel, this module suggests completions for natural language text.
 
 ### Architecture
 
@@ -454,4 +454,3 @@ Captures what code is **actually visible** in the user's VS Code editor viewport
 | `../../utils/path`          | `src/utils/`         | Path utilities (`toRelativePath`)                                                 |
 | `web-tree-sitter`           | npm                  | Tree-sitter WASM parser (used by continuedev)                                     |
 | `PROVIDERS` constant        | `webview-ui/`        | Provider display name mapping                                                     |
-

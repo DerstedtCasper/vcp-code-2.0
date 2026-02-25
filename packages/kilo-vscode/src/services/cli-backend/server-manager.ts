@@ -1,4 +1,4 @@
-﻿import { spawn, ChildProcess } from "child_process"
+import { spawn, ChildProcess } from "child_process"
 import * as crypto from "crypto"
 import * as fs from "fs"
 import * as path from "path"
@@ -21,22 +21,22 @@ export class ServerManager {
    * Get or start the server instance
    */
   async getServer(): Promise<ServerInstance> {
-    console.log("[VCP] ServerManager: 🔍 getServer called")
+    console.log("[Kilo New] ServerManager: 🔍 getServer called")
     if (this.instance) {
-      console.log("[VCP] ServerManager: ♻️ Returning existing instance:", { port: this.instance.port })
+      console.log("[Kilo New] ServerManager: ♻️ Returning existing instance:", { port: this.instance.port })
       return this.instance
     }
 
     if (this.startupPromise) {
-      console.log("[VCP] ServerManager: ⏳ Startup already in progress, waiting...")
+      console.log("[Kilo New] ServerManager: ⏳ Startup already in progress, waiting...")
       return this.startupPromise
     }
 
-    console.log("[VCP] ServerManager: 🚀 Starting new server instance...")
+    console.log("[Kilo New] ServerManager: 🚀 Starting new server instance...")
     this.startupPromise = this.startServer()
     try {
       this.instance = await this.startupPromise
-      console.log("[VCP] ServerManager: ✅ Server started successfully:", { port: this.instance.port })
+      console.log("[Kilo New] ServerManager: ✅ Server started successfully:", { port: this.instance.port })
       return this.instance
     } finally {
       this.startupPromise = null
@@ -46,8 +46,8 @@ export class ServerManager {
   private async startServer(): Promise<ServerInstance> {
     const password = crypto.randomBytes(32).toString("hex")
     const cliPath = this.getCliPath()
-    console.log("[VCP] ServerManager: 📍 CLI path:", cliPath)
-    console.log("[VCP] ServerManager: 🔐 Generated password (length):", password.length)
+    console.log("[Kilo New] ServerManager: 📍 CLI path:", cliPath)
+    console.log("[Kilo New] ServerManager: 🔐 Generated password (length):", password.length)
 
     // Verify the CLI binary exists
     if (!fs.existsSync(cliPath)) {
@@ -57,11 +57,11 @@ export class ServerManager {
     }
 
     const stat = fs.statSync(cliPath)
-    console.log("[VCP] ServerManager: 📄 CLI isFile:", stat.isFile())
-    console.log("[VCP] ServerManager: 📄 CLI mode (octal):", (stat.mode & 0o777).toString(8))
+    console.log("[Kilo New] ServerManager: 📄 CLI isFile:", stat.isFile())
+    console.log("[Kilo New] ServerManager: 📄 CLI mode (octal):", (stat.mode & 0o777).toString(8))
 
     return new Promise((resolve, reject) => {
-      console.log("[VCP] ServerManager: 🎬 Spawning CLI process:", cliPath, ["serve", "--port", "0"])
+      console.log("[Kilo New] ServerManager: 🎬 Spawning CLI process:", cliPath, ["serve", "--port", "0"])
       const serverProcess = spawn(cliPath, ["serve", "--port", "0"], {
         env: {
           ...process.env,
@@ -78,36 +78,36 @@ export class ServerManager {
         },
         stdio: ["ignore", "pipe", "pipe"],
       })
-      console.log("[VCP] ServerManager: 📦 Process spawned with PID:", serverProcess.pid)
+      console.log("[Kilo New] ServerManager: 📦 Process spawned with PID:", serverProcess.pid)
 
       let resolved = false
 
       serverProcess.stdout?.on("data", (data: Buffer) => {
         const output = data.toString()
-        console.log("[VCP] ServerManager: 📥 CLI Server stdout:", output)
+        console.log("[Kilo New] ServerManager: 📥 CLI Server stdout:", output)
 
         const port = parseServerPort(output)
         if (port !== null && !resolved) {
           resolved = true
-          console.log("[VCP] ServerManager: 🎯 Port detected:", port)
+          console.log("[Kilo New] ServerManager: 🎯 Port detected:", port)
           resolve({ port, password, process: serverProcess })
         }
       })
 
       serverProcess.stderr?.on("data", (data: Buffer) => {
         const errorOutput = data.toString()
-        console.error("[VCP] ServerManager: ⚠️ CLI Server stderr:", errorOutput)
+        console.error("[Kilo New] ServerManager: ⚠️ CLI Server stderr:", errorOutput)
       })
 
       serverProcess.on("error", (error) => {
-        console.error("[VCP] ServerManager: ❌ Process error:", error)
+        console.error("[Kilo New] ServerManager: ❌ Process error:", error)
         if (!resolved) {
           reject(error)
         }
       })
 
       serverProcess.on("exit", (code) => {
-        console.log("[VCP] ServerManager: 🛑 Process exited with code:", code)
+        console.log("[Kilo New] ServerManager: 🛑 Process exited with code:", code)
         if (this.instance?.process === serverProcess) {
           this.instance = null
         }
@@ -119,7 +119,7 @@ export class ServerManager {
       // Timeout after 30 seconds
       setTimeout(() => {
         if (!resolved) {
-          console.error("[VCP] ServerManager: ⏰ Server startup timeout (30s)")
+          console.error("[Kilo New] ServerManager: ⏰ Server startup timeout (30s)")
           serverProcess.kill()
           reject(new Error("Server startup timeout"))
         }
@@ -129,9 +129,9 @@ export class ServerManager {
 
   private getCliPath(): string {
     // Always use the bundled binary from the extension directory
-    const binName = process.platform === "win32" ? "VCP.exe" : "VCP" // kilocode_change
+    const binName = process.platform === "win32" ? "kilo.exe" : "kilo" // kilocode_change
     const cliPath = path.join(this.context.extensionPath, "bin", binName)
-    console.log("[VCP] ServerManager: 📦 Using CLI path:", cliPath)
+    console.log("[Kilo New] ServerManager: 📦 Using CLI path:", cliPath)
     return cliPath
   }
 
@@ -142,4 +142,3 @@ export class ServerManager {
     }
   }
 }
-

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Extract a human-readable error message from an HTTP error response.
  * Tries to parse JSON and look for `error` or `message` fields; falls back to raw text.
  */
@@ -53,8 +53,7 @@ export function parseSSEDataLine(line: string): SSEChunkResult | null {
     }
     return result
   } catch (err) {
-    console.warn("[VCP] Failed to parse SSE data line", { err, line })
+    console.warn("[Kilo New] Failed to parse SSE data line", { err, line })
     return null
   }
 }
-

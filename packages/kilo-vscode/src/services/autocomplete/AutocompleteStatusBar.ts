@@ -1,9 +1,9 @@
-﻿import * as vscode from "vscode"
+import * as vscode from "vscode"
 import { t } from "./shims/i18n"
 import type { AutocompleteStatusBarStateProps } from "./types"
 import { humanFormatSessionCost, formatTime } from "./statusbar-utils"
 
-const SUPPORTED_PROVIDER_DISPLAY_NAME = "VCP Gateway"
+const SUPPORTED_PROVIDER_DISPLAY_NAME = "Kilo Gateway"
 
 export class AutocompleteStatusBar {
   statusBar: vscode.StatusBarItem
@@ -106,4 +106,3 @@ export class AutocompleteStatusBar {
     )
   }
 }
-
