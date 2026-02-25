@@ -725,7 +725,7 @@ export const dict = {
   "deviceAuth.toast.urlCopied": "URL copiada para a área de transferência",
   "deviceAuth.toast.codeCopied": "Código copiado para a área de transferência",
   "deviceAuth.status.initiating": "Iniciando login...",
-  "deviceAuth.title": "Entrar no Kilo Code",
+  "deviceAuth.title": "Entrar no VCP Code",
   "deviceAuth.step1": "Passo 1: Abra esta URL",
   "deviceAuth.action.copyUrl": "Copiar URL",
   "deviceAuth.action.openBrowser": "Abrir Navegador",
@@ -743,7 +743,7 @@ export const dict = {
 
   "profile.title": "Perfil",
   "profile.notLoggedIn": "Não conectado",
-  "profile.action.login": "Entrar com Kilo Code",
+  "profile.action.login": "Entrar com VCP Code",
   "profile.balance.title": "Saldo",
   "profile.balance.refresh": "Atualizar saldo",
   "profile.action.dashboard": "Painel",
@@ -762,11 +762,11 @@ export const dict = {
   "settings.prompts.title": "Prompts",
   "settings.experimental.title": "Experimental",
   "settings.language.title": "Idioma",
-  "settings.aboutKiloCode.title": "Sobre o Kilo Code",
+  "settings.aboutVCPCode.title": "Sobre o VCP Code",
 
   "session.messages.empty": "Inicie uma conversa digitando uma mensagem abaixo.",
   "session.messages.welcome":
-    "Kilo Code é um assistente de programação com IA. Peça para criar funcionalidades, corrigir bugs ou explicar sua base de código.",
+    "VCP Code é um assistente de programação com IA. Peça para criar funcionalidades, corrigir bugs ou explicar sua base de código.",
   "session.messages.scrollToBottom": "Rolar para o final",
   "session.status.writingResponse": "Escrevendo resposta…",
   "session.status.retrying": "Tentando novamente (tentativa {{ attempt }})… {{ message }}",
@@ -790,25 +790,25 @@ export const dict = {
   "time.thisMonth": "Este mês",
   "time.older": "Mais antigo",
 
-  "settings.aboutKiloCode.status.connected": "Conectado",
-  "settings.aboutKiloCode.status.connecting": "Conectando...",
-  "settings.aboutKiloCode.status.disconnected": "Desconectado",
-  "settings.aboutKiloCode.status.error": "Erro",
-  "settings.aboutKiloCode.cliServer": "Servidor CLI",
-  "settings.aboutKiloCode.status.label": "Status:",
-  "settings.aboutKiloCode.port.label": "Porta:",
-  "settings.aboutKiloCode.versionInfo": "Informações da Versão",
-  "settings.aboutKiloCode.version.label": "Versão:",
-  "settings.aboutKiloCode.extensionName": "Extensão Kilo Code",
-  "settings.aboutKiloCode.community": "Comunidade e Suporte",
-  "settings.aboutKiloCode.feedback.prefix": "Se você tiver perguntas ou feedback, abra uma issue no",
-  "settings.aboutKiloCode.feedback.or": "ou",
-  "settings.aboutKiloCode.support.prefix":
+  "settings.aboutVCPCode.status.connected": "Conectado",
+  "settings.aboutVCPCode.status.connecting": "Conectando...",
+  "settings.aboutVCPCode.status.disconnected": "Desconectado",
+  "settings.aboutVCPCode.status.error": "Erro",
+  "settings.aboutVCPCode.cliServer": "Servidor CLI",
+  "settings.aboutVCPCode.status.label": "Status:",
+  "settings.aboutVCPCode.port.label": "Porta:",
+  "settings.aboutVCPCode.versionInfo": "Informações da Versão",
+  "settings.aboutVCPCode.version.label": "Versão:",
+  "settings.aboutVCPCode.extensionName": "Extensão VCP Code",
+  "settings.aboutVCPCode.community": "Comunidade e Suporte",
+  "settings.aboutVCPCode.feedback.prefix": "Se você tiver perguntas ou feedback, abra uma issue no",
+  "settings.aboutVCPCode.feedback.or": "ou",
+  "settings.aboutVCPCode.support.prefix":
     "Para questões de cobrança ou conta, entre em contato com o Suporte ao Cliente em",
-  "settings.aboutKiloCode.resetSettings.title": "Redefinir Configurações",
-  "settings.aboutKiloCode.resetSettings.description":
-    "Redefinir todas as configurações da extensão Kilo Code para os valores padrão. Isso não afeta a configuração do CLI ou do backend.",
-  "settings.aboutKiloCode.resetSettings.button": "Redefinir Todas as Configurações",
+  "settings.aboutVCPCode.resetSettings.title": "Redefinir Configurações",
+  "settings.aboutVCPCode.resetSettings.description":
+    "Redefinir todas as configurações da extensão VCP Code para os valores padrão. Isso não afeta a configuração do CLI ou do backend.",
+  "settings.aboutVCPCode.resetSettings.button": "Redefinir Todas as Configurações",
 
   "settings.agentBehaviour.subtab.modes": "Modos",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -828,7 +828,7 @@ export const dict = {
   "settings.browser.headless.description": "Executar em modo headless (sem janela do navegador visível).",
 
   "settings.language.description":
-    'Escolha o idioma da interface do Kilo Code. "Auto" usa o idioma de exibição do VS Code.',
+    'Escolha o idioma da interface do VCP Code. "Auto" usa o idioma de exibição do VS Code.',
   "settings.language.auto": "Auto (idioma do VS Code)",
   "settings.language.current": "Atual:",
 
