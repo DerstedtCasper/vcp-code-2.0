@@ -13,7 +13,7 @@
  * NO CAS queue, NO revision tracking, NO inflight promise — zero async blocking.
  */
 
-import { createContext, useContext, createSignal, onCleanup, ParentComponent, Accessor, createMemo } from "solid-js"
+import { createContext, useContext, createSignal, onCleanup, ParentComponent, Accessor, createMemo, batch } from "solid-js"
 import { useVSCode } from "./vscode"
 import type { Config, ExtensionMessage } from "../types/messages"
 
@@ -71,8 +71,10 @@ export const ConfigProvider: ParentComponent = (props) => {
 
   // ── core update: optimistic + fire-and-forget ────────────────────
   function updateConfig(partial: Partial<Config>) {
-    // 1. Optimistic: shallow merge for instant UI feedback
-    setConfig((prev) => ({ ...prev, ...partial }))
+    batch(() => {
+      // 1. Optimistic: shallow merge for instant UI feedback
+      setConfig((prev) => ({ ...prev, ...partial }))
+    })
     // 2. Send to extension for persistence (fire-and-forget)
     vscode.postMessage({ type: "updateConfig", config: partial })
   }
@@ -97,8 +99,13 @@ export const ConfigProvider: ParentComponent = (props) => {
   const saveScopedConfig = (scopeID: string) => {
     const patch = scopedDrafts()[scopeID]
     if (!patch || !hasPatch(patch)) return
-    setScopedDrafts((prev) => { const next = { ...prev }; delete next[scopeID]; return next })
-    updateConfig(patch)
+    batch(() => {
+      setScopedDrafts((prev) => { const next = { ...prev }; delete next[scopeID]; return next })
+      // Optimistic merge: apply the patch to config immediately
+      setConfig((prev) => ({ ...prev, ...patch }))
+    })
+    // Fire-and-forget persistence
+    vscode.postMessage({ type: "updateConfig", config: patch })
   }
 
   const discardScopedConfig = (scopeID: string) => {
@@ -111,15 +118,20 @@ export const ConfigProvider: ParentComponent = (props) => {
     const entries = Object.values(drafts).filter((patch) => hasPatch(patch))
     if (entries.length === 0) return
     const merged = entries.reduce<Partial<Config>>((acc, patch) => mergePatch(acc, patch), {})
-    setScopedDrafts({})
-    updateConfig(merged)
+    batch(() => {
+      setScopedDrafts({})
+      setConfig((prev) => ({ ...prev, ...merged }))
+    })
+    vscode.postMessage({ type: "updateConfig", config: merged })
   }
 
   // ── message handler (accept authoritative state from backend) ────
   const unsubscribe = vscode.onMessage((message: ExtensionMessage) => {
     if (message.type === "configLoaded") {
-      setConfig(message.config)
-      setLoading(false)
+      batch(() => {
+        setConfig(message.config)
+        setLoading(false)
+      })
       return
     }
     if (message.type === "configUpdated") {

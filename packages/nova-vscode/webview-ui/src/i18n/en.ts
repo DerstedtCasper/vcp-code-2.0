@@ -1064,11 +1064,6 @@ export const dict = {
   "settings.autoApprove.tool.codesearch": "Search codebase",
   "settings.autoApprove.tool.external_directory": "Access files outside workspace",
   "settings.autoApprove.tool.doom_loop": "Continue after repeated failures",
-  "settings.autoApprove.yoloMode": "YOLO Mode",
-  "settings.autoApprove.yoloMode.label": "Enable YOLO Mode — Auto-approve EVERYTHING",
-  "settings.autoApprove.yoloMode.description": "When enabled, all tool operations are automatically approved without confirmation. Includes file edits, command execution, web access, and all other tools.",
-  "settings.autoApprove.yoloMode.warning": "⚡ YOLO Mode is active — all per-tool permission settings below are overridden to Allow",
-  "settings.autoApprove.yoloMode.caution": "Use with extreme caution! This skips all safety confirmations.",
 
   "settings.checkpoints.enable.title": "Enable Snapshots",
   "settings.checkpoints.enable.description": "Create checkpoints before file edits so you can restore previous states",

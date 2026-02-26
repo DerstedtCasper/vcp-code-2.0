@@ -452,14 +452,10 @@ export const MarketplaceView: Component = () => {
 
   function doRefresh() {
     setLoading(true)
-    // Send refresh request — extension host clears cache and re-fetches all 3 categories
     vscode.postMessage({
       type: "requestMarketplaceRefresh",
       requestId: `refresh-${Date.now()}`,
     })
-    // Also re-fetch installed
-    fetchInstalled()
-    showToast({ variant: "success", title: language.t("marketplace.refresh.success") })
   }
 
   // ─── Effects ───────────────────────────────────────────────────────

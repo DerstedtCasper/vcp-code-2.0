@@ -12,7 +12,7 @@ import { ConfigScopeProvider, useConfig } from "../../context/config"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
 import { useVSCode } from "../../context/vscode"
-import type { AgentConfig, Config, ExtensionMessage, SkillInfo, VcpConfig, ProviderConfig } from "../../types/messages"
+import type { AgentConfig, Config, ExtensionMessage, SkillInfo, VcpConfig, VcpAgentTeamMember, ProviderConfig } from "../../types/messages"
 import WorkflowsEditor from "./WorkflowsEditor"
 
 type SubtabId = "agents" | "mcpServers" | "vcp" | "rules" | "workflows" | "skills"
@@ -853,7 +853,6 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
           <SettingsRow
             title={language.t("settings.vcp.agentTeam.handoffFormat.title")}
             description={language.t("settings.vcp.agentTeam.handoffFormat.description")}
-            last
           >
             <Select
               options={handoffFormatOptions}
@@ -866,6 +865,117 @@ const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
               triggerVariant="settings"
             />
           </SettingsRow>
+
+          {/* ── Agent Team Members 编辑器 ───────────────────────────── */}
+          {(() => {
+            const members = createMemo<VcpAgentTeamMember[]>(() => agentTeam().members ?? [])
+            const providerNames = createMemo(() => Object.keys(scopedConfig().provider ?? {}))
+
+            const addMember = () => {
+              const id = `agent-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+              updateAgentTeam({
+                members: [...members(), { id, name: `Agent ${members().length + 1}` }],
+              })
+            }
+
+            const updateMember = (id: string, partial: Partial<VcpAgentTeamMember>) => {
+              updateAgentTeam({
+                members: members().map((m) => (m.id === id ? { ...m, ...partial } : m)),
+              })
+            }
+
+            const removeMember = (id: string) => {
+              updateAgentTeam({
+                members: members().filter((m) => m.id !== id),
+              })
+            }
+
+            return (
+              <div style={{ "margin-top": "8px" }}>
+                <div style={{ display: "flex", "align-items": "center", "justify-content": "space-between", "margin-bottom": "8px" }}>
+                  <span style={{ "font-weight": "600", "font-size": "12px" }}>
+                    {language.t("settings.vcp.agentTeam.members.title" as any) || "Team Members"}
+                    {" "}({members().length})
+                  </span>
+                  <Button size="small" variant="secondary" onClick={addMember}>
+                    + {language.t("settings.vcp.agentTeam.members.add" as any) || "Add Agent"}
+                  </Button>
+                </div>
+
+                <For each={members()}>
+                  {(member) => (
+                    <Card style={{ "margin-bottom": "8px", padding: "10px" }}>
+                      <div style={{ display: "flex", "align-items": "center", "justify-content": "space-between", "margin-bottom": "6px" }}>
+                        <TextField
+                          value={member.name}
+                          placeholder="Agent name / role"
+                          onChange={(v) => updateMember(member.id, { name: v })}
+                        />
+                        <IconButton
+                          icon="trash"
+                          label="Remove"
+                          size="small"
+                          onClick={() => removeMember(member.id)}
+                        />
+                      </div>
+
+                      {/* Provider 选择 */}
+                      <SettingsRow
+                        title={language.t("settings.vcp.agentTeam.members.provider" as any) || "Provider"}
+                        description=""
+                      >
+                        <Select
+                          options={providerNames()}
+                          current={member.providerID}
+                          value={(o) => o}
+                          label={(o) => o}
+                          onSelect={(o) => o && updateMember(member.id, { providerID: o, modelID: undefined })}
+                          variant="secondary"
+                          size="small"
+                          triggerVariant="settings"
+                        />
+                      </SettingsRow>
+
+                      {/* Model ID */}
+                      <SettingsRow
+                        title={language.t("settings.vcp.agentTeam.members.model" as any) || "Model"}
+                        description=""
+                      >
+                        <TextField
+                          value={member.modelID ?? ""}
+                          placeholder="e.g. gpt-4o, claude-sonnet-4-20250514"
+                          onChange={(v) => updateMember(member.id, { modelID: v.trim() || undefined })}
+                        />
+                      </SettingsRow>
+
+                      {/* Role Prompt */}
+                      <SettingsRow
+                        title={language.t("settings.vcp.agentTeam.members.rolePrompt" as any) || "Role Prompt"}
+                        description={language.t("settings.vcp.agentTeam.members.rolePrompt.desc" as any) || "System prompt specific to this agent's role"}
+                        last
+                      >
+                        <textarea
+                          class="settings-textarea"
+                          rows={3}
+                          value={member.rolePrompt ?? ""}
+                          placeholder="You are a code reviewer specializing in..."
+                          onInput={(e) => updateMember(member.id, { rolePrompt: e.currentTarget.value || undefined })}
+                          style={{ width: "100%", resize: "vertical", "font-family": "var(--vscode-editor-font-family)", "font-size": "12px", padding: "6px 8px", "border-radius": "4px", border: "1px solid var(--vscode-input-border)", background: "var(--vscode-input-background)", color: "var(--vscode-input-foreground)" }}
+                        />
+                      </SettingsRow>
+                    </Card>
+                  )}
+                </For>
+
+                <Show when={members().length === 0}>
+                  <div style={{ "font-size": "12px", opacity: 0.6, "text-align": "center", padding: "12px" }}>
+                    {language.t("settings.vcp.agentTeam.members.empty" as any) || "No team members configured. Click \"+ Add Agent\" to add one."}
+                  </div>
+                </Show>
+              </div>
+            )
+          })()}
+
               </Card>
             </Accordion.Content>
           </Accordion.Item>

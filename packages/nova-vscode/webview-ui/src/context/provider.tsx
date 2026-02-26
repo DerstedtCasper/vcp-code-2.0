@@ -18,11 +18,6 @@ interface ProviderContextValue {
   defaultSelection: Accessor<ModelSelection>
   models: Accessor<EnrichedModel[]>
   findModel: (selection: ModelSelection | null) => EnrichedModel | undefined
-  /**
-   * Inject dynamically-fetched models (e.g. from /models API) into a provider
-   * so that ModelSelectorBase can display them.
-   */
-  injectCustomModels: (providerID: string, providerName: string, modelIds: string[]) => void
 }
 
 const NOVA_AUTO: ModelSelection = { providerID: "kilo", modelID: "kilo/auto" }
@@ -41,40 +36,6 @@ export const ProviderProvider: ParentComponent = (props) => {
 
   function findModel(selection: ModelSelection | null): EnrichedModel | undefined {
     return _findModel(models(), selection)
-  }
-
-  /**
-   * Merge dynamically-fetched model IDs (from OpenAI-compatible /models API)
-   * into the global provider map so that ModelSelectorBase can see them.
-   * If the provider already exists we only ADD missing models (never overwrite
-   * richer metadata coming from the backend). If the provider doesn't exist
-   * yet we create a minimal entry.
-   */
-  function injectCustomModels(providerID: string, providerName: string, modelIds: string[]): void {
-    if (!providerID || modelIds.length === 0) return
-
-    setProviders((prev) => {
-      const next = { ...prev }
-      const existing = next[providerID]
-      const existingModels = existing?.models ?? {}
-      const mergedModels: Record<string, import("../types/messages").ProviderModel> = { ...existingModels }
-
-      for (const id of modelIds) {
-        if (!mergedModels[id]) {
-          mergedModels[id] = { id, name: id }
-        }
-      }
-
-      next[providerID] = {
-        id: providerID,
-        name: existing?.name ?? providerName,
-        models: mergedModels,
-      }
-      return next
-    })
-
-    // Also mark this provider as connected so visibleModels includes it
-    setConnected((prev) => (prev.includes(providerID) ? prev : [...prev, providerID]))
   }
 
   // Register handler immediately (not in onMount) so we never miss
@@ -119,7 +80,6 @@ export const ProviderProvider: ParentComponent = (props) => {
     defaultSelection,
     models,
     findModel,
-    injectCustomModels,
   }
 
   return <ProviderContext.Provider value={value}>{props.children}</ProviderContext.Provider>

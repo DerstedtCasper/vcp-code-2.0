@@ -79,12 +79,6 @@ export namespace Agent {
     })
     const user = PermissionNext.fromConfig(cfg.permission ?? {})
 
-    // novacode_change start - YOLO mode: override all permissions to allow
-    const yoloOverride: PermissionNext.Ruleset = cfg.yolo_mode
-      ? [{ permission: "*", pattern: "*", action: "allow" }]
-      : []
-    // novacode_change end
-
     const result: Record<string, Info> = {
       // novacode_change start
       code: {
@@ -99,7 +93,6 @@ export namespace Agent {
             plan_enter: "allow",
           }),
           user,
-          yoloOverride,
         ),
         mode: "primary",
         native: true,
@@ -123,7 +116,6 @@ export namespace Agent {
             },
           }),
           user,
-          yoloOverride,
         ),
         mode: "primary",
         native: true,
@@ -141,7 +133,6 @@ export namespace Agent {
             plan_enter: "allow",
           }),
           user,
-          yoloOverride,
         ),
         mode: "primary",
         native: true,
@@ -172,7 +163,6 @@ export namespace Agent {
             },
           }),
           user,
-          yoloOverride,
         ),
         mode: "primary",
         native: true,
@@ -203,7 +193,6 @@ export namespace Agent {
             },
           }),
           user,
-          yoloOverride,
         ),
         mode: "primary",
         native: true,
@@ -235,7 +224,6 @@ export namespace Agent {
             },
           }),
           user,
-          yoloOverride,
         ),
         mode: "primary",
         native: true,
@@ -251,7 +239,6 @@ export namespace Agent {
             todowrite: "deny",
           }),
           user,
-          yoloOverride,
         ),
         options: {},
         mode: "subagent",
@@ -276,7 +263,6 @@ export namespace Agent {
             },
           }),
           user,
-          yoloOverride,
         ),
         description: `Fast agent specialized for exploring codebases. Use this when you need to quickly find files by patterns (eg. "src/components/**/*.tsx"), search code for keywords (eg. "API endpoints"), or answer questions about the codebase (eg. "how do API endpoints work?"). When calling this agent, specify the desired thoroughness level: "quick" for basic searches, "medium" for moderate exploration, or "very thorough" for comprehensive analysis across multiple locations and naming conventions.`,
         prompt: PROMPT_EXPLORE,
@@ -296,7 +282,6 @@ export namespace Agent {
             "*": "deny",
           }),
           user,
-          yoloOverride,
         ),
         options: {},
       },
@@ -313,7 +298,6 @@ export namespace Agent {
             "*": "deny",
           }),
           user,
-          yoloOverride,
         ),
         prompt: PROMPT_TITLE,
       },
@@ -329,7 +313,6 @@ export namespace Agent {
             "*": "deny",
           }),
           user,
-          yoloOverride,
         ),
         prompt: PROMPT_SUMMARY,
       },
@@ -348,7 +331,7 @@ export namespace Agent {
         item = result[effectiveKey] = {
           name: effectiveKey,
           mode: "all",
-          permission: PermissionNext.merge(defaults, user, yoloOverride),
+          permission: PermissionNext.merge(defaults, user),
           options: {},
           native: false,
         }
@@ -365,7 +348,7 @@ export namespace Agent {
       item.name = value.name ?? item.name
       item.steps = value.steps ?? item.steps
       item.options = mergeDeep(item.options, value.options ?? {})
-      item.permission = PermissionNext.merge(item.permission, PermissionNext.fromConfig(value.permission ?? {}), yoloOverride)
+      item.permission = PermissionNext.merge(item.permission, PermissionNext.fromConfig(value.permission ?? {}))
     }
 
     // Ensure Truncate.GLOB is allowed unless explicitly configured

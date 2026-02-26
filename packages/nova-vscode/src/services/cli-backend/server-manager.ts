@@ -22,16 +22,9 @@ export class ServerManager {
    */
   async getServer(): Promise<ServerInstance> {
     console.log("[Nova New] ServerManager: 🔍 getServer called")
-
-    // If we have an existing instance, verify the process is still alive
     if (this.instance) {
-      if (this.instance.process.killed || this.instance.process.exitCode !== null) {
-        console.warn("[Nova New] ServerManager: ⚠️ Existing process is dead, clearing instance")
-        this.instance = null
-      } else {
-        console.log("[Nova New] ServerManager: ♻️ Returning existing instance:", { port: this.instance.port })
-        return this.instance
-      }
+      console.log("[Nova New] ServerManager: ♻️ Returning existing instance:", { port: this.instance.port })
+      return this.instance
     }
 
     if (this.startupPromise) {
@@ -47,22 +40,6 @@ export class ServerManager {
       return this.instance
     } finally {
       this.startupPromise = null
-    }
-  }
-
-  /**
-   * Invalidate the current server instance so the next getServer() call will start a new one.
-   * Called by ConnectionService when reconnecting after the server process died.
-   */
-  invalidate(): void {
-    console.log("[Nova New] ServerManager: 🔄 Invalidating current instance")
-    if (this.instance) {
-      try {
-        this.instance.process.kill("SIGTERM")
-      } catch {
-        // Process may already be dead
-      }
-      this.instance = null
     }
   }
 

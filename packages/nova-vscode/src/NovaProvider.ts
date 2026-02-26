@@ -2,7 +2,6 @@ import * as path from "path"
 import { promises as fs } from "fs"
 import * as vscode from "vscode"
 import { z } from "zod"
-import { parse as parseYAML } from "yaml"
 import {
   type HttpClient,
   ConfigConflictError,
@@ -92,13 +91,11 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
   private ignoreController: FileIgnoreController | null = null
   private ignoreControllerDir: string | null = null
 
-  /** Pending config updates that could not be sent to the backend (queued for flush on reconnect). */
-  private pendingConfigUpdates: Array<Record<string, unknown>> = []
-
-  /** VCPBridge (VCPToolBox WebSocket) connection state cached from CLI backend. null = not configured. */
-  private vcpBridgeConnected: boolean | null = null
-  /** Timer for periodic VCPBridge stats polling (only when drawer is open). */
-  private vcpBridgePollTimer: ReturnType<typeof setInterval> | null = null
+  // ── VCP Bridge WebSocket (connects to VCPToolBox) ──────────────
+  private vcpLogWs: WebSocket | null = null
+  private vcpInfoWs: WebSocket | null = null
+  private vcpBridgeReconnectTimer: ReturnType<typeof setTimeout> | null = null
+  private vcpBridgeConnected = false
 
   /** Optional interceptor called before the standard message handler.
    *  Return null to consume the message, or return a (possibly transformed) message. */
@@ -135,89 +132,6 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       return null
     }
   }
-
-  // ── Local opencode.json fallback ──────────────────────────────────────────
-
-  /**
-   * Resolve the path to the global opencode.json config file.
-   * Mirrors the CLI logic: %APPDATA%/kilo/opencode.json (Windows) or ~/.config/kilo/opencode.json (Linux/Mac).
-   */
-  private getLocalConfigPath(): string {
-    const configDir =
-      process.platform === "win32"
-        ? path.join(process.env.APPDATA || path.join(require("os").homedir(), "AppData", "Roaming"), "kilo")
-        : path.join(process.env.XDG_CONFIG_HOME || path.join(require("os").homedir(), ".config"), "kilo")
-    return path.join(configDir, "opencode.json")
-  }
-
-  /**
-   * Read the local opencode.json, returning the parsed object (or empty object on error).
-   */
-  private async readLocalConfig(): Promise<Record<string, unknown>> {
-    try {
-      const raw = await fs.readFile(this.getLocalConfigPath(), "utf-8")
-      return JSON.parse(raw)
-    } catch {
-      return {}
-    }
-  }
-
-  /**
-   * Merge a partial config into the local opencode.json and write it back.
-   */
-  private async writeLocalConfig(partial: Record<string, unknown>): Promise<Record<string, unknown>> {
-    const configPath = this.getLocalConfigPath()
-    const existing = await this.readLocalConfig()
-    const merged = this.deepMerge(existing, partial)
-    await fs.mkdir(path.dirname(configPath), { recursive: true })
-    await fs.writeFile(configPath, JSON.stringify(merged, null, 2), "utf-8")
-    console.log("[Nova New] NovaProvider: 💾 Config saved locally to", configPath)
-    return merged
-  }
-
-  /**
-   * Simple deep merge – nested objects are merged, everything else is replaced.
-   */
-  private deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
-    const result: Record<string, unknown> = { ...target }
-    for (const key of Object.keys(source)) {
-      const sv = source[key]
-      const tv = target[key]
-      if (sv && typeof sv === "object" && !Array.isArray(sv) && tv && typeof tv === "object" && !Array.isArray(tv)) {
-        result[key] = this.deepMerge(tv as Record<string, unknown>, sv as Record<string, unknown>)
-      } else {
-        result[key] = sv
-      }
-    }
-    return result
-  }
-
-  /**
-   * Flush any queued config updates to the backend.
-   * Called when the connection transitions to "connected".
-   */
-  private async flushPendingConfigUpdates(): Promise<void> {
-    if (!this.pendingConfigUpdates.length) return
-    const client = this.httpClient
-    if (!client) return
-
-    console.log(`[Nova New] NovaProvider: 🔄 Flushing ${this.pendingConfigUpdates.length} pending config updates to backend`)
-    // Merge all pending partials into one
-    let merged: Record<string, unknown> = {}
-    for (const partial of this.pendingConfigUpdates) {
-      merged = this.deepMerge(merged, partial)
-    }
-    this.pendingConfigUpdates = []
-
-    try {
-      await client.updateConfig(merged)
-      console.log("[Nova New] NovaProvider: ✅ Pending config updates flushed to backend")
-    } catch (error) {
-      console.error("[Nova New] NovaProvider: ❌ Failed to flush pending config:", error)
-    }
-  }
-
-  // ── End local config fallback ─────────────────────────────────────────────
 
   private sanitizeTokenCount(value: unknown): number {
     return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : 0
@@ -299,7 +213,6 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       payload: {
         status,
         connected,
-        vcpBridgeConnected: this.vcpBridgeConnected,
         currentModel: activeSessionID
           ? (this.sessionModelSelection.get(activeSessionID) ?? this.defaultModelSelection.modelID)
           : this.defaultModelSelection.modelID,
@@ -312,87 +225,6 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
         lastRunId: activeSessionID,
       },
     })
-  }
-
-  // ── VCPBridge (VCPToolBox WS) status relay ────────────────────────────────
-
-  /**
-   * Fetch VCPBridge status + stats from CLI backend and push to webview.
-   * Called on-demand when webview opens the status drawer, or once on connect.
-   */
-  private async fetchAndSendVcpBridgeStats(): Promise<void> {
-    const client = this.httpClient
-    if (!client) {
-      this.postMessage({ type: "vcpBridgeStats", stats: null, status: null })
-      return
-    }
-
-    try {
-      const serverConfig = this.connectionService.getServerConfig()
-      if (!serverConfig) return
-
-      const baseUrl = serverConfig.baseUrl
-      const authHeader = `Basic ${Buffer.from(`kilo:${serverConfig.password}`).toString("base64")}`
-
-      const [statsRes, statusRes] = await Promise.allSettled([
-        fetch(`${baseUrl}/vcp/bridge/stats`, {
-          headers: { Authorization: authHeader },
-          signal: AbortSignal.timeout(5000),
-        }),
-        fetch(`${baseUrl}/vcp/bridge/status`, {
-          headers: { Authorization: authHeader },
-          signal: AbortSignal.timeout(5000),
-        }),
-      ])
-
-      const stats = statsRes.status === "fulfilled" && statsRes.value.ok
-        ? (await statsRes.value.json()) as Record<string, unknown>
-        : null
-      const status = statusRes.status === "fulfilled" && statusRes.value.ok
-        ? (await statusRes.value.json()) as Record<string, unknown>
-        : null
-
-      // Update cached bridge connection state
-      const prevBridgeConnected = this.vcpBridgeConnected
-      if (stats && typeof stats.connected === "boolean") {
-        this.vcpBridgeConnected = stats.connected
-      } else if (status && typeof status.connected === "boolean") {
-        this.vcpBridgeConnected = status.connected
-      }
-
-      // If bridge connection state changed, re-push vcpStatusUpdate
-      if (prevBridgeConnected !== this.vcpBridgeConnected) {
-        this.sendVcpStatusUpdate()
-      }
-
-      this.postMessage({ type: "vcpBridgeStats", stats: stats as any, status: status as any })
-    } catch (err) {
-      console.warn("[Nova New] NovaProvider: fetchVcpBridgeStats error:", err)
-      this.postMessage({ type: "vcpBridgeStats", stats: null, status: null })
-    }
-  }
-
-  /**
-   * Start polling VCPBridge stats every 5s (called when webview opens the drawer).
-   */
-  private startVcpBridgePoll(): void {
-    this.stopVcpBridgePoll()
-    // Fetch immediately
-    void this.fetchAndSendVcpBridgeStats()
-    // Then poll
-    this.vcpBridgePollTimer = setInterval(() => {
-      void this.fetchAndSendVcpBridgeStats()
-    }, 5000)
-  }
-
-  /**
-   * Stop VCPBridge stats polling.
-   */
-  private stopVcpBridgePoll(): void {
-    if (this.vcpBridgePollTimer) {
-      clearInterval(this.vcpBridgePollTimer)
-      this.vcpBridgePollTimer = null
-    }
   }
 
   /**
@@ -841,7 +673,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
         }
         // ── Marketplace proxy: list items, install, installed, refresh ──
         case "requestMarketplaceList": {
-          void this.handleMarketplaceListDirect(message.tab ?? "skills", message.query, message.requestId)
+          void this.handleMarketplaceProxy("GET", `/marketplace/${message.tab ?? "skills"}${message.query ? `?q=${encodeURIComponent(message.query)}` : ""}`, message.requestId, message.tab)
           break
         }
         case "requestMarketplaceInstalled": {
@@ -849,20 +681,20 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
           break
         }
         case "requestMarketplaceRefresh": {
-          // Clear cache and re-fetch all categories
-          this.marketplaceCache.clear()
-          void this.handleMarketplaceListDirect("skills", undefined, `${message.requestId}-skills`)
-          void this.handleMarketplaceListDirect("modes", undefined, `${message.requestId}-modes`)
-          void this.handleMarketplaceListDirect("mcps", undefined, `${message.requestId}-mcps`)
+          void this.handleMarketplaceProxy("POST", "/marketplace/refresh", message.requestId)
           break
         }
         case "requestMarketplaceInstall": {
           void this.handleMarketplaceInstall(message.body, message.requestId)
           break
         }
-        // ── VCPBridge stats request (webview drawer opened) ──
-        case "requestVcpBridgeStats": {
-          this.startVcpBridgePoll()
+        // ── VCP Bridge WebSocket ──────────────────────────────────
+        case "requestVcpBridgeConnect": {
+          void this.connectVcpBridge()
+          break
+        }
+        case "requestVcpBridgeDisconnect": {
+          this.disconnectVcpBridge()
           break
         }
       }
@@ -912,16 +744,12 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
 
         if (state === "connected") {
           try {
-            // Flush any config updates queued while backend was offline
-            await this.flushPendingConfigUpdates()
             const client = this.httpClient
             if (client) {
               const profileData = await client.getProfile()
               this.postMessage({ type: "profileData", data: profileData })
             }
             await this.syncWebviewState("sse-connected")
-            // Fetch VCPBridge state once so the capsule badge knows VCPToolBox WS status immediately
-            void this.fetchAndSendVcpBridgeStats()
           } catch (error) {
             console.error("[Nova New] NovaProvider:  - Failed during connected state handling:", error)
             this.postMessage({
@@ -1317,100 +1145,6 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     }
   }
 
-  // ── In-memory marketplace cache ──────────────────────────────────
-  private marketplaceCache: Map<string, { items: unknown[]; expiresAt: number }> = new Map()
-
-  /**
-   * Directly fetch marketplace YAML from GitHub, parse it, and send items to webview.
-   * Does NOT depend on the CLI backend being running.
-   */
-  private async handleMarketplaceListDirect(
-    tab: string,
-    query?: string,
-    requestId?: string,
-    isRefresh?: boolean,
-  ): Promise<void> {
-    const MARKETPLACE_BASE = "https://raw.githubusercontent.com/Kilo-Org/kilo-marketplace/main"
-    const CACHE_TTL = 600_000 // 10 minutes
-
-    // Clear cache on refresh
-    if (isRefresh) {
-      this.marketplaceCache.clear()
-    }
-
-    // Check cache
-    const cacheKey = tab
-    const cached = this.marketplaceCache.get(cacheKey)
-    if (cached && cached.expiresAt > Date.now() && !isRefresh) {
-      const items = query ? this.filterMarketplaceItems(cached.items, query) : cached.items
-      this.postMessage({ type: "marketplaceProxyResult", data: items, requestId, tab })
-      return
-    }
-
-    const url = `${MARKETPLACE_BASE}/${tab}/marketplace.yaml`
-    try {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 20_000)
-      const response = await fetch(url, { signal: controller.signal })
-      clearTimeout(timeout)
-
-      if (!response.ok) {
-        this.postMessage({
-          type: "marketplaceProxyResult",
-          error: `GitHub HTTP ${response.status}: ${response.statusText}`,
-          requestId,
-          tab,
-        })
-        return
-      }
-
-      const text = await response.text()
-      let items: unknown[] = []
-
-      try {
-        const parsed = parseYAML(text)
-        // Kilo YAML format: { items: [...] } or just an array
-        if (parsed && typeof parsed === "object" && "items" in parsed && Array.isArray((parsed as any).items)) {
-          items = (parsed as any).items
-        } else if (Array.isArray(parsed)) {
-          items = parsed
-        }
-      } catch (yamlErr) {
-        console.error("[Marketplace] YAML parse error:", yamlErr)
-        this.postMessage({ type: "marketplaceProxyResult", error: "YAML parse error", requestId, tab })
-        return
-      }
-
-      // Cache the full list
-      this.marketplaceCache.set(cacheKey, { items, expiresAt: Date.now() + CACHE_TTL })
-
-      // Apply query filter if provided
-      const result = query ? this.filterMarketplaceItems(items, query) : items
-      this.postMessage({ type: "marketplaceProxyResult", data: result, requestId, tab })
-
-      // On refresh, also notify success
-      if (isRefresh) {
-        this.postMessage({ type: "marketplaceProxyResult", data: result, requestId, tab })
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err)
-      this.postMessage({
-        type: "marketplaceProxyResult",
-        error: msg.includes("aborted") ? "Request timeout (20s)" : msg,
-        requestId,
-        tab,
-      })
-    }
-  }
-
-  private filterMarketplaceItems(items: unknown[], query: string): unknown[] {
-    const q = query.toLowerCase()
-    return items.filter((item: any) => {
-      const fields = [item.id, item.name, item.description, ...(item.tags ?? [])]
-      return fields.some((f: string) => f && String(f).toLowerCase().includes(q))
-    })
-  }
-
   /**
    * Generic marketplace proxy: Extension host fetches from backend and forwards to webview.
    * This avoids the webview needing to know the backend port.
@@ -1474,6 +1208,144 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       const msg = err instanceof Error ? err.message : String(err)
       this.postMessage({ type: "marketplaceInstallResult", error: msg.includes("aborted") ? "Timeout (30s)" : msg, requestId })
     }
+  }
+
+  // ── VCP Bridge WebSocket Management ───────────────────────────────
+  /**
+   * Connect to VCPToolBox WebSocket endpoints (VCPlog + VCPinfo).
+   * Reads vcp.toolbox config from the cached config.
+   */
+  private async connectVcpBridge(): Promise<void> {
+    this.disconnectVcpBridge()
+
+    // Read toolbox config from cached config
+    const configMsg = this.cachedConfigMessage as { config?: Record<string, unknown> } | null
+    const vcp = (configMsg?.config?.vcp ?? {}) as Record<string, unknown>
+    const toolbox = (vcp.toolbox ?? {}) as Record<string, unknown>
+
+    const enabled = toolbox.enabled as boolean | undefined
+    const url = toolbox.url as string | undefined
+    const key = toolbox.key as string | undefined
+
+    if (!enabled || !url || !key) {
+      console.log("[Nova New] VCP Bridge: Skipping — not enabled or missing url/key", { enabled, url: !!url, key: !!key })
+      this.postMessage({
+        type: "vcpBridgeStatus",
+        connected: false,
+        logConnected: false,
+        infoConnected: false,
+        error: !enabled ? "VCP Toolbox bridge is not enabled" : !url ? "Missing VCP Toolbox URL" : "Missing VCP_Key",
+      })
+      return
+    }
+
+    // Normalize URL: strip trailing slash
+    const baseWsUrl = url.replace(/\/+$/, "")
+
+    console.log("[Nova New] VCP Bridge: Connecting to", baseWsUrl)
+
+    // Connect to VCPlog
+    try {
+      const logWsUrl = `${baseWsUrl}/VCPlog/VCP_Key=${key}`
+      this.vcpLogWs = new WebSocket(logWsUrl)
+
+      this.vcpLogWs.onopen = () => {
+        console.log("[Nova New] VCP Bridge: VCPlog connected")
+        this.sendBridgeStatus()
+      }
+
+      this.vcpLogWs.onmessage = (event) => {
+        try {
+          const data = JSON.parse(typeof event.data === "string" ? event.data : event.data.toString())
+          this.postMessage({ type: "vcpBridgeLog", data })
+        } catch { /* ignore parse errors */ }
+      }
+
+      this.vcpLogWs.onclose = () => {
+        console.log("[Nova New] VCP Bridge: VCPlog disconnected")
+        this.vcpLogWs = null
+        this.sendBridgeStatus()
+        this.scheduleVcpBridgeReconnect()
+      }
+
+      this.vcpLogWs.onerror = (err) => {
+        console.error("[Nova New] VCP Bridge: VCPlog error", err)
+        this.vcpLogWs?.close()
+      }
+    } catch (err) {
+      console.error("[Nova New] VCP Bridge: Failed to connect VCPlog", err)
+    }
+
+    // Connect to VCPinfo
+    try {
+      const infoWsUrl = `${baseWsUrl}/vcpinfo/VCP_Key=${key}`
+      this.vcpInfoWs = new WebSocket(infoWsUrl)
+
+      this.vcpInfoWs.onopen = () => {
+        console.log("[Nova New] VCP Bridge: VCPinfo connected")
+        this.sendBridgeStatus()
+      }
+
+      this.vcpInfoWs.onmessage = (event) => {
+        try {
+          const data = JSON.parse(typeof event.data === "string" ? event.data : event.data.toString())
+          this.postMessage({ type: "vcpBridgeLog", data })
+        } catch { /* ignore parse errors */ }
+      }
+
+      this.vcpInfoWs.onclose = () => {
+        console.log("[Nova New] VCP Bridge: VCPinfo disconnected")
+        this.vcpInfoWs = null
+        this.sendBridgeStatus()
+      }
+
+      this.vcpInfoWs.onerror = (err) => {
+        console.error("[Nova New] VCP Bridge: VCPinfo error", err)
+        this.vcpInfoWs?.close()
+      }
+    } catch (err) {
+      console.error("[Nova New] VCP Bridge: Failed to connect VCPinfo", err)
+    }
+  }
+
+  private disconnectVcpBridge(): void {
+    if (this.vcpBridgeReconnectTimer) {
+      clearTimeout(this.vcpBridgeReconnectTimer)
+      this.vcpBridgeReconnectTimer = null
+    }
+    if (this.vcpLogWs) {
+      try { this.vcpLogWs.close() } catch { /* ok */ }
+      this.vcpLogWs = null
+    }
+    if (this.vcpInfoWs) {
+      try { this.vcpInfoWs.close() } catch { /* ok */ }
+      this.vcpInfoWs = null
+    }
+    this.vcpBridgeConnected = false
+  }
+
+  private sendBridgeStatus(): void {
+    const logOk = this.vcpLogWs?.readyState === WebSocket.OPEN
+    const infoOk = this.vcpInfoWs?.readyState === WebSocket.OPEN
+    this.vcpBridgeConnected = logOk || infoOk
+    this.postMessage({
+      type: "vcpBridgeStatus",
+      connected: this.vcpBridgeConnected,
+      logConnected: logOk,
+      infoConnected: infoOk,
+    })
+  }
+
+  private scheduleVcpBridgeReconnect(): void {
+    if (this.vcpBridgeReconnectTimer) return
+    this.vcpBridgeReconnectTimer = setTimeout(() => {
+      this.vcpBridgeReconnectTimer = null
+      // Only reconnect if at least one WS is down
+      if (!this.vcpLogWs || !this.vcpInfoWs) {
+        console.log("[Nova New] VCP Bridge: Auto-reconnecting...")
+        void this.connectVcpBridge()
+      }
+    }, 10000)
   }
 
   /**
@@ -1658,20 +1530,6 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     if (!this.httpClient) {
       if (this.cachedConfigMessage) {
         this.postMessage(this.cachedConfigMessage)
-        return
-      }
-      // Backend not available – try to load config from local opencode.json directly
-      try {
-        const localConfig = await this.readLocalConfig()
-        if (Object.keys(localConfig).length > 0) {
-          const message = { type: "configLoaded", config: localConfig, revision: -1 }
-          this.cachedConfigMessage = message
-          this.postMessage(message)
-          console.log("[Nova New] NovaProvider: 📄 Loaded config from local opencode.json (backend unavailable)")
-          return
-        }
-      } catch {
-        // Ignore read errors
       }
       return
     }
@@ -1686,13 +1544,27 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       const revision = await client.getGlobalConfigRevision().catch(() => undefined)
 
       // ── Config backup guard ──────────────────────────────────────
-      // If we got a meaningful config (has provider entries), back it up to
-      // globalState so it survives edge-case data loss on extension updates.
-      const hasProviders = config && typeof config === "object" && config.provider && Object.keys(config.provider).length > 0
-      if (hasProviders) {
+      // Back up the FULL config (provider, mcp, skills, agent, vcp, etc.) to
+      // globalState so it survives extension updates, reinstalls, and edge-case data loss.
+      const hasContent = config && typeof config === "object" && (
+        (config.provider && Object.keys(config.provider).length > 0) ||
+        (config.mcp && Object.keys(config.mcp).length > 0) ||
+        (config.agent && Object.keys(config.agent).length > 0) ||
+        (config.skills && (config.skills.paths?.length || config.skills.urls?.length)) ||
+        (config.vcp && Object.keys(config.vcp).length > 0) ||
+        (config.command && Object.keys(config.command).length > 0) ||
+        (config.instructions && config.instructions.length > 0) ||
+        config.model || config.small_model || config.default_agent
+      )
+      if (hasContent) {
         await this.extensionContext?.globalState.update("nova.configBackup", JSON.stringify(config))
         await this.extensionContext?.globalState.update("nova.configBackupVersion", this.extensionVersion)
-        console.log("[Nova New] NovaProvider: Config backed up to globalState", { providers: Object.keys(config.provider ?? {}).length })
+        console.log("[Nova New] NovaProvider: Full config backed up to globalState", {
+          providers: Object.keys(config.provider ?? {}).length,
+          mcp: Object.keys(config.mcp ?? {}).length,
+          agents: Object.keys(config.agent ?? {}).length,
+          hasVcp: !!config.vcp,
+        })
       } else {
         // Config came back empty — try to restore from backup
         const backupJson = this.extensionContext?.globalState.get<string>("nova.configBackup")
@@ -1700,7 +1572,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
           try {
             const backup = JSON.parse(backupJson)
             const backupVersion = this.extensionContext?.globalState.get<string>("nova.configBackupVersion") ?? "unknown"
-            console.warn("[Nova New] NovaProvider: Config is empty, restoring from backup (version:", backupVersion, ")")
+            console.warn("[Nova New] NovaProvider: Config is empty, restoring FULL backup (version:", backupVersion, ")")
             // Push the backup back to the backend
             await client.updateConfig(backup).catch((err: unknown) => {
               console.error("[Nova New] NovaProvider: Failed to restore config backup:", err)
@@ -1838,51 +1710,46 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * the full merged config back to the webview.
    */
   private async handleUpdateConfig(partial: Record<string, unknown>, expectedRevision?: number): Promise<void> {
-    // ── Primary path: use the CLI backend ──
-    if (this.httpClient) {
-      try {
-        const updated = await this.httpClient.updateConfig(partial, expectedRevision)
-
-        const message = {
-          type: "configUpdated",
-          config: updated.config,
-          revision: updated.revision,
-        }
-        this.cachedConfigMessage = { type: "configLoaded", config: updated.config, revision: updated.revision }
-        this.postMessage(message)
-        await this.fetchAndSendSkills()
-        return
-      } catch (error) {
-        if (error instanceof ConfigConflictError) {
-          this.postMessage({
-            type: "configConflict",
-            error: error.payload.error,
-            code: error.payload.code,
-            config: error.payload.config,
-            revision: error.payload.revision,
-            expectedRevision: error.payload.expectedRevision,
-          })
-          return
-        }
-        console.error("[Nova New] NovaProvider: Failed to update config via backend:", error)
-        // Fall through to local fallback
-      }
+    if (!this.httpClient) {
+      this.postMessage({ type: "error", message: "Not connected to CLI backend" })
+      return
     }
 
-    // ── Fallback: write directly to local opencode.json ──
-    console.log("[Nova New] NovaProvider: ⚡ Using local config fallback (backend unavailable)")
     try {
-      const merged = await this.writeLocalConfig(partial)
-      // Queue for flush when backend reconnects
-      this.pendingConfigUpdates.push(partial)
-      // Notify webview
-      this.cachedConfigMessage = { type: "configLoaded", config: merged, revision: -1 }
-      this.postMessage({ type: "configUpdated", config: merged, revision: -1 })
+      const updated = await this.httpClient.updateConfig(partial, expectedRevision)
+
+      const message = {
+        type: "configUpdated",
+        config: updated.config,
+        revision: updated.revision,
+      }
+      this.cachedConfigMessage = { type: "configLoaded", config: updated.config, revision: updated.revision }
+      this.postMessage(message)
+
+      // ── Sync backup on every successful config write ──────────
+      if (updated.config && typeof updated.config === "object") {
+        await this.extensionContext?.globalState.update("nova.configBackup", JSON.stringify(updated.config))
+        await this.extensionContext?.globalState.update("nova.configBackupVersion", this.extensionVersion)
+        console.log("[Nova New] NovaProvider: Config backup synced after update")
+      }
+
+      await this.fetchAndSendSkills()
     } catch (error) {
-      console.error("[Nova New] NovaProvider: Failed to save config locally:", error)
+      if (error instanceof ConfigConflictError) {
+        this.postMessage({
+          type: "configConflict",
+          error: error.payload.error,
+          code: error.payload.code,
+          config: error.payload.config,
+          revision: error.payload.revision,
+          expectedRevision: error.payload.expectedRevision,
+        })
+        return
+      }
+      console.error("[Nova New] NovaProvider: Failed to update config:", error)
       this.postMessage({
         type: "error",
-        message: error instanceof Error ? error.message : "Failed to save config",
+        message: error instanceof Error ? error.message : "Failed to update config",
       })
     }
   }
@@ -3121,7 +2988,6 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Does NOT kill the server  - that's the connection service's job.
    */
   dispose(): void {
-    this.stopVcpBridgePoll()
     this.unsubscribeEvent?.()
     this.unsubscribeState?.()
     this.unsubscribeNotificationDismiss?.()

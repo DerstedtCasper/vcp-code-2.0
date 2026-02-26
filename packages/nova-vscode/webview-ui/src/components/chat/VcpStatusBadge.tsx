@@ -6,11 +6,12 @@
  * 点击展开抽屉，显示 Token 统计、最近请求历史、VCP Backend 实时状态和快捷操作。
  */
 
-import { Component, Show, createSignal, createMemo, For } from "solid-js"
+import { Component, Show, createSignal, createMemo, For, onCleanup } from "solid-js"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
 import { useServer } from "../../context/server"
 import { useVSCode } from "../../context/vscode"
+import type { VCPBridgeRuntimeStats, VCPBridgeStatus } from "../../types/messages"
 
 interface RunRecord {
   id: string
@@ -60,18 +61,52 @@ export const VcpStatusBadge: Component = () => {
 
   const [drawerOpen, setDrawerOpen] = createSignal(false)
 
-  // novacode_change start — VCP Bridge stats via postMessage (T-10)
-  // Instead of directly connecting to the backend SSE, we request stats through
-  // the extension host which proxies HTTP requests to the CLI backend.
-  const bridgeStats = () => vscode.lastBridgeStats()
-  const bridgeStatus = () => vscode.lastBridgeStatus()
+  // novacode_change start — VCP Bridge status via extension host postMessage
+  const [bridgeStats, setBridgeStats] = createSignal<VCPBridgeRuntimeStats | null>(null)
+  const [bridgeStatus, setBridgeStatus] = createSignal<VCPBridgeStatus | null>(null)
+  const [sseConnected, setSseConnected] = createSignal(false)
+  const [bridgeLogs, setBridgeLogs] = createSignal<VCPBridgeRuntimeStats["recentLogs"]>([])
 
-  // When drawer opens, tell extension host to start polling bridge stats.
-  // When drawer closes, extension host will keep the last state but we don't need live updates.
+  // Listen for bridge status and log messages from extension host
+  const unsubBridge = vscode.onMessage((msg: any) => {
+    if (msg.type === "vcpBridgeStatus") {
+      const connected = !!msg.connected
+      setSseConnected(connected)
+      setBridgeStatus({
+        connected,
+        channels: [msg.logConnected ? "VCPlog" : "", msg.infoConnected ? "VCPinfo" : ""].filter(Boolean),
+        reconnectAttempts: 0,
+        lastError: msg.error,
+      })
+      // Update bridgeStats connected field
+      setBridgeStats((prev) => prev ? { ...prev, connected } : {
+        connected,
+        activePlugins: [],
+        distributedServers: [],
+        recentLogs: [],
+      })
+    } else if (msg.type === "vcpBridgeLog" && msg.data) {
+      // Accumulate logs
+      const log = {
+        level: (msg.data.type === "error" ? "error" : "info") as "info" | "warn" | "error",
+        message: typeof msg.data.data === "string" ? msg.data.data : JSON.stringify(msg.data.data ?? msg.data.message ?? ""),
+        timestamp: Date.now(),
+        plugin: msg.data.source,
+      }
+      setBridgeLogs((prev) => [...prev.slice(-19), log])
+      setBridgeStats((prev) => {
+        const base = prev ?? { connected: true, activePlugins: [], distributedServers: [], recentLogs: [] }
+        return { ...base, recentLogs: [...base.recentLogs.slice(-19), log] }
+      })
+    }
+  })
+  onCleanup(unsubBridge)
+
+  // Request connection when drawer opens, disconnect when closes
   const onDrawerToggle = (open: boolean) => {
     setDrawerOpen(open)
     if (open) {
-      vscode.postMessage({ type: "requestVcpBridgeStats" })
+      vscode.postMessage({ type: "requestVcpBridgeConnect" })
     }
   }
   // novacode_change end
@@ -113,15 +148,6 @@ export const VcpStatusBadge: Component = () => {
 
   const agentLabel = createMemo(() => remoteStatus()?.currentAgent || session.selectedAgent() || "")
 
-  /** VCPBridge (VCPToolBox WS) connection indicator: 🟢 connected, 🔴 disconnected, ⚪ not configured */
-  const vcpBridgeDot = createMemo(() => {
-    const rs = remoteStatus()
-    if (rs?.vcpBridgeConnected === true) return "🟢"
-    if (rs?.vcpBridgeConnected === false) return "🔴"
-    // null / undefined = not configured
-    return null
-  })
-
   // Token 统计（基于当前会话所有消息）
   const tokenStats = createMemo(() => {
     if (remoteStatus()) {
@@ -153,9 +179,6 @@ export const VcpStatusBadge: Component = () => {
         aria-haspopup="dialog"
       >
         <span class="vcp-status-badge-dot">{statusDot()}</span>
-        <Show when={vcpBridgeDot()}>
-          <span class="vcp-status-badge-bridge-dot" title="VCPToolBox">{vcpBridgeDot()}</span>
-        </Show>
         <span class="vcp-status-badge-model">{modelLabel()}</span>
         <Show when={agentLabel()}>
           <span class="vcp-status-badge-sep">·</span>

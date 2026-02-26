@@ -372,12 +372,27 @@ export interface VcpToolRequestConfig {
   denyTools?: string[]
 }
 
+export interface VcpAgentTeamMember {
+  /** 唯一标识 (自动生成) */
+  id: string
+  /** 显示名称 / 角色标识 */
+  name: string
+  /** 使用的 provider ID（从 config.provider 中选择） */
+  providerID?: string
+  /** 使用的 model ID */
+  modelID?: string
+  /** 角色级系统提示词 */
+  rolePrompt?: string
+}
+
 export interface VcpAgentTeamConfig {
   enabled?: boolean
   maxParallel?: number
   waveStrategy?: "auto" | "conservative" | "aggressive"
   requireFileSeparation?: boolean
   handoffFormat?: "summary" | "checklist"
+  /** 参与团队的 agent 成员列表 */
+  members?: VcpAgentTeamMember[]
 }
 
 export interface VcpMemoryPassiveConfig {
@@ -434,7 +449,6 @@ export interface VcpConfig {
 
 export interface Config {
   permission?: PermissionConfig
-  yolo_mode?: boolean
   model?: string
   small_model?: string
   default_agent?: string
@@ -831,8 +845,6 @@ export interface VcpStatusUpdateMessage {
   payload: {
     status: "idle" | "busy" | "error"
     connected: boolean
-    /** VCPToolBox WebSocket connection state (null = VCPBridge not configured) */
-    vcpBridgeConnected?: boolean | null
     currentModel?: string
     currentProfile?: string
     currentAgent?: string
@@ -885,13 +897,6 @@ export interface VCPBridgeStatus {
   reconnectAttempts: number
   lastConnected?: number
   lastError?: string
-}
-
-/** Extension → Webview: pushed VCPBridge runtime stats (plugins, logs, servers, etc.) */
-export interface VcpBridgeStatsMessage {
-  type: "vcpBridgeStats"
-  stats: VCPBridgeRuntimeStats | null
-  status: VCPBridgeStatus | null
 }
 // novacode_change end
 
@@ -1055,7 +1060,6 @@ export type ExtensionMessage =
   | VcpToolRequestResultMessage
   | VcpMemoryRefreshMessage
   | VcpStatusUpdateMessage
-  | VcpBridgeStatsMessage
   | AgentManagerSessionMetaMessage
   | AgentManagerRepoInfoMessage
   | AgentManagerWorktreeSetupMessage
@@ -1073,6 +1077,31 @@ export type ExtensionMessage =
   | MarketplaceProxyResultMessage
   | MarketplaceInstallResultMessage
   | MarketplaceDataMessage
+  | VcpBridgeStatusMessage
+  | VcpBridgeLogMessage
+
+// ── VCP Bridge WebSocket (extension → webview) ─────────────────
+export interface VcpBridgeStatusMessage {
+  type: "vcpBridgeStatus"
+  connected: boolean
+  logConnected: boolean
+  infoConnected: boolean
+  error?: string
+}
+
+export interface VcpBridgeLogMessage {
+  type: "vcpBridgeLog"
+  data: unknown
+}
+
+// ── VCP Bridge WebSocket (webview → extension) ─────────────────
+export interface RequestVcpBridgeConnectMessage {
+  type: "requestVcpBridgeConnect"
+}
+
+export interface RequestVcpBridgeDisconnectMessage {
+  type: "requestVcpBridgeDisconnect"
+}
 
 // ============================================
 // Messages FROM webview TO extension
@@ -1558,11 +1587,6 @@ export interface RequestVariantsMessage {
   type: "requestVariants"
 }
 
-// Request VCPBridge stats from extension (webview → extension)
-export interface RequestVcpBridgeStatsMessage {
-  type: "requestVcpBridgeStats"
-}
-
 export type WebviewMessage =
   | SendMessageRequest
   | AbortRequest
@@ -1638,7 +1662,8 @@ export type WebviewMessage =
   | RequestMarketplaceInstalledMessage
   | RequestMarketplaceRefreshMessage
   | RequestMarketplaceInstallMessage
-  | RequestVcpBridgeStatsMessage
+  | RequestVcpBridgeConnectMessage
+  | RequestVcpBridgeDisconnectMessage
 
 // ============================================
 // VS Code API type

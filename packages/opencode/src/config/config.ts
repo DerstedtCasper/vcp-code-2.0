@@ -1548,9 +1548,6 @@ export namespace Config {
       instructions: z.array(z.string()).optional().describe("Additional instruction files or patterns to include"),
       layout: Layout.optional().describe("@deprecated Always uses stretch layout."),
       permission: Permission.optional(),
-      // novacode_change start - YOLO mode: auto-approve all tool calls
-      yolo_mode: z.boolean().optional().describe("When true, all tool calls are automatically approved (YOLO mode)"),
-      // novacode_change end
       tools: z.record(z.string(), z.boolean()).optional(),
       enterprise: z
         .object({

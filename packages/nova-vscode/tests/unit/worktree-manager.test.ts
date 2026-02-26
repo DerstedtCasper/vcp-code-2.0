@@ -56,12 +56,12 @@ describe("generateBranchName", () => {
     expect(prefix.length).toBeLessThanOrEqual(50)
   })
 
-  it("falls back to 'nova' for empty input", () => {
-    expect(generateBranchName("")).toMatch(/^nova-\d+$/)
+  it("falls back to 'kilo' for empty input", () => {
+    expect(generateBranchName("")).toMatch(/^kilo-\d+$/)
   })
 
-  it("falls back to 'nova' for whitespace-only input", () => {
-    expect(generateBranchName("   ")).toMatch(/^nova-\d+$/)
+  it("falls back to 'kilo' for whitespace-only input", () => {
+    expect(generateBranchName("   ")).toMatch(/^kilo-\d+$/)
   })
 
   it("strips leading and trailing hyphens from sanitized text", () => {

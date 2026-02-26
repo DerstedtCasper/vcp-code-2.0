@@ -60,13 +60,13 @@ const readNumber = (source: unknown, path: string[]): number | undefined => {
 }
 
 const parseInteger = (value: string): number | undefined => {
-  if (value.trim() === "") return undefined
+  if (value.trim() === "") return 0
   const parsed = Number.parseInt(value, 10)
   return Number.isFinite(parsed) ? parsed : undefined
 }
 
 const parseFloatNumber = (value: string): number | undefined => {
-  if (value.trim() === "") return undefined
+  if (value.trim() === "") return 0
   const parsed = Number.parseFloat(value)
   return Number.isFinite(parsed) ? parsed : undefined
 }
@@ -235,15 +235,15 @@ const ProvidersTab: Component = () => {
     return next
   })
 
-  const modelContext = createMemo(() => readNumber(modelMerged(), ["limit", "context"]))
-  const modelOutput = createMemo(() => readNumber(modelMerged(), ["limit", "output"]))
+  const modelContext = createMemo(() => readNumber(modelMerged(), ["limit", "context"]) ?? 0)
+  const modelOutput = createMemo(() => readNumber(modelMerged(), ["limit", "output"]) ?? 0)
   const modelReasoning = createMemo(() => readBoolean(modelMerged(), ["reasoning"]) ?? readBoolean(modelMerged(), ["capabilities", "reasoning"]) ?? false)
   const modelTemperature = createMemo(() => readBoolean(modelMerged(), ["temperature"]) ?? readBoolean(modelMerged(), ["capabilities", "temperature"]) ?? false)
   const modelToolcall = createMemo(() => readBoolean(modelMerged(), ["tool_call"]) ?? readBoolean(modelMerged(), ["capabilities", "toolcall"]) ?? true)
-  const modelInputPrice = createMemo(() => readNumber(modelMerged(), ["cost", "input"]))
-  const modelOutputPrice = createMemo(() => readNumber(modelMerged(), ["cost", "output"]))
-  const modelCacheRead = createMemo(() => readNumber(modelMerged(), ["cost", "cache_read"]) ?? readNumber(modelMerged(), ["cost", "cache", "read"]))
-  const modelCacheWrite = createMemo(() => readNumber(modelMerged(), ["cost", "cache_write"]) ?? readNumber(modelMerged(), ["cost", "cache", "write"]))
+  const modelInputPrice = createMemo(() => readNumber(modelMerged(), ["cost", "input"]) ?? 0)
+  const modelOutputPrice = createMemo(() => readNumber(modelMerged(), ["cost", "output"]) ?? 0)
+  const modelCacheRead = createMemo(() => readNumber(modelMerged(), ["cost", "cache_read"]) ?? readNumber(modelMerged(), ["cost", "cache", "read"]) ?? 0)
+  const modelCacheWrite = createMemo(() => readNumber(modelMerged(), ["cost", "cache_write"]) ?? readNumber(modelMerged(), ["cost", "cache", "write"]) ?? 0)
   const modelImage = createMemo(() => {
     const modalities = readPath(modelMerged(), ["modalities", "input"])
     if (Array.isArray(modalities)) return modalities.includes("image")
@@ -391,14 +391,6 @@ const ProvidersTab: Component = () => {
           setFetchError("")
           setConnectionStatus("success")
           setConnectionLatency(latencyMs ?? null)
-
-          // ── Inject fetched models into global Provider context ──
-          // so that ModelSelectorBase (default model / small model) can see them.
-          const profileID = selectedProfileId()
-          const profileName = selectedProviderName()
-          if (profileID && models.length > 0) {
-            provider.injectCustomModels(profileID, profileName, models)
-          }
         }
         setIsFetchingModels(false)
       }
@@ -565,11 +557,11 @@ const ProvidersTab: Component = () => {
           {/* ── Model info summary (inline, read-only) ───────────── */}
           <Show when={selectedModelId()}>
             <div style={{ "font-size": "11px", color: "var(--text-weak-base, var(--vscode-descriptionForeground))", padding: "6px 0" }}>
-              {language.t("settings.providers.model.context.title")}: {(modelContext() ?? 0).toLocaleString()} tokens
+              {language.t("settings.providers.model.context.title")}: {modelContext().toLocaleString()} tokens
               {modelImage() ? " · ✓ " + language.t("settings.providers.model.image.title") : ""}
               {modelReasoning() ? " · ✓ " + language.t("settings.providers.model.reasoning.title") : ""}
-              {" · " + language.t("settings.providers.model.inputPrice.title")}: ${modelInputPrice() ?? 0} / 1M
-              {" · " + language.t("settings.providers.model.outputPrice.title")}: ${modelOutputPrice() ?? 0} / 1M
+              {" · " + language.t("settings.providers.model.inputPrice.title")}: ${modelInputPrice()} / 1M
+              {" · " + language.t("settings.providers.model.outputPrice.title")}: ${modelOutputPrice()} / 1M
             </div>
           </Show>
 
@@ -599,10 +591,10 @@ const ProvidersTab: Component = () => {
 
                 <Show when={selectedModelId()}>
                   <SettingsRow title={language.t("settings.providers.model.maxOutput.title")} description={language.t("settings.providers.model.maxOutput.description")} isDirty={hasDraft()}>
-                    <TextField value={modelOutput() != null ? String(modelOutput()) : ""} placeholder="0" onChange={(value) => { const parsed = parseInteger(value); if (parsed !== undefined) updateModel({ limit: { output: parsed } }) }} />
+                    <TextField value={String(modelOutput())} onChange={(value) => { const parsed = parseInteger(value); if (parsed !== undefined) updateModel({ limit: { output: parsed } }) }} />
                   </SettingsRow>
                   <SettingsRow title={language.t("settings.providers.model.context.title")} description={language.t("settings.providers.model.context.description")} isDirty={hasDraft()}>
-                    <TextField value={modelContext() != null ? String(modelContext()) : ""} placeholder="0" onChange={(value) => { const parsed = parseInteger(value); if (parsed !== undefined) updateModel({ limit: { context: parsed } }) }} />
+                    <TextField value={String(modelContext())} onChange={(value) => { const parsed = parseInteger(value); if (parsed !== undefined) updateModel({ limit: { context: parsed } }) }} />
                   </SettingsRow>
                   <SettingsRow title={language.t("settings.providers.model.image.title")} description={language.t("settings.providers.model.image.description")} isDirty={hasDraft()}>
                     <Switch checked={modelImage()} onChange={(checked) => updateModel({ modalities: { input: checked ? ["text", "image"] : ["text"], output: ["text"] } })} hideLabel>{language.t("settings.providers.model.image.title")}</Switch>
@@ -635,16 +627,16 @@ const ProvidersTab: Component = () => {
                     <Switch checked={modelToolcall()} onChange={(checked) => updateModel({ tool_call: checked })} hideLabel>{language.t("settings.providers.model.toolCall.title")}</Switch>
                   </SettingsRow>
                   <SettingsRow title={language.t("settings.providers.model.inputPrice.title")} description={language.t("settings.providers.model.inputPrice.description")} isDirty={hasDraft()}>
-                    <TextField value={modelInputPrice() != null ? String(modelInputPrice()) : ""} placeholder="0" onChange={(value) => { const parsed = parseFloatNumber(value); if (parsed !== undefined) updateModel({ cost: { input: parsed } }) }} />
+                    <TextField value={String(modelInputPrice())} onChange={(value) => { const parsed = parseFloatNumber(value); if (parsed !== undefined) updateModel({ cost: { input: parsed } }) }} />
                   </SettingsRow>
                   <SettingsRow title={language.t("settings.providers.model.outputPrice.title")} description={language.t("settings.providers.model.outputPrice.description")} isDirty={hasDraft()}>
-                    <TextField value={modelOutputPrice() != null ? String(modelOutputPrice()) : ""} placeholder="0" onChange={(value) => { const parsed = parseFloatNumber(value); if (parsed !== undefined) updateModel({ cost: { output: parsed } }) }} />
+                    <TextField value={String(modelOutputPrice())} onChange={(value) => { const parsed = parseFloatNumber(value); if (parsed !== undefined) updateModel({ cost: { output: parsed } }) }} />
                   </SettingsRow>
                   <SettingsRow title={language.t("settings.providers.model.cacheReadPrice.title")} description={language.t("settings.providers.model.cacheReadPrice.description")} isDirty={hasDraft()}>
-                    <TextField value={modelCacheRead() != null ? String(modelCacheRead()) : ""} placeholder="0" onChange={(value) => { const parsed = parseFloatNumber(value); if (parsed !== undefined) updateModel({ cost: { cache_read: parsed } }) }} />
+                    <TextField value={String(modelCacheRead())} onChange={(value) => { const parsed = parseFloatNumber(value); if (parsed !== undefined) updateModel({ cost: { cache_read: parsed } }) }} />
                   </SettingsRow>
                   <SettingsRow title={language.t("settings.providers.model.cacheWritePrice.title")} description={language.t("settings.providers.model.cacheWritePrice.description")} isDirty={hasDraft()}>
-                    <TextField value={modelCacheWrite() != null ? String(modelCacheWrite()) : ""} placeholder="0" onChange={(value) => { const parsed = parseFloatNumber(value); if (parsed !== undefined) updateModel({ cost: { cache_write: parsed } }) }} />
+                    <TextField value={String(modelCacheWrite())} onChange={(value) => { const parsed = parseFloatNumber(value); if (parsed !== undefined) updateModel({ cost: { cache_write: parsed } }) }} />
                   </SettingsRow>
                   <SettingsRow title={language.t("settings.providers.model.customHeaders.title")} description={language.t("settings.providers.model.customHeaders.description")} isDirty={hasDraft()} last>
                     <div style={{ width: "100%", display: "grid", gap: "8px" }}>

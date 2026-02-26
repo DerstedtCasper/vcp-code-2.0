@@ -4,7 +4,7 @@
  * @ file mention support, slash commands, context pills, and history navigation.
  */
 
-import { Component, createSignal, createEffect, on, For, Index, onCleanup, Show, untrack } from "solid-js"
+import { Component, createSignal, createEffect, createMemo, on, For, Index, onCleanup, Show, untrack } from "solid-js"
 import { Button } from "@novacode/nova-ui/button"
 import { Dialog } from "@novacode/nova-ui/dialog"
 import { Tooltip } from "@novacode/nova-ui/tooltip"
@@ -15,6 +15,7 @@ import { useSession } from "../../context/session"
 import { useServer } from "../../context/server"
 import { useLanguage } from "../../context/language"
 import { useVSCode } from "../../context/vscode"
+import { useConfig } from "../../context/config"
 import { ModelSelector } from "./ModelSelector"
 import { ModeSwitcher } from "./ModeSwitcher"
 import { ThinkingSelector } from "./ThinkingSelector"
@@ -23,9 +24,9 @@ import { useAtMention, type MentionResult } from "../../hooks/useAtMention"
 import { useImageAttachments, ACCEPTED_IMAGE_TYPES } from "../../hooks/useImageAttachments"
 import { useEnhancePrompt } from "../../hooks/useEnhancePrompt"
 import { fileName, dirName, buildHighlightSegments } from "./prompt-input-utils"
-import { SlashCommandPopover, SLASH_COMMANDS, type SlashCommand } from "./SlashCommandPopover"
+import { SlashCommandPopover, BUILTIN_SLASH_COMMANDS, type SlashCommand } from "./SlashCommandPopover"
 import { ContextPills, type ContextItem } from "./ContextPills"
-import type { FileAttachment } from "../../types/messages"
+import type { FileAttachment, ExtensionMessage, SkillInfo } from "../../types/messages"
 import AgentBehaviourTab from "../settings/AgentBehaviourTab"
 
 const AUTOCOMPLETE_DEBOUNCE_MS = 500
@@ -44,6 +45,7 @@ export const PromptInput: Component = () => {
   const language = useLanguage()
   const vscode = useVSCode()
   const dialog = useDialog()
+  const configCtx = useConfig()
   const mention = useAtMention(vscode, session.agents)
   const imageAttach = useImageAttachments()
 
@@ -69,6 +71,71 @@ export const PromptInput: Component = () => {
   const [slashIndex, setSlashIndex] = createSignal(0)
   const [slashFeedback, setSlashFeedback] = createSignal("")
   const [manualAttachments, setManualAttachments] = createSignal<Array<{ id: string; filename: string; mime: string; url: string }>>([])
+
+  // ── Skills 列表（从 extension host 获取） ─────────────────────────────
+  const [loadedSkills, setLoadedSkills] = createSignal<SkillInfo[]>([])
+
+  // 请求 skills 数据并监听 skillsLoaded 消息
+  {
+    vscode.postMessage({ type: "requestSkills" })
+    const unsubSkills = vscode.onMessage((msg: ExtensionMessage) => {
+      if (msg.type === "skillsLoaded") setLoadedSkills(msg.skills)
+    })
+    onCleanup(unsubSkills)
+  }
+
+  /**
+   * 动态合并所有 slash 命令：builtin + MCP servers + Skills + custom commands
+   */
+  const allSlashCommands = createMemo<SlashCommand[]>(() => {
+    const cmds: SlashCommand[] = [...BUILTIN_SLASH_COMMANDS]
+
+    // ── 从 config.mcp 获取 MCP 服务器 ─────────────────────────────
+    const mcpEntries = configCtx.config().mcp
+    if (mcpEntries) {
+      for (const [name] of Object.entries(mcpEntries)) {
+        cmds.push({
+          id:       `mcp:${name}`,
+          keyword:  name,
+          labelKey: name,
+          descKey:  `MCP server: ${name}`,
+          icon:     "🔌",
+          source:   "mcp",
+        })
+      }
+    }
+
+    // ── 从 skillsLoaded 获取已安装 Skill ──────────────────────────
+    for (const skill of loadedSkills()) {
+      cmds.push({
+        id:       `skill:${skill.name}`,
+        keyword:  skill.name,
+        labelKey: skill.name,
+        descKey:  skill.description || `Skill: ${skill.name}`,
+        icon:     "🧩",
+        source:   "skill",
+      })
+    }
+
+    // ── 从 config.command 获取自定义命令模板 ───────────────────────
+    const cmdEntries = configCtx.config().command
+    if (cmdEntries) {
+      for (const [name, cmdConfig] of Object.entries(cmdEntries)) {
+        // 避免与 builtin 关键字冲突
+        if (BUILTIN_SLASH_COMMANDS.some((b) => b.keyword === name)) continue
+        cmds.push({
+          id:       `command:${name}`,
+          keyword:  name,
+          labelKey: name,
+          descKey:  cmdConfig.description || `Command: ${name}`,
+          icon:     "⚙️",
+          source:   "command",
+        })
+      }
+    }
+
+    return cmds
+  })
 
   // ── 上下文 Pills 状态 ────────────────────────────────────────────────
   const [contextItems, setContextItems] = createSignal<ContextItem[]>([])
@@ -352,6 +419,24 @@ export const PromptInput: Component = () => {
   const executeSlashCommand = (cmd: SlashCommand) => {
     const currentText = text()
     setShowSlash(false)
+
+    // ── MCP / Skill / Command 来源：将命令作为消息直接发送 ─────────
+    if (cmd.source === "mcp" || cmd.source === "skill" || cmd.source === "command") {
+      // 清空输入框，将 "/<keyword> " 后的文本作为附加内容
+      const afterSlash = currentText.replace(/^\/\S*\s*/, "").trim()
+      setText("")
+      if (textareaRef) {
+        textareaRef.value = ""
+        adjustHeight()
+      }
+      // 将 slash 命令作为消息内容发送给 agent
+      const prompt = afterSlash ? `/${cmd.keyword} ${afterSlash}` : `/${cmd.keyword}`
+      session.sendMessage(prompt)
+      showCommandFeedback(`✓ /${cmd.keyword}`)
+      return
+    }
+
+    // ── Builtin 命令处理 ──────────────────────────────────────────
     if (cmd.id !== "enhance") {
       setText("")
       if (textareaRef) {
@@ -389,9 +474,10 @@ export const PromptInput: Component = () => {
   const handleKeyDown = (e: KeyboardEvent) => {
     // ── Slash 命令面板键盘处理 ──────────────────────────────────────
     if (showSlash()) {
-      const filtered = SLASH_COMMANDS.filter((c) => {
+      const cmds = allSlashCommands()
+      const filtered = cmds.filter((c) => {
         const q = slashQuery().toLowerCase()
-        return !q || c.keyword.startsWith(q) || c.keyword.includes(q)
+        return !q || c.keyword.toLowerCase().startsWith(q) || c.keyword.toLowerCase().includes(q)
       })
       if (e.key === "ArrowDown") {
         e.preventDefault()
@@ -583,6 +669,7 @@ export const PromptInput: Component = () => {
         <SlashCommandPopover
           query={slashQuery()}
           activeIndex={slashIndex()}
+          commands={allSlashCommands()}
           onSelect={executeSlashCommand}
           onHover={setSlashIndex}
         />
