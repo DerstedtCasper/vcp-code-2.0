@@ -1,88 +1,160 @@
 <p align="center">
-  <a href="https://marketplace.visualstudio.com/items?itemName=novacode.Kilo-Code"><img src="https://img.shields.io/badge/VS_Code_Marketplace-007ACC?style=flat&logo=visualstudiocode&logoColor=white" alt="VS Code Marketplace"></a>
-  <a href="https://x.com/novacode"><img src="https://img.shields.io/badge/novacode-000000?style=flat&logo=x&logoColor=white" alt="X (Twitter)"></a>
-  <a href="https://blog.kilo.ai"><img src="https://img.shields.io/badge/Blog-555?style=flat&logo=substack&logoColor=white" alt="Substack Blog"></a>
-  <a href="https://kilo.ai/discord"><img src="https://img.shields.io/badge/Join%20Discord-5865F2?style=flat&logo=discord&logoColor=white" alt="Discord"></a>
-  <a href="https://www.reddit.com/r/novacode/"><img src="https://img.shields.io/badge/Join%20r%2Fnovacode-D84315?style=flat&logo=reddit&logoColor=white" alt="Reddit"></a>
+  <img src="assets/icons/nova-dark.svg" width="120" alt="VCP Code Logo" />
 </p>
 
-# 🚀 Kilo
-
-> Kilo is the all-in-one agentic engineering platform. Build, ship, and iterate faster with the most popular open source coding agent.
-> #1 on OpenRouter. 1.5M+ Nova Coders. 25T+ tokens processed
-
-- ✨ Generate code from natural language
-- ✅ Checks its own work
-- 🧪 Run terminal commands
-- 🌐 Automate the browser
-- ⚡ Inline autocomplete suggestions
-- 🤖 Latest AI models
-- 🎁 API keys optional
-- 💡 **Get $20 in bonus credits when you top-up for the first time** Credits can be used with 500+ models like Gemini 3.1 Pro, Claude 4.6 Sonnet & Opus, and GPT-5.2
+<h1 align="center">VCP Code 2.0</h1>
 
 <p align="center">
-  <img src="https://media.githubusercontent.com/media/Kilo-Org/novacode/main/nova.gif" width="100%" />
+  <strong>一站式 AI 编码智能体 — 基于 Nova 架构</strong>
 </p>
 
-## Quick Links
+<p align="center">
+  <a href="https://github.com/DerstedtCasper/vcp-code-2.0/releases/latest"><img src="https://img.shields.io/github/v/release/DerstedtCasper/vcp-code-2.0?style=flat&label=Release&color=blue" alt="Latest Release"></a>
+  <a href="https://github.com/DerstedtCasper/vcp-code-2.0"><img src="https://img.shields.io/github/stars/DerstedtCasper/vcp-code-2.0?style=flat" alt="GitHub Stars"></a>
+  <a href="https://github.com/DerstedtCasper/vcp-code-2.0/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=flat" alt="MIT License"></a>
+</p>
 
-- [VS Code Marketplace](https://kilo.ai/vscode-marketplace?utm_source=Readme) (download)
-- Install CLI: `npm install -g @novacode/cli`
-- [Official Kilo.ai Home page](https://kilo.ai) (learn more)
+---
 
-## Key Features
+## 简介
 
-- **Code Generation:** Kilo can generate code using natural language.
-- **Inline Autocomplete:** Get intelligent code completions as you type, powered by AI.
-- **Task Automation:** Kilo can automate repetitive coding tasks to save time.
-- **Automated Refactoring:** Kilo can refactor and improve existing code efficiently.
-- **MCP Server Marketplace**: Kilo can easily find, and use MCP servers to extend the agent capabilities.
-- **Multi Mode**: Plan with Architect, Code with Coder, and Debug with Debugger, and make your own custom modes.
+**VCP Code 2.0** 是一个功能丰富的 VS Code AI 编码助手扩展，基于开源项目 [Kilo Code](https://github.com/Kilo-Org/kilocode) 进行深度定制与品牌重构（Nova 架构）。它将大语言模型的能力直接嵌入编辑器，帮助开发者更高效地编写、重构、调试和理解代码。
 
-## Get Started in Visual Studio Code
+### 核心能力
 
-1. Install the Nova Code extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=novacode.Kilo-Code).
-2. Create your account to access 500+ cutting-edge AI models including Gemini 3 Pro, Claude 4.5 Sonnet & Opus, and GPT-5 – with transparent pricing that matches provider rates exactly.
-3. Start coding with AI that adapts to your workflow. Watch our quick-start guide to see Kilo in action:
+| 能力 | 说明 |
+|------|------|
+| 🧠 **多模型支持** | 接入 500+ AI 模型（Claude、GPT、Gemini、DeepSeek 等），自由切换 |
+| 💬 **对话式编码** | 在侧边栏与 AI 对话，生成代码、解释逻辑、排查问题 |
+| ⚡ **内联自动补全** | 基于上下文的智能代码补全，边写边提示 |
+| 🔀 **多 Agent 模式** | Code / Architect / Ask / Debug / Orchestrator，按任务切换最佳策略 |
+| 📎 **丰富上下文** | @文件、@目录、@剪贴板、@git、@终端 — 精确控制 AI 看到的信息 |
+| 🔧 **工具调用** | AI 可自主读写文件、执行终端命令、搜索代码库 |
+| 🌐 **浏览器自动化** | 通过 Playwright MCP 实现网页交互与测试 |
+| ✨ **提示词增强** | 一键将简单描述转化为结构化的高质量 Prompt |
+| 📊 **状态与统计** | 实时显示连接状态、Token 消耗和运行历史 |
 
-[![Watch the video](https://img.youtube.com/vi/pqGfYXgrhig/maxresdefault.jpg)](https://youtu.be/pqGfYXgrhig)
+---
 
-## Get Started with the CLI
+## 快速开始
+
+### 方式一：安装 VSIX
+
+1. 前往 [Releases](https://github.com/DerstedtCasper/vcp-code-2.0/releases/latest) 下载最新的 `.vsix` 文件
+2. 在 VS Code 中：`Ctrl+Shift+P` → `Extensions: Install from VSIX...`
+3. 选择下载的 `.vsix` 文件，安装完成后重载窗口
+4. 在侧边栏找到 VCP Code 图标，开始使用
+
+### 方式二：从源码构建
 
 ```bash
-# npm
-npm install -g @novacode/cli
+# 克隆仓库
+git clone https://github.com/DerstedtCasper/vcp-code-2.0.git
+cd vcp-code-2.0
 
-# Or run directly with npx
-npx @novacode/cli
+# 安装依赖（需要 Bun）
+bun install
+
+# 构建扩展
+cd packages/nova-vscode
+bun run package
+
+# 打包 VSIX
+npx @vscode/vsce package --no-dependencies --allow-missing-repository
 ```
 
-Then run `kilo` in any project directory to start.
+---
 
-### Autonomous Mode (CI/CD)
+## 项目架构
 
-Use the `--auto` flag with `kilo run` to enable fully autonomous operation without user interaction. This is ideal for CI/CD pipelines and automated workflows:
-
-```bash
-kilo run --auto "run tests and fix any failures"
+```
+vcp-code-2.0/
+├── packages/
+│   ├── nova-vscode/      ← VS Code 扩展主包（SolidJS WebView + TS 后端）
+│   ├── nova-ui/          ← 共享 UI 组件库
+│   ├── nova-i18n/        ← 国际化覆盖层（16 种语言）
+│   ├── nova-gateway/     ← API 网关客户端
+│   ├── nova-telemetry/   ← 遥测服务
+│   ├── nova-docs/        ← 文档站
+│   ├── opencode/         ← 核心后端（CLI + Server）
+│   ├── app/              ← 新架构前端（Desktop/Web）
+│   └── desktop/          ← Tauri 桌面应用
+└── 构建工具: Bun + Turbo + esbuild
 ```
 
-**Important:** The `--auto` flag disables all permission prompts and allows the agent to execute any action without confirmation. Only use this in trusted environments like CI/CD pipelines.
+---
 
-## Contributing
+## 特色功能
 
-We welcome contributions from developers, writers, and enthusiasts!
-To get started, please read our [Contributing Guide](/CONTRIBUTING.md). It includes details on setting up your environment, coding standards, types of contribution and how to submit pull requests.
+### 🎯 Slash 命令
 
-## Code of Conduct
+在输入框输入 `/` 快速执行操作：
 
-Our community is built on respect, inclusivity, and collaboration. Please review our [Code of Conduct](/CODE_OF_CONDUCT.md) to understand the expectations for all contributors and community members.
+| 命令 | 功能 |
+|------|------|
+| `/new` | 新建会话 |
+| `/clear` | 清除当前对话 |
+| `/model` | 切换模型 |
+| `/mode` | 切换 Agent 模式 |
+| `/compact` | 压缩上下文 |
+| `/enhance` | AI 增强提示词 |
 
-## License
+### 📌 上下文 @提及
 
-This project is licensed under the MIT License.
-You’re free to use, modify, and distribute this code, including for commercial purposes as long as you include proper attribution and license notices. See [License](/LICENSE).
+在输入框输入 `@` 精确添加上下文：
 
-### Where did Kilo CLI come from?
+- `@文件名` — 引用项目文件
+- `@目录/` — 引用整个目录
+- `@clipboard` — 引用剪贴板内容
+- `@git` — 引用 Git 变更
+- `@terminal` — 引用终端输出
+- `@problems` — 引用诊断问题
 
-Kilo CLI is a fork of [OpenCode](https://github.com/anomalyco/opencode), enhanced to work within the Kilo agentic engineering platform.
+### 🔀 Agent 模式
+
+| 模式 | 用途 | 典型场景 |
+|------|------|---------|
+| **Code** | 智能编码 | 写功能、修 Bug、重构 |
+| **Architect** | 系统设计 | 技术方案、架构评审 |
+| **Ask** | 知识问答 | 解释代码、学习概念 |
+| **Debug** | 调试专家 | 定位错误、分析日志 |
+| **Orchestrator** | 自动编排 | 复杂多步骤任务 |
+
+支持自定义模式：配置专属的系统提示、工具权限和审批策略。
+
+---
+
+## 与上游的关系
+
+VCP Code 2.0 是 [Kilo Code](https://github.com/Kilo-Org/kilocode) 的独立分支，进行了以下定制：
+
+- **品牌重构**：全面从 Kilo 品牌脱钩为 Nova/VCP 品牌
+- **前端交互增强**：Slash 命令、多类型上下文提及、模型详情卡片、Agent 能力面板、状态徽章等
+- **中文本地化**：优化中文翻译覆盖
+
+上游仓库以 `upstream` remote 保留，便于同步社区更新。
+
+---
+
+## 技术栈
+
+| 组件 | 技术 |
+|------|------|
+| 运行时 | Bun 1.3.9 |
+| 构建 | Turbo 2.5.6 + esbuild |
+| 前端框架 | SolidJS 1.9 |
+| 语言 | TypeScript 5.8 |
+| 扩展宿主 | VS Code Extension API |
+| 桌面端 | Tauri |
+
+---
+
+## 贡献
+
+欢迎提交 Issue 和 Pull Request。
+
+开发前请阅读 [Contributing Guide](/CONTRIBUTING.md)，了解环境搭建和代码规范。
+
+## 许可证
+
+本项目基于 [MIT License](/LICENSE) 开源。
