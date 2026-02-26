@@ -10,6 +10,7 @@ import { Component, Show, createSignal, createMemo, For } from "solid-js"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
 import { useServer } from "../../context/server"
+import { useVSCode } from "../../context/vscode"
 
 interface RunRecord {
   id: string
@@ -55,34 +56,55 @@ export const VcpStatusBadge: Component = () => {
   const session = useSession()
   const server = useServer()
   const language = useLanguage()
+  const vscode = useVSCode()
 
   const [drawerOpen, setDrawerOpen] = createSignal(false)
 
   const isBusy = () => session.status() === "busy"
   const isConnected = () => server.isConnected()
+  const remoteStatus = () => vscode.lastVcpStatus()
 
   const statusClass = createMemo(() => {
+    if (remoteStatus()) {
+      if (!remoteStatus()!.connected || remoteStatus()!.status === "error") return "vcp-status-badge--error"
+      if (remoteStatus()!.status === "busy") return "vcp-status-badge--busy"
+      return "vcp-status-badge--idle"
+    }
     if (!isConnected()) return "vcp-status-badge--error"
     if (isBusy()) return "vcp-status-badge--busy"
     return "vcp-status-badge--idle"
   })
 
   const statusDot = createMemo(() => {
+    if (remoteStatus()) {
+      if (!remoteStatus()!.connected || remoteStatus()!.status === "error") return "🔴"
+      if (remoteStatus()!.status === "busy") return "🟡"
+      return "🟢"
+    }
     if (!isConnected()) return "🔴"
     if (isBusy()) return "🟡"
     return "🟢"
   })
 
   const modelLabel = createMemo(() => {
+    if (remoteStatus()?.currentModel) {
+      return remoteStatus()!.currentModel!.split("/").pop() ?? remoteStatus()!.currentModel!
+    }
     const sel = session.selected()
     if (!sel) return language.t("status.badge.noModel")
     return sel.modelID.split("/").pop() ?? sel.modelID
   })
 
-  const agentLabel = createMemo(() => session.selectedAgent() || "")
+  const agentLabel = createMemo(() => remoteStatus()?.currentAgent || session.selectedAgent() || "")
 
   // Token 统计（基于当前会话所有消息）
   const tokenStats = createMemo(() => {
+    if (remoteStatus()) {
+      return {
+        total: remoteStatus()!.tokens.total,
+        cost: session.totalCost(),
+      }
+    }
     // 通过 totalCost 已有 cost，直接使用 contextUsage 得到 token 总数
     const usage = session.contextUsage()
     const cost = session.totalCost()

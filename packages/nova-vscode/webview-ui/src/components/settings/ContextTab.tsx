@@ -11,6 +11,12 @@ import { useVSCode } from "../../context/vscode"
 import type { Config, ExtensionMessage, MemoryAtomicItem, MemoryFolderDoc, MemoryProfile } from "../../types/messages"
 import SettingsRow from "./SettingsRow"
 
+type VcpMemory = NonNullable<NonNullable<Config["vcp"]>["memory"]>
+type VcpMemoryPassive = NonNullable<VcpMemory["passive"]>
+type VcpMemoryWriter = NonNullable<VcpMemory["writer"]>
+type VcpMemoryRetrieval = NonNullable<VcpMemory["retrieval"]>
+type VcpMemoryRefresh = NonNullable<VcpMemory["refresh"]>
+
 const ContextTab: Component = () => {
   const { config, updateConfig } = useConfig()
   const language = useLanguage()
@@ -29,6 +35,11 @@ const ContextTab: Component = () => {
   const [previewRemovedIDs, setPreviewRemovedIDs] = createSignal<string[]>([])
   const [editingID, setEditingID] = createSignal<string | undefined>(undefined)
   const [editingText, setEditingText] = createSignal("")
+  const [indexStatus, setIndexStatus] = createSignal<"idle" | "indexing" | "error">("idle")
+  const [indexIndexedFiles, setIndexIndexedFiles] = createSignal(0)
+  const [indexTotalFiles, setIndexTotalFiles] = createSignal(0)
+  const [indexCurrentFile, setIndexCurrentFile] = createSignal("")
+  const [indexLastUpdated, setIndexLastUpdated] = createSignal<string | undefined>(undefined)
 
   const patterns = () => config().watcher?.ignore ?? []
   const vcpMemory = () => config().vcp?.memory ?? {}
@@ -36,6 +47,7 @@ const ContextTab: Component = () => {
   const writer = () => vcpMemory().writer ?? {}
   const retrieval = () => vcpMemory().retrieval ?? {}
   const refresh = () => vcpMemory().refresh ?? {}
+  const indexConfig = () => config().experimental?.codebaseIndex ?? {}
 
   const nextRequestID = (prefix: string) => {
     return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -49,6 +61,25 @@ const ContextTab: Component = () => {
   const normalizeFloat = (value: string): number | undefined => {
     const parsed = Number.parseFloat(value.trim())
     return Number.isFinite(parsed) ? parsed : undefined
+  }
+
+  const normalizeList = (value: string): string[] => {
+    return value
+      .split(/\r?\n|,/)
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0)
+  }
+
+  const updateIndexConfig = (partial: Partial<NonNullable<NonNullable<Config["experimental"]>["codebaseIndex"]>>) => {
+    updateConfig({
+      experimental: {
+        ...(config().experimental ?? {}),
+        codebaseIndex: {
+          ...(indexConfig() ?? {}),
+          ...partial,
+        },
+      },
+    })
   }
 
   const updateMemory = (partial: VcpMemory) => {
@@ -125,6 +156,28 @@ const ContextTab: Component = () => {
     vscode.postMessage({ type: "requestMemoryOverview", requestID, limit: 30 })
   }
 
+  const requestCodebaseIndexStatus = () => {
+    vscode.postMessage({ type: "requestCodebaseIndexStatus" })
+  }
+
+  const triggerCodebaseReindex = () => {
+    setIndexStatus("indexing")
+    setIndexCurrentFile("")
+    vscode.postMessage({ type: "reindexCodebase" })
+    window.setTimeout(() => {
+      if (indexStatus() === "indexing") {
+        setIndexStatus("idle")
+        setIndexLastUpdated(new Date().toISOString())
+      }
+    }, 2000)
+  }
+
+  const indexProgressPercent = () => {
+    const total = indexTotalFiles()
+    if (total <= 0) return 0
+    return Math.max(0, Math.min(100, Math.round((indexIndexedFiles() / total) * 100)))
+  }
+
   const searchMemory = () => {
     const query = memoryQuery().trim()
     if (!query) return
@@ -180,6 +233,21 @@ const ContextTab: Component = () => {
   }
 
   const unsubscribe = vscode.onMessage((message: ExtensionMessage) => {
+    if (message.type === "codebaseIndexStatus") {
+      setIndexStatus(message.status)
+      setIndexIndexedFiles(message.indexedFiles)
+      setIndexTotalFiles(message.totalFiles)
+      setIndexLastUpdated(message.lastUpdated)
+      return
+    }
+    if (message.type === "codebaseIndexProgress") {
+      setIndexStatus(message.status)
+      setIndexIndexedFiles(message.indexedFiles)
+      setIndexTotalFiles(message.totalFiles)
+      setIndexCurrentFile(message.currentFile ?? "")
+      if (message.status === "idle") setIndexLastUpdated(new Date().toISOString())
+      return
+    }
     if (message.type === "memoryOverview") {
       setMemoryTotal(message.data.atomicTotal)
       setMemoryProfile(message.data.profile)
@@ -206,11 +274,91 @@ const ContextTab: Component = () => {
     }
   })
 
-  onMount(() => requestMemoryOverview())
+  onMount(() => {
+    requestMemoryOverview()
+    requestCodebaseIndexStatus()
+  })
   onCleanup(unsubscribe)
 
   return (
     <div>
+      <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>0) 代码库索引（状态 / 进度 / 配置）</h4>
+      <Card style={{ "margin-bottom": "16px" }}>
+        <div style={{ display: "flex", "justify-content": "space-between", "align-items": "center", "margin-bottom": "8px" }}>
+          <div style={{ display: "grid", gap: "2px" }}>
+            <span style={{ "font-size": "12px" }}>
+              状态: {indexStatus()} | 已索引 {indexIndexedFiles()} / {indexTotalFiles()}
+            </span>
+            <Show when={indexLastUpdated()}>
+              <span style={{ "font-size": "11px", color: "var(--text-weak-base, var(--vscode-descriptionForeground))" }}>
+                上次更新: {indexLastUpdated()}
+              </span>
+            </Show>
+          </div>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <Button size="small" variant="ghost" onClick={requestCodebaseIndexStatus}>
+              刷新状态
+            </Button>
+            <Button size="small" onClick={triggerCodebaseReindex}>
+              重新索引
+            </Button>
+          </div>
+        </div>
+
+        <div style={{ height: "8px", background: "var(--vscode-editorWidget-border, rgba(128,128,128,0.2))", "border-radius": "999px", overflow: "hidden", "margin-bottom": "6px" }}>
+          <div
+            style={{
+              width: `${indexProgressPercent()}%`,
+              height: "100%",
+              background: indexStatus() === "error" ? "#ef4444" : "#3b82f6",
+              transition: "width 150ms ease",
+            }}
+          />
+        </div>
+
+        <Show when={indexCurrentFile()}>
+          <div style={{ "font-size": "11px", color: "var(--text-weak-base, var(--vscode-descriptionForeground))", "margin-bottom": "8px" }}>
+            当前文件: {indexCurrentFile()}
+          </div>
+        </Show>
+
+        <SettingsRow title="包含路径" description="每行一个 glob，索引时优先包含。">
+          <TextField
+            multiline
+            value={(indexConfig().include ?? []).join("\n")}
+            onChange={(val) => updateIndexConfig({ include: normalizeList(val) })}
+          />
+        </SettingsRow>
+        <SettingsRow title="排除路径" description="每行一个 glob，索引时忽略。">
+          <TextField
+            multiline
+            value={(indexConfig().exclude ?? []).join("\n")}
+            onChange={(val) => updateIndexConfig({ exclude: normalizeList(val) })}
+          />
+        </SettingsRow>
+        <SettingsRow title="最大文件大小 (KB)" description="超过该值的文件将被跳过。">
+          <TextField
+            value={indexConfig().maxFileSizeKb?.toString() ?? ""}
+            onChange={(val) => updateIndexConfig({ maxFileSizeKb: normalizeInteger(val) })}
+          />
+        </SettingsRow>
+        <SettingsRow title="索引存储路径" description="默认使用扩展全局存储目录。">
+          <TextField
+            value={indexConfig().storagePath ?? ""}
+            onChange={(val) => updateIndexConfig({ storagePath: val.trim() || undefined })}
+          />
+        </SettingsRow>
+        <SettingsRow title="自动索引" description="项目变化后自动增量更新索引。" last>
+          <Switch
+            checked={indexConfig().autoIndex ?? true}
+            onChange={(checked) => updateIndexConfig({ autoIndex: checked })}
+            hideLabel
+          >
+            自动索引
+          </Switch>
+        </SettingsRow>
+      </Card>
+
       <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>1) {language.t("settings.context.title")} / 基础压缩</h4>
       <Card style={{ "margin-bottom": "12px" }}>
         <SettingsRow
@@ -508,8 +656,3 @@ const ContextTab: Component = () => {
 }
 
 export default ContextTab
-  type VcpMemory = NonNullable<NonNullable<Config["vcp"]>["memory"]>
-  type VcpMemoryPassive = NonNullable<VcpMemory["passive"]>
-  type VcpMemoryWriter = NonNullable<VcpMemory["writer"]>
-  type VcpMemoryRetrieval = NonNullable<VcpMemory["retrieval"]>
-  type VcpMemoryRefresh = NonNullable<VcpMemory["refresh"]>

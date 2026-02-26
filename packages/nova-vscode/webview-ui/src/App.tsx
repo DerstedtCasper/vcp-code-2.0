@@ -1,4 +1,4 @@
-﻿import { Component, createSignal, createMemo, Switch, Match, Show, onMount, onCleanup } from "solid-js"
+import { Component, createSignal, createMemo, Switch, Match, Show, onMount, onCleanup } from "solid-js"
 import { ThemeProvider } from "@novacode/nova-ui/theme"
 import { DialogProvider } from "@novacode/nova-ui/context/dialog"
 import { MarkedProvider } from "@novacode/nova-ui/context/marked"
@@ -290,11 +290,11 @@ const AppContent: Component = () => {
     const handler = (event: MessageEvent) => {
       const message = event.data
       if (message?.type === "action" && message.action) {
-        console.log("[Kilo New] App: 馃幀 action:", message.action)
+        console.log("[Nova New] App: 🎬 action:", message.action)
         handleViewAction(message.action)
       }
       if (message?.type === "navigate" && message.view && VALID_VIEWS.has(message.view)) {
-        console.log("[Kilo New] App: 馃Л navigate:", message.view)
+        console.log("[Nova New] App: 🧭 navigate:", message.view)
         setCurrentView(message.view as ViewType)
       }
     }
