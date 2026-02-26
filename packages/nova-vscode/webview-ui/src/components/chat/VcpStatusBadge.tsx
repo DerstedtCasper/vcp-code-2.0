@@ -207,8 +207,6 @@ export const VcpStatusBadge: Component = () => {
         classList={{ [statusClass()]: true }}
         onClick={() => onDrawerToggle(!drawerOpen())}
         title={drawerOpen() ? language.t("status.drawer.hide") : language.t("status.drawer.show")}
-        // eslint-disable-next-line jsx-a11y/aria-proptypes
-        aria-expanded={drawerOpen() as boolean | "true" | "false"}
         aria-haspopup="dialog"
       >
         <span class="vcp-status-badge-dot">{statusDot()}</span>

@@ -139,8 +139,12 @@ export namespace MarketplaceClient {
         return undefined
       }
       const text = await response.text()
-      const parsed = parseYAML(text) as T
-      return parsed
+      const parsed = parseYAML(text)
+      // Kilo Marketplace YAML format wraps data in { items: [...] }
+      if (parsed && typeof parsed === "object" && "items" in parsed && Array.isArray((parsed as any).items)) {
+        return (parsed as any).items as T
+      }
+      return parsed as T
     } catch (err) {
       log.error("failed to parse marketplace YAML", { url, label, err })
       return undefined

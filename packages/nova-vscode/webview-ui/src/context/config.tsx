@@ -1,12 +1,21 @@
 /**
- * Config context
+ * Config context — lightweight, Kilo-style
+ * ==========================================
  * Manages backend configuration state (permissions, agents, providers, etc.)
  * and exposes an updateConfig method to apply partial updates.
+ *
+ * Design (matches Kilo Code upstream):
+ *   1. Optimistic local merge via shallow spread (instant UI feedback)
+ *   2. Fire-and-forget postMessage to extension for persistence
+ *   3. Backend pushes authoritative configUpdated/configLoaded; we always accept it
+ *   4. Scoped drafts for tabs with a Save/Discard button (AgentBehaviour, etc.)
+ *
+ * NO CAS queue, NO revision tracking, NO inflight promise — zero async blocking.
  */
 
 import { createContext, useContext, createSignal, onCleanup, ParentComponent, Accessor, createMemo } from "solid-js"
 import { useVSCode } from "./vscode"
-import type { Config, ConfigConflictMessage, ConfigUpdatedMessage, ExtensionMessage } from "../types/messages"
+import type { Config, ExtensionMessage } from "../types/messages"
 
 interface ConfigContextValue {
   config: Accessor<Config>
@@ -24,11 +33,30 @@ interface ConfigContextValue {
 const ConfigContext = createContext<ConfigContextValue>()
 const ConfigScopeContext = createContext<Accessor<string | undefined>>()
 
+// ── helpers ──────────────────────────────────────────────────────────
 const hasPatch = (value: unknown): boolean => {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false
   return Object.keys(value).length > 0
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === "object" && !Array.isArray(value)
+
+/** Deep merge (right wins). Used only for scoped drafts accumulation. */
+const deepMerge = <T extends Record<string, unknown>>(left: T, right: Partial<T>): T => {
+  const next: Record<string, unknown> = { ...left }
+  for (const [key, value] of Object.entries(right) as [string, unknown][]) {
+    if (value === undefined) continue
+    const prev = next[key]
+    next[key] = isRecord(prev) && isRecord(value) ? deepMerge(prev, value) : value
+  }
+  return next as T
+}
+
+const mergePatch = (left: Partial<Config>, right: Partial<Config>): Partial<Config> =>
+  deepMerge(left as Record<string, unknown>, right as Record<string, unknown>) as Partial<Config>
+
+// ── providers ────────────────────────────────────────────────────────
 export const ConfigScopeProvider: ParentComponent<{ scopeID: string }> = (props) => {
   const value = () => props.scopeID
   return <ConfigScopeContext.Provider value={value}>{props.children}</ConfigScopeContext.Provider>
@@ -39,110 +67,29 @@ export const ConfigProvider: ParentComponent = (props) => {
 
   const [config, setConfig] = createSignal<Config>({})
   const [loading, setLoading] = createSignal(true)
-  const [revision, setRevision] = createSignal<number | undefined>(undefined)
   const [scopedDrafts, setScopedDrafts] = createSignal<Record<string, Partial<Config>>>({})
-  let staged: Partial<Config> | null = null
-  let running = false
-  let nextMutationID = 0
-  let inflight:
-    | {
-        mutationID: number
-        resolve: (value: ConfigUpdatedMessage) => void
-        reject: (reason: ConfigConflictMessage | Error) => void
-      }
-    | null = null
 
-  const isRecord = (value: unknown): value is Record<string, unknown> =>
-    !!value && typeof value === "object" && !Array.isArray(value)
-
-  const mergeConfig = <T extends Record<string, unknown>>(left: T, right: Partial<T>): T => {
-    const next: Record<string, unknown> = { ...left }
-    for (const [key, value] of Object.entries(right) as [string, unknown][]) {
-      if (value === undefined) continue
-      const prev = next[key]
-      next[key] =
-        isRecord(prev) && isRecord(value)
-          ? mergeConfig(prev, value)
-          : value
-    }
-    return next as T
+  // ── core update: optimistic + fire-and-forget ────────────────────
+  function updateConfig(partial: Partial<Config>) {
+    // 1. Optimistic: shallow merge for instant UI feedback
+    setConfig((prev) => ({ ...prev, ...partial }))
+    // 2. Send to extension for persistence (fire-and-forget)
+    vscode.postMessage({ type: "updateConfig", config: partial })
   }
 
-  const mergePatch = (left: Partial<Config>, right: Partial<Config>): Partial<Config> =>
-    mergeConfig(left as Record<string, unknown>, right as Record<string, unknown>) as Partial<Config>
-
-  const applyLocalConfig = (partial: Partial<Config>) => {
-    setConfig((prev) => mergeConfig(prev as Record<string, unknown>, partial as Record<string, unknown>) as Config)
-  }
-
-  const waitConfigMutation = (mutationID: number) =>
-    new Promise<ConfigUpdatedMessage>((resolve, reject) => {
-      inflight = { mutationID, resolve, reject }
-    })
-
-  const sendNext = async () => {
-    if (!staged) {
-      running = false
-      return
-    }
-
-    const patch = staged
-    staged = null
-    const mutationID = ++nextMutationID
-    const expectedRevision = revision()
-    console.debug("[Nova New] Config queue: send", { mutationID, expectedRevision, hasPending: !!staged })
-    const waiter = waitConfigMutation(mutationID)
-    vscode.postMessage({
-      type: "updateConfig",
-      config: patch,
-      expectedRevision,
-    })
-
-    try {
-      const updated = await waiter
-      setConfig(updated.config)
-      setRevision(updated.revision ?? revision())
-    } catch (error) {
-      if (typeof error === "object" && error !== null && "type" in error && error.type === "configConflict") {
-        const conflict = error as ConfigConflictMessage
-        console.warn("[Nova New] Config queue: conflict", {
-          mutationID,
-          revision: conflict.revision,
-        })
-        setConfig(conflict.config)
-        setRevision(conflict.revision)
-      } else {
-        console.error("[Nova New] Config update failed", error)
-      }
-    }
-
-    await sendNext()
-  }
-
-  const enqueueConfigMutation = (partial: Partial<Config>) => {
-    const current = staged ?? {}
-    staged = mergeConfig(current as Record<string, unknown>, partial as Record<string, unknown>) as Partial<Config>
-    console.debug("[Nova New] Config queue: enqueue", { running, hasPending: !!staged })
-    if (running) return
-    running = true
-    void sendNext()
-  }
-
+  // ── scoped drafts (for tabs with Save / Discard buttons) ─────────
   const updateScopedConfig = (scopeID: string, partial: Partial<Config>) => {
     if (!scopeID) return
-    setScopedDrafts((prev) => {
-      const current = prev[scopeID] ?? {}
-      return {
-        ...prev,
-        [scopeID]: mergePatch(current, partial),
-      }
-    })
+    setScopedDrafts((prev) => ({
+      ...prev,
+      [scopeID]: mergePatch(prev[scopeID] ?? {}, partial),
+    }))
   }
 
   const getScopedConfig = (scopeID: string): Config => {
     const draft = scopedDrafts()[scopeID]
     if (!draft || !hasPatch(draft)) return config()
-    return mergeConfig(config() as Record<string, unknown>, draft as Record<string, unknown>) as Config
+    return deepMerge(config() as Record<string, unknown>, draft as Record<string, unknown>) as Config
   }
 
   const hasScopedDraft = (scopeID: string): boolean => hasPatch(scopedDrafts()[scopeID])
@@ -150,22 +97,13 @@ export const ConfigProvider: ParentComponent = (props) => {
   const saveScopedConfig = (scopeID: string) => {
     const patch = scopedDrafts()[scopeID]
     if (!patch || !hasPatch(patch)) return
-    setScopedDrafts((prev) => {
-      const next = { ...prev }
-      delete next[scopeID]
-      return next
-    })
-    applyLocalConfig(patch)
-    enqueueConfigMutation(patch)
+    setScopedDrafts((prev) => { const next = { ...prev }; delete next[scopeID]; return next })
+    updateConfig(patch)
   }
 
   const discardScopedConfig = (scopeID: string) => {
     if (!hasPatch(scopedDrafts()[scopeID])) return
-    setScopedDrafts((prev) => {
-      const next = { ...prev }
-      delete next[scopeID]
-      return next
-    })
+    setScopedDrafts((prev) => { const next = { ...prev }; delete next[scopeID]; return next })
   }
 
   const saveAllScopedConfig = () => {
@@ -174,58 +112,24 @@ export const ConfigProvider: ParentComponent = (props) => {
     if (entries.length === 0) return
     const merged = entries.reduce<Partial<Config>>((acc, patch) => mergePatch(acc, patch), {})
     setScopedDrafts({})
-    applyLocalConfig(merged)
-    enqueueConfigMutation(merged)
+    updateConfig(merged)
   }
 
-  // Register handler immediately (not in onMount) so we never miss
-  // a configLoaded message that arrives before the DOM mount.
+  // ── message handler (accept authoritative state from backend) ────
   const unsubscribe = vscode.onMessage((message: ExtensionMessage) => {
     if (message.type === "configLoaded") {
       setConfig(message.config)
-      setRevision(message.revision)
       setLoading(false)
       return
     }
     if (message.type === "configUpdated") {
-      if (!inflight) {
-        console.debug("[Nova New] Config queue: stale configUpdated dropped (no inflight)")
-        return
-      }
-      if (
-        typeof message.revision === "number" &&
-        typeof revision() === "number" &&
-        message.revision < (revision() as number)
-      ) {
-        console.warn("[Nova New] Config queue: stale configUpdated dropped", {
-          inflightMutationID: inflight.mutationID,
-          incomingRevision: message.revision,
-          currentRevision: revision(),
-        })
-        inflight.reject(new Error("Stale config update response dropped"))
-        inflight = null
-        return
-      }
+      // Backend is authoritative — always accept
       setConfig(message.config)
-      setRevision(message.revision)
-      inflight?.resolve(message)
-      inflight = null
       return
     }
+    // configConflict: backend resolved a conflict, accept its state
     if (message.type === "configConflict") {
-      if (!inflight) {
-        console.debug("[Nova New] Config queue: stale configConflict dropped (no inflight)")
-        return
-      }
       setConfig(message.config)
-      setRevision(message.revision)
-      inflight?.reject(message)
-      inflight = null
-      return
-    }
-    if (message.type === "error") {
-      inflight?.reject(new Error(message.message))
-      inflight = null
       return
     }
   })
@@ -251,13 +155,6 @@ export const ConfigProvider: ParentComponent = (props) => {
   }, retryMs)
 
   onCleanup(() => clearInterval(retryTimer))
-
-  function updateConfig(partial: Partial<Config>) {
-    // Optimistically update local state
-    applyLocalConfig(partial)
-    // Send to extension for persistence
-    enqueueConfigMutation(partial)
-  }
 
   const hasAnyScopedDraft = createMemo(() =>
     Object.values(scopedDrafts()).some((patch) => hasPatch(patch)),

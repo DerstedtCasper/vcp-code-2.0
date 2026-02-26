@@ -329,7 +329,9 @@ const AppContent: Component = () => {
 
   return (
     <div class="container">
-      <VcpStatusBadge />
+      <Show when={currentView() === "newTask"}>
+        <VcpStatusBadge />
+      </Show>
       <Switch fallback={<ChatView />}>
         <Match when={currentView() === "newTask"}>
           <Show when={!session.currentSessionID()}>

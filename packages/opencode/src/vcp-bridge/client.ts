@@ -28,6 +28,7 @@ export class VCPBridgeClient {
   private subscribers = new Map<string, Set<MessageHandler>>()
   private globalSubscribers = new Set<MessageHandler>()
   private config: VCPBridgeClientConfig
+  private endpointIndex = 0
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private reconnectAttempts = 0
   private _connected = false
@@ -48,16 +49,19 @@ export class VCPBridgeClient {
       return
     }
 
-    const keyPart = this.config.toolboxKey ? `VCP_Key=${this.config.toolboxKey}` : ""
-    // VCPToolBox WS path: /vcpinfo/VCP_Key=xxx
-    const url = `${this.config.toolboxUrl}/vcpinfo/${keyPart}`
+    const connectUrls = this.buildConnectUrls()
+    const index = Math.min(this.endpointIndex, connectUrls.length - 1)
+    const url = connectUrls[index]
+    let opened = false
 
-    log.info("connecting to VCPToolBox", { url: url.replace(/VCP_Key=.*/, "VCP_Key=***") })
+    log.info("connecting to VCPToolBox", { url: this.maskKey(url) })
 
     try {
       this.ws = new WebSocket(url)
 
       this.ws.onopen = () => {
+        opened = true
+        this.endpointIndex = index
         this._connected = true
         this._lastConnected = Date.now()
         this.reconnectAttempts = 0
@@ -103,6 +107,20 @@ export class VCPBridgeClient {
       this.ws.onclose = (event) => {
         this._connected = false
         log.info("VCPToolBox WebSocket closed", { code: event.code, reason: event.reason })
+
+        const shouldFallback = !opened && index < connectUrls.length - 1
+        if (shouldFallback) {
+          const nextIndex = index + 1
+          this.endpointIndex = nextIndex
+          log.warn("primary VCPToolBox endpoint unavailable, trying fallback", {
+            from: this.maskKey(connectUrls[index]),
+            to: this.maskKey(connectUrls[nextIndex]),
+            code: event.code,
+          })
+          this.connect()
+          return
+        }
+
         this.scheduleReconnect()
       }
     } catch (err) {
@@ -218,5 +236,46 @@ export class VCPBridgeClient {
       this.reconnectTimer = null
       this.connect()
     }, delay)
+  }
+
+  private buildConnectUrls(): string[] {
+    const normalized = this.normalizeToolboxUrl(this.config.toolboxUrl || "ws://localhost:5800")
+    const key = this.config.toolboxKey?.trim()
+    const keySegment = key ? `/VCP_Key=${encodeURIComponent(key)}` : ""
+
+    // If user already provided a full channel URL, use it directly.
+    if (/\/(?:vcpinfo|VCPlog)\/VCP_Key=/i.test(normalized)) {
+      return [normalized]
+    }
+
+    try {
+      const parsed = new URL(normalized)
+      const basePath = parsed.pathname === "/" ? "" : parsed.pathname.replace(/\/+$/, "")
+      return [
+        `${parsed.origin}${basePath}/vcpinfo${keySegment}`,
+        `${parsed.origin}${basePath}/VCPlog${keySegment}`,
+      ]
+    } catch {
+      return [
+        `${normalized}/vcpinfo${keySegment}`,
+        `${normalized}/VCPlog${keySegment}`,
+      ]
+    }
+  }
+
+  private normalizeToolboxUrl(rawUrl: string): string {
+    let url = rawUrl.trim()
+    if (url.startsWith("http://")) {
+      url = `ws://${url.slice("http://".length)}`
+    } else if (url.startsWith("https://")) {
+      url = `wss://${url.slice("https://".length)}`
+    } else if (!/^wss?:\/\//i.test(url)) {
+      url = `ws://${url}`
+    }
+    return url.replace(/\/+$/, "")
+  }
+
+  private maskKey(url: string): string {
+    return url.replace(/VCP_Key=[^/]+/g, "VCP_Key=***")
   }
 }

@@ -56,6 +56,12 @@ export namespace Server {
   let _url: URL | undefined
   let _corsWhitelist: string[] = []
 
+  function isVSCodeWebviewOrigin(input: string | undefined): boolean {
+    if (!input) return false
+    const origin = input.toLowerCase()
+    return origin.startsWith("vscode-webview://") || origin.startsWith("vscode-file://")
+  }
+
   export function url(): URL {
     return _url ?? new URL("http://localhost:4096")
   }
@@ -87,6 +93,7 @@ export namespace Server {
           // Allow CORS preflight requests to succeed without auth.
           // Browser clients sending Authorization headers will preflight with OPTIONS.
           if (c.req.method === "OPTIONS") return next()
+          if (isVSCodeWebviewOrigin(c.req.header("origin"))) return next()
           const password = Flag.KILO_SERVER_PASSWORD
           if (!password) return next()
           const username = Flag.KILO_SERVER_USERNAME ?? "kilo" // novacode_change
@@ -113,6 +120,7 @@ export namespace Server {
           cors({
             origin(input) {
               if (!input) return
+              if (isVSCodeWebviewOrigin(input)) return input
 
               if (input.startsWith("http://localhost:")) return input
               if (input.startsWith("http://127.0.0.1:")) return input

@@ -8,6 +8,14 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - Initial release
 
+## [1.0.39] - 2026-02-26
+
+- 修复 VcpStatusBadge 的 `aria-expanded` 无效值问题（webview 可访问性错误）。
+- 修复 `chat.css` 的 Safari `user-select` 兼容告警（补充 `-webkit-user-select`）。
+- 修复 webview 到本地 CLI backend 的直连鉴权/CORS 问题，恢复 Provider 连接测试与 Marketplace 拉取。
+- Marketplace 增加默认源兜底并兼容 Kilo `items` YAML 结构解析，避免列表为空。
+- 配置读取改为优先全局配置（与保存端一致），修复升级后“配置看似丢失”问题。
+
 ## [7.0.33] - 2026-02-24
 
 - 完成 VCP Code 2.0 全量重构规划落地（Phase A-H）

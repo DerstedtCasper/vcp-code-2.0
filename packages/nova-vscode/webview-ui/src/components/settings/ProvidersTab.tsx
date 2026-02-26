@@ -59,11 +59,13 @@ const readNumber = (source: unknown, path: string[]): number | undefined => {
 }
 
 const parseInteger = (value: string): number | undefined => {
+  if (value.trim() === "") return 0
   const parsed = Number.parseInt(value, 10)
   return Number.isFinite(parsed) ? parsed : undefined
 }
 
 const parseFloatNumber = (value: string): number | undefined => {
+  if (value.trim() === "") return 0
   const parsed = Number.parseFloat(value)
   return Number.isFinite(parsed) ? parsed : undefined
 }

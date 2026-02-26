@@ -44,6 +44,11 @@ export const ServerProvider: ParentComponent = (props) => {
         case "ready":
           console.log("[Nova New] Server ready:", message.serverInfo)
           setServerInfo(message.serverInfo)
+          // Expose port globally so standalone helpers (ProvidersTab, MarketplaceView, etc.)
+          // can build fetch URLs without needing the SolidJS context.
+          if (message.serverInfo?.port) {
+            ;(window as any).__OPENCODE_PORT__ = message.serverInfo.port
+          }
           if (message.extensionVersion) setExtensionVersion(message.extensionVersion)
           setConnectionState("connected")
           setError(undefined)

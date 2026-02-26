@@ -407,13 +407,21 @@ export const MarketplaceView: Component = () => {
     setLoading(true)
     try {
       const qs = q ? `?q=${encodeURIComponent(q)}` : ""
-      const res = await fetch(`${getBaseUrl()}/marketplace/${t}${qs}`)
+      const url = `${getBaseUrl()}/marketplace/${t}${qs}`
+      console.log("[Marketplace] fetching", url)
+      const res = await fetch(url)
+      if (!res.ok) {
+        console.warn("[Marketplace] fetch failed", res.status, res.statusText)
+        return
+      }
       const data = await res.json()
-      if (t === "skills") setSkills(data)
-      else if (t === "modes") setModes(data)
-      else if (t === "mcps") setMCPs(data)
-    } catch {
-      // Silently fail; data stays empty
+      console.log("[Marketplace]", t, "received", Array.isArray(data) ? data.length : typeof data, "items")
+      const items = Array.isArray(data) ? data : []
+      if (t === "skills") setSkills(items)
+      else if (t === "modes") setModes(items)
+      else if (t === "mcps") setMCPs(items)
+    } catch (err) {
+      console.error("[Marketplace] fetchTab error:", err)
     } finally {
       setLoading(false)
     }

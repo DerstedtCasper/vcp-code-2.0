@@ -29,17 +29,28 @@ export namespace Marketplace {
 
   // ── Init / Refresh ───────────────────────────────────────────────
 
+  // Default marketplace source – used when config.vcp or config.vcp.marketplace is absent
+  const DEFAULT_SOURCES = [
+    {
+      name: "Kilo Marketplace",
+      baseUrl: "https://raw.githubusercontent.com/Kilo-Org/kilo-marketplace/main",
+      type: "kilo" as const,
+    },
+  ]
+
   export async function refresh(): Promise<MarketplaceCatalog[]> {
     const config = await Config.get()
     const mpConfig = config.vcp?.marketplace
-    if (!mpConfig?.enabled) {
-      log.info("marketplace disabled")
+
+    // Explicitly disabled check – only skip if user set enabled = false
+    if (mpConfig?.enabled === false) {
+      log.info("marketplace explicitly disabled")
       catalogs = []
       return catalogs
     }
 
-    const sources = mpConfig.sources ?? []
-    const cacheTTL = mpConfig.cacheTTL ?? 3600
+    const sources = mpConfig?.sources?.length ? mpConfig.sources : DEFAULT_SOURCES
+    const cacheTTL = mpConfig?.cacheTTL ?? 3600
 
     catalogs = await Promise.all(
       sources.map((source) =>

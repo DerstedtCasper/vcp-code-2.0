@@ -1172,8 +1172,12 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
 
     try {
       const workspaceDir = this.getWorkspaceDirectory()
-      const config = await this.httpClient.getConfig(workspaceDir)
-      const revision = await this.httpClient.getGlobalConfigRevision().catch(() => undefined)
+      const client = this.httpClient
+      if (!client) return
+      // Keep settings read/write source consistent: prefer global config (same as updateConfig),
+      // then fall back to merged instance config for older backends.
+      const config = await client.getGlobalConfig().catch(() => client.getConfig(workspaceDir))
+      const revision = await client.getGlobalConfigRevision().catch(() => undefined)
 
       const message = {
         type: "configLoaded",

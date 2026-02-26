@@ -55,7 +55,7 @@ export function buildWebviewHtml(
 </head>
 <body>
   <div id="root"></div>
-  <script nonce="${nonce}">window.ICONS_BASE_URI = "${opts.iconsBaseUri}";</script>
+  <script nonce="${nonce}">window.ICONS_BASE_URI = "${opts.iconsBaseUri}";${opts.port ? `window.__OPENCODE_PORT__ = ${opts.port};` : ""}</script>
   <script nonce="${nonce}" src="${opts.scriptUri}"></script>
 </body>
 </html>`

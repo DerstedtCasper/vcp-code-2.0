@@ -630,6 +630,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-weak, var(--vscode-descriptionForeground));
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -640,6 +641,7 @@
   padding: 5px 12px;
   font-size: 12px;
   cursor: pointer;
+  -webkit-user-select: none;
   user-select: none;
 }
 

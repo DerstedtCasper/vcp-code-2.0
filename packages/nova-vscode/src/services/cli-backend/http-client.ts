@@ -221,6 +221,13 @@ export class HttpClient {
     return this.request<Config>("GET", "/config", undefined, { directory })
   }
 
+  /**
+   * Get the persisted global backend configuration.
+   */
+  async getGlobalConfig(): Promise<Config> {
+    return this.request<Config>("GET", "/global/config")
+  }
+
   async getGlobalConfigRevision(): Promise<number> {
     const snapshot = await this.request<{ revision: number }>("GET", "/experimental/vcp/config/revision")
     return snapshot.revision
