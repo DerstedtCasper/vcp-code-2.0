@@ -38,10 +38,10 @@ const contributingItems: DropdownItem[] = [
   { label: "Contributing Guide", href: "/contributing", description: "How to contribute to Nova Code" },
   {
     label: "Code of Conduct",
-    href: "https://github.com/Kilo-Org/novacode?tab=coc-ov-file",
+    href: "https://github.com/DerstedtCasper/vcp-code-2.0?tab=coc-ov-file",
     description: "Our community guidelines",
   },
-  { label: "GitHub Repository", href: "https://github.com/Kilo-Org/", description: "View source and issues" },
+  { label: "GitHub Repository", href: "https://github.com/DerstedtCasper/", description: "View source and issues" },
   { label: "Discord Community", href: "https://kilo.ai/discord", description: "Join our community" },
 ]
 
@@ -52,7 +52,7 @@ const helpItems: DropdownItem[] = [
   { label: "Support", href: "https://kilo.ai/support", description: "Get help from the team" },
   {
     label: "Changelog",
-    href: "https://github.com/Kilo-Org/novacode/releases",
+    href: "https://github.com/DerstedtCasper/vcp-code-2.0/releases",
     description: "Latest updates and releases",
   },
 ]
@@ -337,7 +337,7 @@ export function TopNav({ onMobileMenuToggle, isMobileMenuOpen = false, showMobil
         <p>
           We're <Link href="https://blog.kilo.ai/p/kilo-cli">replatforming our extensions on the new Kilo CLI</Link>.
           Contribute to the new CLI and pre-release extensions at{" "}
-          <Link href="https://github.com/Kilo-Org/novacode">Kilo-Org/novacode</Link>.
+          <Link href="https://github.com/DerstedtCasper/vcp-code-2.0">DerstedtCasper/vcp-code-2.0</Link>.
         </p>
       </div>
 

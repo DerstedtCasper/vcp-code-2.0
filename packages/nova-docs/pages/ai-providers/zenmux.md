@@ -194,4 +194,4 @@ For additional support:
 
 - Visit the [ZenMux documentation](https://zenmux.ai/docs)
 - Contact ZenMux support through their dashboard
-- Check the [Nova Code GitHub repository](https://github.com/Kilo-Org/novacode) for integration-specific issues
+- Check the [Nova Code GitHub repository](https://github.com/DerstedtCasper/vcp-code-2.0) for integration-specific issues

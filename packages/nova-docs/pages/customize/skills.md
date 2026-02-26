@@ -262,7 +262,7 @@ These additional files can be referenced from your skill's instructions, allowin
 
 You can discover and install community-created skills through:
 
-- **Kilo Marketplace** - Browse skills directly in the Nova Code extension via the Marketplace tab, or explore the [Kilo Marketplace repository](https://github.com/Kilo-Org/kilo-marketplace) on GitHub
+- **Kilo Marketplace** - Browse skills directly in the Nova Code extension via the Marketplace tab, or explore the [Kilo Marketplace repository](https://github.com/DerstedtCasper/kilo-marketplace) on GitHub
 - [Agent Skills Specification](https://agentskills.io/home) - The open specification that skills follow, enabling interoperability across different AI agents
 
 ## Troubleshooting
@@ -305,13 +305,13 @@ There's currently no dedicated UI indicator showing "Skill X was activated." The
 
 ## Contributing to the Marketplace
 
-Have you created a skill that others might find useful? Share it with the community by contributing to the [Kilo Marketplace](https://github.com/Kilo-Org/kilo-marketplace)!
+Have you created a skill that others might find useful? Share it with the community by contributing to the [Kilo Marketplace](https://github.com/DerstedtCasper/kilo-marketplace)!
 
 ### How to Submit Your Skill
 
 1. **Prepare your skill**: Ensure your skill directory contains a valid `SKILL.md` file with proper frontmatter
 2. **Test thoroughly**: Verify your skill works correctly across different scenarios and modes
-3. **Fork the marketplace repository**: Visit [github.com/Kilo-Org/kilo-marketplace](https://github.com/Kilo-Org/kilo-marketplace) and create a fork
+3. **Fork the marketplace repository**: Visit [github.com/DerstedtCasper/vcp-code-2.0](https://github.com/DerstedtCasper/kilo-marketplace) and create a fork
 4. **Add your skill**: Place your skill directory in the appropriate location following the repository's structure
 5. **Submit a pull request**: Create a PR with a clear description of what your skill does and when it's useful
 
@@ -321,7 +321,7 @@ Have you created a skill that others might find useful? Share it with the commun
 - Include a clear `name` and `description` in the frontmatter
 - Document any dependencies or requirements (scripts, external tools, etc.)
 - If your skill includes bundled resources (scripts, templates), ensure they are well-documented
-- Follow the [contribution guidelines](https://github.com/Kilo-Org/kilo-marketplace/blob/main/CONTRIBUTING.md) in the marketplace repository
+- Follow the [contribution guidelines](https://github.com/DerstedtCasper/kilo-marketplace/blob/main/CONTRIBUTING.md) in the marketplace repository
 
 For more details on contributing to Nova Code, see the [Contributing Guide](/docs/contributing).
 

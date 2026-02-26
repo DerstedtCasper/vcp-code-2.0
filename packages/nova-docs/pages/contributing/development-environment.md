@@ -6,7 +6,7 @@ description: "Set up your development environment for contributing"
 # Development Environment
 
 {% callout type="info" %}
-**New versions of the VS Code extension and CLI are being developed in [Kilo-Org/novacode](https://github.com/Kilo-Org/novacode)** (extension at `packages/nova-vscode`, CLI at `packages/opencode`). For extension and CLI development, please head over to that repository.
+**New versions of the VS Code extension and CLI are being developed in [DerstedtCasper/vcp-code-2.0](https://github.com/DerstedtCasper/vcp-code-2.0)** (extension at `packages/nova-vscode`, CLI at `packages/opencode`). For extension and CLI development, please head over to that repository.
 {% /callout %}
 
 This document will help you set up your development environment and understand how to work with the codebase. Whether you're fixing bugs, adding features, or just exploring the code, this guide will get you started.
@@ -25,7 +25,7 @@ Before you begin, make sure you have the following installed:
 
 1. **Fork and Clone the Repository**:
    - **Fork the Repository**:
-     - Visit the [Nova Code GitHub repository](https://github.com/Kilo-Org/novacode)
+     - Visit the [Nova Code GitHub repository](https://github.com/DerstedtCasper/vcp-code-2.0)
      - Click the "Fork" button in the top-right corner to create your own copy.
    - **Clone Your Fork**:
      ```bash

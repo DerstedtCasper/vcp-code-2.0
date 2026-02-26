@@ -13,9 +13,9 @@ These resources are maintained by the community unless explicitly noted otherwis
 
 ## Recommended Starting Points
 
-- **[Kilo Marketplace](https://github.com/Kilo-Org/kilo-marketplace)**  
+- **[Kilo Marketplace](https://github.com/DerstedtCasper/kilo-marketplace)**  
   Share and install community-created Modes, Skills, and MCP servers.
-- **[Nova Code Show and Tell Discussions](https://github.com/Kilo-Org/novacode/discussions/categories/show-and-tell)**  
+- **[Nova Code Show and Tell Discussions](https://github.com/DerstedtCasper/vcp-code-2.0/discussions/categories/show-and-tell)**  
   Real examples from users building workflows with Nova Code.
 - **[MCP Official Resources](https://github.com/modelcontextprotocol)**  
   Reference implementations and docs for MCP servers used with Kilo.
@@ -32,4 +32,4 @@ Before adopting a community project, check:
 ## Share Your Project
 
 Built something useful with Nova Code?  
-Share it in [Show and Tell](https://github.com/Kilo-Org/novacode/discussions/categories/show-and-tell) or contribute it to the [Kilo Marketplace](https://github.com/Kilo-Org/kilo-marketplace).
+Share it in [Show and Tell](https://github.com/DerstedtCasper/vcp-code-2.0/discussions/categories/show-and-tell) or contribute it to the [Kilo Marketplace](https://github.com/DerstedtCasper/kilo-marketplace).

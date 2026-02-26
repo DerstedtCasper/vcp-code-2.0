@@ -354,7 +354,7 @@ export default function HomePage() {
             <span className="footer-icon">📝</span>
             <div>
               <strong>Check out our</strong>
-              <Link href="https://github.com/Kilo-Org/novacode/releases" className="footer-link">
+              <Link href="https://github.com/DerstedtCasper/vcp-code-2.0/releases" className="footer-link">
                 Changelog
               </Link>
             </div>
@@ -363,7 +363,7 @@ export default function HomePage() {
             <span className="footer-icon">🐛</span>
             <div>
               <strong>Found a bug?</strong>
-              <Link href="https://github.com/Kilo-Org/novacode/issues" className="footer-link">
+              <Link href="https://github.com/DerstedtCasper/vcp-code-2.0/issues" className="footer-link">
                 Report an issue
               </Link>
             </div>

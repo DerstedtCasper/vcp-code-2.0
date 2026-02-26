@@ -6,7 +6,7 @@ description: "Contribute to Nova Code"
 # Contributing Overview
 
 {% callout type="info" %}
-**New versions of the VS Code extension and CLI are being developed in [Kilo-Org/Kilo](https://github.com/Kilo-Org/Kilo)** (extension at `packages/nova-vscode`, CLI at `packages/opencode`). If you're looking to contribute to the extension or CLI, please head over to that repository.
+**New versions of the VS Code extension and CLI are being developed in [DerstedtCasper/vcp-code-2.0](https://github.com/DerstedtCasper/vcp-code-2.0)** (extension at `packages/nova-vscode`, CLI at `packages/opencode`). If you're looking to contribute to the extension or CLI, please head over to that repository.
 {% /callout %}
 
 Nova Code is an open-source project that welcomes contributions from developers of all skill levels. This guide will help you get started with contributing to Nova Code, whether you're fixing bugs, adding features, improving documentation, or sharing custom modes.
@@ -17,7 +17,7 @@ There are many ways to contribute to Nova Code:
 
 1. **Code Contributions**: Implement new features or fix bugs
 2. **Documentation**: Improve existing docs or create new guides
-3. **Marketplace Contributions**: Create and share custom modes, skills, and MCP servers via the [Kilo Marketplace](https://github.com/Kilo-Org/kilo-marketplace)
+3. **Marketplace Contributions**: Create and share custom modes, skills, and MCP servers via the [Kilo Marketplace](https://github.com/DerstedtCasper/kilo-marketplace)
 4. **Bug Reports**: Report issues you encounter
 5. **Feature Requests**: Suggest new features or improvements
 6. **Community Support**: Help other users in the community
@@ -74,7 +74,7 @@ git checkout -b docs/your-change-description
    git push origin your-branch-name
    ```
 
-2. Go to the [Nova Code repository](https://github.com/Kilo-Org/novacode)
+2. Go to the [Nova Code repository](https://github.com/DerstedtCasper/vcp-code-2.0)
 
 3. Click "New Pull Request" and select "compare across forks"
 
@@ -88,7 +88,7 @@ git checkout -b docs/your-change-description
 
 ## Contributing to the Kilo Marketplace
 
-The [Kilo Marketplace](https://github.com/Kilo-Org/kilo-marketplace) is a community-driven repository of agent tooling that extends Nova Code's capabilities. You can contribute:
+The [Kilo Marketplace](https://github.com/DerstedtCasper/kilo-marketplace) is a community-driven repository of agent tooling that extends Nova Code's capabilities. You can contribute:
 
 - **Skills**: Modular workflows and domain expertise that teach agents how to perform specific tasks
 - **MCP Servers**: Standardized integrations that connect agents to external tools and services
@@ -100,7 +100,7 @@ To contribute:
 
 2. Test your contribution thoroughly
 
-3. Submit a pull request to the [Kilo Marketplace repository](https://github.com/Kilo-Org/kilo-marketplace)
+3. Submit a pull request to the [Kilo Marketplace repository](https://github.com/DerstedtCasper/kilo-marketplace)
 
 ## Engineering Specs
 
@@ -133,14 +133,14 @@ When participating in the Nova Code community:
 - Be respectful and inclusive
 - Provide constructive feedback
 - Help newcomers get started
-- Follow the [Code of Conduct](https://github.com/Kilo-Org/novacode/blob/main/CODE_OF_CONDUCT.md)
+- Follow the [Code of Conduct](https://github.com/DerstedtCasper/vcp-code-2.0/blob/main/CODE_OF_CONDUCT.md)
 
 ## Getting Help
 
 If you need help with your contribution:
 
 - Join our [Discord community](https://kilo.ai/discord) for real-time support
-- Ask questions on [GitHub Discussions](https://github.com/Kilo-Org/novacode/discussions)
+- Ask questions on [GitHub Discussions](https://github.com/DerstedtCasper/vcp-code-2.0/discussions)
 - Visit our [Reddit community](https://www.reddit.com/r/novacode)
 
 ## Recognition

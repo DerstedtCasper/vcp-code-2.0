@@ -39,12 +39,12 @@ Coming from Cursor or Windsurf? See our [migration guide](/docs/getting-started/
 
 Nova Code is open source. You can inspect the code, contribute features, or fork it to meet your needs.
 
-- [GitHub Repository](https://github.com/Kilo-Org/novacode)
+- [GitHub Repository](https://github.com/DerstedtCasper/vcp-code-2.0)
 - [Contributing Guide](/docs/contributing)
 - [Architecture Overview](/docs/contributing/architecture)
 
 ## Get Help
 
 - [**Discord**](https://kilo.ai/discord) — Real-time help and community discussion
-- [**GitHub Issues**](https://github.com/Kilo-Org/novacode/issues?q=sort%3Aupdated-desc+is%3Aissue+is%3Aopen) — Report bugs or request features
+- [**GitHub Issues**](https://github.com/DerstedtCasper/vcp-code-2.0/issues?q=sort%3Aupdated-desc+is%3Aissue+is%3Aopen) — Report bugs or request features
 - [**YouTube**](https://kilo.ai/youtube) — Tutorials and walkthroughs

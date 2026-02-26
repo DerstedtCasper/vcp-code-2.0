@@ -516,4 +516,4 @@ customModes:
 
 ## Community Gallery
 
-Ready to explore more? Check out the [Show and Tell](https://github.com/Kilo-Org/novacode/discussions/categories/show-and-tell) to discover and share custom modes created by the community!
+Ready to explore more? Check out the [Show and Tell](https://github.com/DerstedtCasper/vcp-code-2.0/discussions/categories/show-and-tell) to discover and share custom modes created by the community!

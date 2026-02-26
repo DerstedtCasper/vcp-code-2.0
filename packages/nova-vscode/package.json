@@ -7,7 +7,7 @@
   "publisher": "vcpcode",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Kilo-Org/novacode.git",
+    "url": "https://github.com/DerstedtCasper/vcp-code-2.0.git",
     "directory": "packages/nova-vscode"
   },
   "engines": {

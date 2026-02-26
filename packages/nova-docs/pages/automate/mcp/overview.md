@@ -21,13 +21,13 @@ This documentation is organized into several sections:
 
 ## Contributing to the Marketplace
 
-Have you created an MCP server that others might find useful? Share it with the community by contributing to the [Kilo Marketplace](https://github.com/Kilo-Org/kilo-marketplace)!
+Have you created an MCP server that others might find useful? Share it with the community by contributing to the [Kilo Marketplace](https://github.com/DerstedtCasper/kilo-marketplace)!
 
 ### How to Submit Your MCP Server
 
 1. **Develop your server**: Create an MCP server following the [MCP specification](https://github.com/modelcontextprotocol/)
 2. **Test thoroughly**: Ensure your server works correctly with Nova Code and handles edge cases gracefully
-3. **Fork the marketplace repository**: Visit [github.com/Kilo-Org/kilo-marketplace](https://github.com/Kilo-Org/kilo-marketplace) and create a fork
+3. **Fork the marketplace repository**: Visit [github.com/DerstedtCasper/vcp-code-2.0](https://github.com/DerstedtCasper/kilo-marketplace) and create a fork
 4. **Add your server**: Include your server configuration and documentation following the repository's structure
 5. **Submit a pull request**: Create a PR with a clear description of what your server does and its requirements
 
@@ -37,6 +37,6 @@ Have you created an MCP server that others might find useful? Share it with the 
 - Include example configurations for both STDIO and SSE transports if applicable
 - Specify any required environment variables or API keys
 - Note any platform-specific requirements (Windows, macOS, Linux)
-- Follow the [contribution guidelines](https://github.com/Kilo-Org/kilo-marketplace/blob/main/CONTRIBUTING.md) in the marketplace repository
+- Follow the [contribution guidelines](https://github.com/DerstedtCasper/kilo-marketplace/blob/main/CONTRIBUTING.md) in the marketplace repository
 
 For more details on contributing to Nova Code, see the [Contributing Guide](/docs/contributing).

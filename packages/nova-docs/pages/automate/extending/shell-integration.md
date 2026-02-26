@@ -344,7 +344,7 @@ The [VS Code Terminal Integration Test Extension](https://github.com/KJ7LNW/vsce
 
 If you've followed these steps and are still experiencing problems, please:
 
-1. Check the [Nova Code GitHub Issues](https://github.com/Kilo-Org/novacode/issues) to see if others have reported similar problems
+1. Check the [Nova Code GitHub Issues](https://github.com/DerstedtCasper/vcp-code-2.0/issues) to see if others have reported similar problems
 2. If not, create a new issue with details about your operating system, VS Code/Cursor version, and the steps you've tried
 
 For additional help, join our [Discord](https://kilo.ai/discord).

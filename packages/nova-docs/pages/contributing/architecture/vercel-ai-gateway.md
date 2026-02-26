@@ -72,6 +72,6 @@ Vercel will also act as fallback if we encounter issues with OpenRouter (such as
 
 Requests from the same user for the same model should go to the same gateway for caching purposes.
 
-We can randomize users to a gateway in a way similar to what was done for autocomplete: https://github.com/Kilo-Org/novacode/pull/3857
+We can randomize users to a gateway in a way similar to what was done for autocomplete: https://github.com/DerstedtCasper/vcp-code-2.0/pull/3857
 
 Since not all models are available on Vercel, some traffic will have to go to OpenRouter regardless.

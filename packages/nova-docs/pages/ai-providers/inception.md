@@ -33,4 +33,4 @@ Refer to Inception's current website and developer documentation for the most up
 - **Enterprise Focus:** Inception is designed for production-grade AI applications with emphasis on reliability and consistency.
 - **Pricing:** Refer to the Inception platform for current pricing details and available subscription options.
 - **Support:** Enterprise customers have access to dedicated support channels for technical assistance.
-- **Docs Feedback:** Report documentation issues at [Kilo-Org/novacode issues](https://github.com/Kilo-Org/novacode/issues/new?title=Documentation%20Issue:%20/docs/ai-providers/inception).
+- **Docs Feedback:** Report documentation issues at [DerstedtCasper/vcp-code-2.0 issues](https://github.com/DerstedtCasper/vcp-code-2.0/issues/new?title=Documentation%20Issue:%20/docs/ai-providers/inception).

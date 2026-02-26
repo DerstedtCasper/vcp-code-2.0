@@ -48,7 +48,7 @@ Get started with Nova Code by installing it on your preferred platform. Choose y
 ## Pre-Release Extension
 
 {% callout type="info" %}
-We're rebuilding Nova Code from the ground up on the new [Kilo CLI](https://github.com/Kilo-Org/novacode). The pre-release extension is available for users who want to try the latest architecture and provide feedback, and don't mind some missing features and rough edges.
+We're rebuilding Nova Code from the ground up on the new [Kilo CLI](https://github.com/DerstedtCasper/vcp-code-2.0). The pre-release extension is available for users who want to try the latest architecture and provide feedback, and don't mind some missing features and rough edges.
 {% /callout %}
 
 The pre-release extension is a complete rebuild featuring:
@@ -61,7 +61,7 @@ The pre-release extension is a complete rebuild featuring:
 
 This is an early pre-release. Core features like chat, markdown rendering, authentication, and model/mode switching are working. Some features from the stable extension are still being implemented.
 
-For the full feature status, see the [feature parity tracking document](https://github.com/Kilo-Org/novacode/blob/main/packages/nova-vscode/docs/opencode-migration-plan.md).
+For the full feature status, see the [feature parity tracking document](https://github.com/DerstedtCasper/vcp-code-2.0/blob/main/packages/nova-vscode/docs/opencode-migration-plan.md).
 
 ### Installing the Pre-Release
 
@@ -80,7 +80,7 @@ If you need to return to the stable version:
 
 ### Feedback and Issues
 
-Report issues or provide feedback in the [Kilo-Org/novacode repository](https://github.com/Kilo-Org/novacode/issues).
+Report issues or provide feedback in the [DerstedtCasper/vcp-code-2.0 repository](https://github.com/DerstedtCasper/vcp-code-2.0/issues).
 
 ## Manual Installations
 
@@ -106,8 +106,8 @@ If your editor isn't automatically configured for Open VSX Registry, you may nee
 If you prefer to download and install the VSIX file directly:
 
 1. **Download the VSIX file:**
-   - Find official releases on the [Nova Code GitHub Releases page](https://github.com/Kilo-Org/novacode/releases)
-   - Download the `.vsix` file from the [latest release](https://github.com/Kilo-Org/novacode/releases/latest)
+   - Find official releases on the [Nova Code GitHub Releases page](https://github.com/DerstedtCasper/vcp-code-2.0/releases)
+   - Download the `.vsix` file from the [latest release](https://github.com/DerstedtCasper/vcp-code-2.0/releases/latest)
 
 2. **Install in VS Code:**
    - Open VS Code
@@ -154,5 +154,5 @@ After installation, check out these resources to get started:
 If you encounter issues not covered here:
 
 - Join our [Discord community](https://kilo.ai/discord) for real-time support
-- Submit issues on [GitHub](https://github.com/Kilo-Org/novacode/issues)
+- Submit issues on [GitHub](https://github.com/DerstedtCasper/vcp-code-2.0/issues)
 - Visit our [Reddit community](https://www.reddit.com/r/NovaCode)
