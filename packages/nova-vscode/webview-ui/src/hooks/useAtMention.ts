@@ -27,6 +27,10 @@ export interface MentionResult {
   value: string
   /** 可选说明 */
   description?: string
+  /** 文件基础路径（当 value 含行范围时使用） */
+  path?: string
+  /** 文件行范围，例如 10-20 */
+  range?: string
 }
 
 // ── 特殊项静态列表 ────────────────────────────────────────────────────────
@@ -35,8 +39,15 @@ export const SPECIAL_MENTION_ITEMS: MentionResult[] = [
   { type: "special", label: "Clipboard", value: "clipboard", description: "Insert clipboard content" },
   { type: "special", label: "Terminal", value: "terminal", description: "Insert terminal output" },
   { type: "special", label: "Problems", value: "problems", description: "Insert diagnostic problems" },
-  { type: "special", label: "Git Diff", value: "git", description: "Insert current git diff" },
+  { type: "special", label: "Git", value: "git", description: "Insert git context" },
   { type: "special", label: "URL", value: "url", description: "Fetch and insert a URL" },
+]
+
+export const GIT_MENTION_ITEMS: MentionResult[] = [
+  { type: "special", label: "Git Staged", value: "git:staged", description: "Insert staged changes" },
+  { type: "special", label: "Git Unstaged", value: "git:unstaged", description: "Insert unstaged changes" },
+  { type: "special", label: "Git Diff", value: "git:diff", description: "Insert diff against HEAD" },
+  { type: "special", label: "Git Log", value: "git:log", description: "Insert latest commit logs" },
 ]
 
 // ── VSCode 上下文接口 ─────────────────────────────────────────────────────
@@ -92,6 +103,45 @@ export function useAtMention(vscode: VSCodeContext, getAgents: () => AgentInfo[]
     if (!showMention()) setMentionIndex(0)
   })
 
+  const buildNonFileResults = (query: string): MentionResult[] => {
+    const q = query.toLowerCase()
+    const lineRangeMatch = /^(.+):(\d+)(?:-(\d+))?$/.exec(query)
+
+    const lineRangeItem: MentionResult[] =
+      lineRangeMatch && lineRangeMatch[1]
+        ? [
+            {
+              type: "file",
+              label: `${lineRangeMatch[1]}:${lineRangeMatch[2]}${lineRangeMatch[3] ? `-${lineRangeMatch[3]}` : ""}`,
+              value: `${lineRangeMatch[1]}:${lineRangeMatch[2]}${lineRangeMatch[3] ? `-${lineRangeMatch[3]}` : ""}`,
+              path: lineRangeMatch[1],
+              range: `${lineRangeMatch[2]}${lineRangeMatch[3] ? `-${lineRangeMatch[3]}` : ""}`,
+              description: "Attach specific line range",
+            },
+          ]
+        : []
+
+    const agentItems: MentionResult[] = getAgents()
+      .filter((a) => !a.hidden && (q === "" || a.name.toLowerCase().includes(q)))
+      .map((a) => ({
+        type: "agent" as MentionResultType,
+        label: a.name,
+        value: a.name,
+        description: a.description,
+      }))
+
+    const gitItems =
+      q === "git" || q.startsWith("git:")
+        ? GIT_MENTION_ITEMS.filter((s) => s.value.includes(q) || s.label.toLowerCase().includes(q))
+        : []
+
+    const specialItems = SPECIAL_MENTION_ITEMS.filter(
+      (s) => q === "" || s.label.toLowerCase().includes(q) || s.value.includes(q),
+    )
+
+    return [...lineRangeItem, ...agentItems, ...gitItems, ...specialItems]
+  }
+
   const unsubscribe = vscode.onMessage((message) => {
     if (message.type !== "fileSearchResult") return
     const result = message as { type: "fileSearchResult"; paths: string[]; dir: string; requestId: string }
@@ -103,7 +153,7 @@ export function useAtMention(vscode: VSCodeContext, getAgents: () => AgentInfo[]
         label: p,
         value: p,
       }))
-      setMentionResults(items)
+      setMentionResults([...buildNonFileResults(mentionQuery() ?? ""), ...items])
       setMentionIndex(0)
     }
   })
@@ -134,18 +184,27 @@ export function useAtMention(vscode: VSCodeContext, getAgents: () => AgentInfo[]
    * 构建点击/回车选择后的 ContextItem
    */
   function buildContextItem(item: MentionResult): ContextItem {
+    const specialType: ContextItemType = item.value.startsWith("git:")
+      ? "git"
+      : ((item.value as ContextItemType) ?? "file")
+
     const typeMap: Record<MentionResultType, ContextItemType> = {
       file: "file",
       directory: "directory",
       agent: "agent",
-      special: item.value as ContextItemType,
+      special: specialType,
     }
+
+    const detail =
+      item.range ??
+      (item.value.startsWith("git:") ? item.value.split(":")[1] : item.description)
+
     return {
       id: `${item.type}:${item.value}:${Date.now()}`,
       type: typeMap[item.type] ?? "file",
       label: item.label,
-      path: item.type === "file" || item.type === "directory" ? item.value : undefined,
-      detail: item.description,
+      path: item.type === "file" || item.type === "directory" ? (item.path ?? item.value) : undefined,
+      detail,
     }
   }
 
@@ -166,9 +225,10 @@ export function useAtMention(vscode: VSCodeContext, getAgents: () => AgentInfo[]
     const after = val.substring(cursor)
 
     if (item.type === "file" || item.type === "directory") {
+      const mentionToken = item.value
       const replaced = before.replace(AT_PATTERN, (match) => {
         const prefix = match.startsWith(" ") ? " " : ""
-        return `${prefix}@${item.value}`
+        return `${prefix}@${mentionToken}`
       })
       const newText = replaced + after
       textarea.value = newText
@@ -176,7 +236,7 @@ export function useAtMention(vscode: VSCodeContext, getAgents: () => AgentInfo[]
       const newCursor = replaced.length
       textarea.setSelectionRange(newCursor, newCursor)
       textarea.focus()
-      setMentionedPaths((prev) => new Set([...prev, item.value]))
+      setMentionedPaths((prev) => new Set([...prev, item.path ?? item.value]))
     } else {
       // agent / special: 清除 @query，将条目作为 pill
       const replaced = before.replace(AT_PATTERN, (match) => {
@@ -202,32 +262,15 @@ export function useAtMention(vscode: VSCodeContext, getAgents: () => AgentInfo[]
     if (match) {
       const query = match[1] ?? ""
       setMentionQuery(query)
-
-      const q = query.toLowerCase()
-
-      // 收集 agent 匹配
-      const agentItems: MentionResult[] = getAgents()
-        .filter((a) => !a.hidden && (q === "" || a.name.toLowerCase().includes(q)))
-        .map((a) => ({
-          type: "agent" as MentionResultType,
-          label: a.name,
-          value: a.name,
-          description: a.description,
-        }))
-
-      // 收集特殊项匹配
-      const specialItems = SPECIAL_MENTION_ITEMS.filter(
-        (s) => q === "" || s.label.toLowerCase().includes(q) || s.value.includes(q),
-      )
-
-      if (agentItems.length > 0 || specialItems.length > 0) {
-        // 先展示 agent + special，同时异步请求文件
-        setMentionResults([...agentItems, ...specialItems])
+      const nonFileItems = buildNonFileResults(query)
+      if (nonFileItems.length > 0) {
+        setMentionResults(nonFileItems)
         setMentionIndex(0)
       }
 
       // 总是发起文件搜索（结果回来后会合并/覆盖）
-      requestFileSearch(query)
+      const rangeMatch = /^(.+):\d+(?:-\d+)?$/.exec(query)
+      requestFileSearch(rangeMatch ? (rangeMatch[1] ?? query) : query)
     } else {
       closeMention()
     }

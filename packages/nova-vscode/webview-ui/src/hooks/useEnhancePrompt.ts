@@ -13,7 +13,7 @@
 
 import { createSignal, onCleanup } from "solid-js"
 import type { Accessor } from "solid-js"
-import type { WebviewMessage, ExtensionMessage } from "../types/messages"
+import type { WebviewMessage, ExtensionMessage, EnhancePromptResponse } from "../types/messages"
 import type { ContextItem } from "../components/chat/ContextPills"
 
 interface VSCodeContext {
@@ -39,9 +39,10 @@ export function useEnhancePrompt(
   let currentRequestId = ""
 
   const unsubscribe = vscode.onMessage((message) => {
+    const enhanceMessage = message as EnhancePromptResponse
     // 增强成功
-    if (message.type === "enhancePromptResult") {
-      const result = message as { type: "enhancePromptResult"; text: string; requestId: string }
+    if (enhanceMessage.type === "enhancePromptResult") {
+      const result = enhanceMessage
       if (result.requestId === currentRequestId) {
         setIsEnhancing(false)
         setLastError(null)
@@ -50,8 +51,8 @@ export function useEnhancePrompt(
       return
     }
     // 增强失败
-    if (message.type === "enhancePromptError") {
-      const err = message as { type: "enhancePromptError"; error: string; requestId: string }
+    if (enhanceMessage.type === "enhancePromptError") {
+      const err = enhanceMessage
       if (err.requestId === currentRequestId) {
         setIsEnhancing(false)
         setLastError(err.error)

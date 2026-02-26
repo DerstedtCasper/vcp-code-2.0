@@ -32,7 +32,7 @@ const TYPE_ICON: Record<ContextItemType, string> = {
   git: "🔀",
   url: "🌐",
   clipboard: "📋",
-  terminal: "�",
+  terminal: "💻",
   problems: "⚠️",
 }
 

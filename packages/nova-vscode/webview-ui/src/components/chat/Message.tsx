@@ -9,7 +9,7 @@
  */
 
 import { Component, Show } from "solid-js"
-import { Message as KiloMessage } from "@novacode/nova-ui/message-part"
+import { Message as NovaMessage } from "@novacode/nova-ui/message-part"
 import { useSession } from "../../context/session"
 import type { Message as MessageType } from "../../types/messages"
 import type { Message as SDKMessage, Part as SDKPart } from "@novacode/sdk/v2"
@@ -24,7 +24,7 @@ export const Message: Component<MessageProps> = (props) => {
 
   return (
     <Show when={parts().length > 0 || props.message.content}>
-      <KiloMessage message={props.message as unknown as SDKMessage} parts={parts()} />
+      <NovaMessage message={props.message as unknown as SDKMessage} parts={parts()} />
     </Show>
   )
 }

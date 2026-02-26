@@ -46,6 +46,7 @@ export const PromptInput: Component = () => {
       textareaRef.value = enhanced
       adjustHeight()
     }
+    showCommandFeedback(`✨ ${language.t("prompt.slash.enhance")}`)
   })
 
   const sessionKey = () => session.currentSessionID() ?? "__new__"
@@ -58,6 +59,7 @@ export const PromptInput: Component = () => {
   const [showSlash, setShowSlash] = createSignal(false)
   const [slashQuery, setSlashQuery] = createSignal("")
   const [slashIndex, setSlashIndex] = createSignal(0)
+  const [slashFeedback, setSlashFeedback] = createSignal("")
 
   // ── 上下文 Pills 状态 ────────────────────────────────────────────────
   const [contextItems, setContextItems] = createSignal<ContextItem[]>([])
@@ -84,6 +86,7 @@ export const PromptInput: Component = () => {
   let highlightRef: HTMLDivElement | undefined
   let dropdownRef: HTMLDivElement | undefined
   let debounceTimer: ReturnType<typeof setTimeout> | undefined
+  let slashFeedbackTimer: ReturnType<typeof setTimeout> | undefined
   let requestCounter = 0
   // Save/restore input text when switching sessions.
   // Uses `on()` to track only sessionKey — avoids re-running on every keystroke.
@@ -149,7 +152,14 @@ export const PromptInput: Component = () => {
     if (current) drafts.set(sessionKey(), current)
     unsubscribe()
     if (debounceTimer) clearTimeout(debounceTimer)
+    if (slashFeedbackTimer) clearTimeout(slashFeedbackTimer)
   })
+
+  const showCommandFeedback = (label: string) => {
+    setSlashFeedback(label)
+    if (slashFeedbackTimer) clearTimeout(slashFeedbackTimer)
+    slashFeedbackTimer = setTimeout(() => setSlashFeedback(""), 1800)
+  }
 
   const requestAutocomplete = (val: string) => {
     if (val.length < MIN_TEXT_LENGTH || isDisabled()) {
@@ -243,31 +253,39 @@ export const PromptInput: Component = () => {
 
   /** 执行 slash 命令 */
   const executeSlashCommand = (cmd: SlashCommand) => {
+    const currentText = text()
     setShowSlash(false)
-    setText("")
-    if (textareaRef) {
-      textareaRef.value = ""
-      adjustHeight()
+    if (cmd.id !== "enhance") {
+      setText("")
+      if (textareaRef) {
+        textareaRef.value = ""
+        adjustHeight()
+      }
     }
     switch (cmd.id) {
       case "new":
         session.createSession?.()
+        showCommandFeedback(`✓ ${language.t(cmd.labelKey as any)}`)
         break
       case "clear":
         session.clearCurrentSession?.()
+        showCommandFeedback(`✓ ${language.t(cmd.labelKey as any)}`)
         break
       case "model":
         // 打开模型选择器（通过自定义事件通知 ModelSelector）
         window.dispatchEvent(new CustomEvent("openModelSelector"))
+        showCommandFeedback(`✓ ${language.t(cmd.labelKey as any)}`)
         break
       case "mode":
         window.dispatchEvent(new CustomEvent("openModeSwitcher"))
+        showCommandFeedback(`✓ ${language.t(cmd.labelKey as any)}`)
         break
       case "compact":
         vscode.postMessage({ type: "compactContext" })
+        showCommandFeedback(`✓ ${language.t(cmd.labelKey as any)}`)
         break
       case "enhance":
-        vscode.postMessage({ type: "enhancePrompt", text: text() })
+        enhance.enhance(currentText, contextItems())
     }
   }
 
@@ -534,11 +552,24 @@ export const PromptInput: Component = () => {
                   onClick={() => imageAttach.remove(img.id)}
                   aria-label="Remove image"
                 >
-                  脳
+                  ✕
                 </button>
               </div>
             )}
           </For>
+        </div>
+      </Show>
+      <Show when={slashFeedback()}>
+        <div
+          style={{
+            "margin-top": "6px",
+            "margin-bottom": "2px",
+            "font-size": "12px",
+            color: "var(--vscode-terminal-ansiGreen, #16a34a)",
+            "font-weight": "500",
+          }}
+        >
+          {slashFeedback()}
         </div>
       </Show>
       <div class="prompt-input-wrapper">
@@ -574,15 +605,16 @@ export const PromptInput: Component = () => {
       <Show when={showBusyActions()}>
         <div style={{ display: "flex", gap: "8px", "align-items": "center", "margin-top": "8px", "flex-wrap": "wrap" }}>
           <Button size="small" variant="secondary" onClick={() => handleBusySend("guide")}>
-            绔嬪嵆鎻掑叆
+            立即插入
           </Button>
           <Button size="small" variant="secondary" onClick={() => handleBusySend("queue")}>
-            鍔犲叆闃熷垪
+            加入队列
           </Button>
           <Button size="small" variant="ghost" onClick={() => handleBusySend("interrupt")}>
-            涓柇骞跺彂閫?          </Button>
+            中断并发送
+          </Button>
           <Button size="small" variant="ghost" onClick={() => setShowBusyActions(false)}>
-            鍙栨秷
+            取消
           </Button>
         </div>
       </Show>

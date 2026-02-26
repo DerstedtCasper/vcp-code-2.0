@@ -167,7 +167,7 @@ export const MessageList: Component<MessageListProps> = (props) => {
         <Show when={isEmpty()}>
           <div class="message-list-empty">
             <VCPLogo />
-            <p class="kilo-about-text">{language.t("session.messages.welcome")}</p>
+            <p class="nova-about-text">{language.t("session.messages.welcome")}</p>
             <Show when={recent().length > 0 && props.onSelectSession}>
               <div class="recent-sessions">
                 <span class="recent-sessions-label">{language.t("session.recent")}</span>
