@@ -15,7 +15,7 @@ This extension requires the [opencode CLI](https://opencode.ai) to be installed 
 
 ## Support
 
-This is an early release. If you encounter issues or have feedback, please create an issue at https://github.com/Kilo-Org/novacode/issues.
+This is an early release. If you encounter issues or have feedback, please create an issue at https://github.com/DerstedtCasper/vcp-code-2.0/issues.
 
 ## Development
 

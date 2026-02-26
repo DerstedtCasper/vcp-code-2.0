@@ -21,7 +21,7 @@
 - 💡 **Get $20 in bonus credits when you top-up for the first time** Credits can be used with 500+ models like Gemini 3 Pro, Claude 4.5 Sonnet & Opus, and GPT-5
 
 <p align="center">
-  <img src="https://media.githubusercontent.com/media/Kilo-Org/novacode/main/nova.gif" width="100%" />
+  <img src="https://media.githubusercontent.com/media/DerstedtCasper/vcp-code-2.0/main/nova.gif" width="100%" />
 </p>
 
 ## Quick Links
@@ -120,7 +120,7 @@ Thanks to all the contributors who help make Kilo better!
       </a>
     </td>
     <td align="center">
-      <a href="https://github.com/Kilo-Org/novacode/graphs/contributors">
+      <a href="https://github.com/DerstedtCasper/vcp-code-2.0/graphs/contributors">
         <b>more ...</b>
       </a>
     </td>
