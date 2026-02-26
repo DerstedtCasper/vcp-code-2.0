@@ -12,7 +12,7 @@ import Settings from "./components/Settings"
 import ProfileView from "./components/ProfileView"
 import { VSCodeProvider, useVSCode } from "./context/vscode"
 import { ServerProvider, useServer } from "./context/server"
-import { ProviderProvider } from "./context/provider"
+import { ProviderProvider, useProvider } from "./context/provider"
 import { ConfigProvider, useConfig } from "./context/config"
 import { SessionProvider, useSession } from "./context/session"
 import { LanguageProvider, useLanguage } from "./context/language"
@@ -196,10 +196,13 @@ const VCPView: Component = () => {
 export const DataBridge: Component<{ children: any }> = (props) => {
   const session = useSession()
   const vscode = useVSCode()
+  const prov = useProvider()
+  const server = useServer()
 
   const data = createMemo(() => {
     const id = session.currentSessionID()
     const perms = id ? session.permissions().filter((p) => p.sessionID === id) : []
+    const allParts = session.allParts()
     return {
       session: session.sessions().map((s) => ({ ...s, id: s.id, role: "user" as const })) as unknown as any[],
       session_status: {} as Record<string, any>,
@@ -207,13 +210,18 @@ export const DataBridge: Component<{ children: any }> = (props) => {
       message: id ? { [id]: session.messages() as unknown as SDKMessage[] } : {},
       part: id
         ? Object.fromEntries(
-            session
-              .messages()
-              .map((msg) => [msg.id, session.getParts(msg.id) as unknown as SDKPart[]])
-              .filter(([, parts]) => (parts as SDKPart[]).length > 0),
+            Object.entries(allParts)
+              .filter(([, parts]) => (parts as SDKPart[]).length > 0)
+              .map(([msgId, parts]) => [msgId, parts as unknown as SDKPart[]]),
           )
         : {},
       permission: id ? { [id]: perms as unknown as any[] } : {},
+      question: {},
+      provider: {
+        all: Object.values(prov.providers()) as unknown as any[],
+        connected: prov.connected(),
+        default: prov.defaults(),
+      } as unknown as any,
     }
   })
 
@@ -221,16 +229,33 @@ export const DataBridge: Component<{ children: any }> = (props) => {
     session.respondToPermission(input.permissionID, input.response)
   }
 
-  const sync = (sessionID: string) => {
-    session.syncSession(sessionID)
+  const reply = (input: { requestID: string; answers: string[][] }) => {
+    session.replyToQuestion(input.requestID, input.answers)
+  }
+
+  const reject = (input: { requestID: string }) => {
+    session.rejectQuestion(input.requestID)
   }
 
   const open = (filePath: string, line?: number, column?: number) => {
     vscode.postMessage({ type: "openFile", filePath, line, column })
   }
 
+  const directory = () => {
+    const dir = server.workspaceDirectory()
+    if (!dir) return ""
+    return dir.endsWith("/") || dir.endsWith("\\") ? dir : dir + "/"
+  }
+
   return (
-    <DataProvider data={data()} directory="" onPermissionRespond={respond} onSyncSession={sync} onOpenFile={open}>
+    <DataProvider
+      data={data()}
+      directory={directory()}
+      onPermissionRespond={respond}
+      onQuestionReply={reply}
+      onQuestionReject={reject}
+      onOpenFile={open}
+    >
       {props.children}
     </DataProvider>
   )

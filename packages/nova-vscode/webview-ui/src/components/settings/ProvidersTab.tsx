@@ -1,4 +1,4 @@
-import { Component, For, createSignal, createMemo } from "solid-js"
+import { Component, For, createSignal, createMemo, Show } from "solid-js"
 import { Select } from "@novacode/nova-ui/select"
 import { Card } from "@novacode/nova-ui/card"
 import { Button } from "@novacode/nova-ui/button"
@@ -7,7 +7,7 @@ import { useConfig } from "../../context/config"
 import { useProvider } from "../../context/provider"
 import { useLanguage } from "../../context/language"
 import { ModelSelectorBase } from "../chat/ModelSelector"
-import type { ModelSelection } from "../../types/messages"
+import type { ModelSelection, ProviderConfig } from "../../types/messages"
 import SettingsRow from "./SettingsRow"
 
 interface ProviderOption {
@@ -41,6 +41,49 @@ const ProvidersTab: Component = () => {
   const [newDisabled, setNewDisabled] = createSignal<ProviderOption | undefined>()
   const [newEnabled, setNewEnabled] = createSignal<ProviderOption | undefined>()
 
+  // ── Provider API Configuration ──────────────────────────────────────
+  const [selectedProvider, setSelectedProvider] = createSignal<ProviderOption | undefined>()
+  const [apiKeyInput, setApiKeyInput] = createSignal("")
+  const [baseUrlInput, setBaseUrlInput] = createSignal("")
+  const [showApiKey, setShowApiKey] = createSignal(false)
+
+  // When provider selection changes, populate fields from config
+  const onProviderSelect = (opt: ProviderOption | undefined) => {
+    setSelectedProvider(opt)
+    if (opt) {
+      const provCfg = config().provider?.[opt.value]
+      setApiKeyInput(provCfg?.api_key ?? provCfg?.options?.apiKey ?? "")
+      setBaseUrlInput(provCfg?.base_url ?? provCfg?.options?.baseURL ?? "")
+    } else {
+      setApiKeyInput("")
+      setBaseUrlInput("")
+    }
+    setShowApiKey(false)
+  }
+
+  const saveProviderConfig = () => {
+    const prov = selectedProvider()
+    if (!prov) return
+    const patch: ProviderConfig = {}
+    const key = apiKeyInput().trim()
+    const url = baseUrlInput().trim()
+    if (key) patch.api_key = key
+    if (url) patch.base_url = url
+    updateConfig({ provider: { [prov.value]: patch } })
+  }
+
+  // List of providers that already have config
+  const configuredProviders = createMemo(() => {
+    const provCfg = config().provider ?? {}
+    return Object.entries(provCfg)
+      .filter(([, v]) => v.api_key || v.base_url || v.options?.apiKey || v.options?.baseURL)
+      .map(([id, v]) => ({
+        id,
+        hasKey: !!(v.api_key || v.options?.apiKey),
+        hasUrl: !!(v.base_url || v.options?.baseURL),
+      }))
+  })
+
   const disabledProviders = () => config().disabled_providers ?? []
   const enabledProviders = () => config().enabled_providers ?? []
 
@@ -70,7 +113,133 @@ const ProvidersTab: Component = () => {
 
   return (
     <div>
+      {/* Provider API Configuration */}
+      <h4 style={{ "margin-bottom": "8px" }}>提供商 API 配置</h4>
+      <Card>
+        <div
+          style={{
+            "font-size": "11px",
+            color: "var(--text-weak-base, var(--vscode-descriptionForeground))",
+            "padding-bottom": "8px",
+            "border-bottom": "1px solid var(--border-weak-base)",
+          }}
+        >
+          选择提供商并配置 API Key 和 Base URL，用于连接 AI 模型服务。
+        </div>
+        <div style={{ padding: "8px 0", display: "grid", gap: "8px" }}>
+          <div style={{ display: "flex", gap: "8px", "align-items": "center" }}>
+            <div style={{ flex: 1 }}>
+              <Select
+                options={providerOptions()}
+                current={selectedProvider()}
+                value={(o) => o.value}
+                label={(o) => o.label}
+                onSelect={onProviderSelect}
+                variant="secondary"
+                size="small"
+                triggerVariant="settings"
+                placeholder="选择提供商…"
+              />
+            </div>
+          </div>
+          <Show when={selectedProvider()}>
+            <div style={{ display: "grid", gap: "6px" }}>
+              <div>
+                <label style={{ "font-size": "11px", "font-weight": "500", display: "block", "margin-bottom": "4px" }}>
+                  API Key
+                </label>
+                <div style={{ display: "flex", gap: "4px", "align-items": "center" }}>
+                  <input
+                    type={showApiKey() ? "text" : "password"}
+                    value={apiKeyInput()}
+                    onInput={(e) => setApiKeyInput(e.currentTarget.value)}
+                    placeholder="sk-..."
+                    style={{
+                      flex: "1",
+                      padding: "4px 8px",
+                      "font-size": "12px",
+                      "font-family": "var(--vscode-editor-font-family, monospace)",
+                      background: "var(--vscode-input-background)",
+                      color: "var(--vscode-input-foreground)",
+                      border: "1px solid var(--vscode-input-border, var(--border-base))",
+                      "border-radius": "4px",
+                      outline: "none",
+                    }}
+                  />
+                  <IconButton
+                    size="small"
+                    variant="ghost"
+                    icon={showApiKey() ? "eye-closed" : "eye"}
+                    onClick={() => setShowApiKey(!showApiKey())}
+                  />
+                </div>
+              </div>
+              <div>
+                <label style={{ "font-size": "11px", "font-weight": "500", display: "block", "margin-bottom": "4px" }}>
+                  Base URL <span style={{ "font-weight": "normal", opacity: "0.6" }}>(可选)</span>
+                </label>
+                <input
+                  type="text"
+                  value={baseUrlInput()}
+                  onInput={(e) => setBaseUrlInput(e.currentTarget.value)}
+                  placeholder="https://api.openai.com/v1"
+                  style={{
+                    width: "100%",
+                    padding: "4px 8px",
+                    "font-size": "12px",
+                    "font-family": "var(--vscode-editor-font-family, monospace)",
+                    background: "var(--vscode-input-background)",
+                    color: "var(--vscode-input-foreground)",
+                    border: "1px solid var(--vscode-input-border, var(--border-base))",
+                    "border-radius": "4px",
+                    outline: "none",
+                    "box-sizing": "border-box",
+                  }}
+                />
+              </div>
+              <div style={{ display: "flex", "justify-content": "flex-end", gap: "8px", "margin-top": "4px" }}>
+                <Button size="small" onClick={saveProviderConfig}>
+                  保存配置
+                </Button>
+              </div>
+            </div>
+          </Show>
+        </div>
+
+        {/* Already configured providers summary */}
+        <Show when={configuredProviders().length > 0}>
+          <div
+            style={{
+              "border-top": "1px solid var(--border-weak-base)",
+              "padding-top": "8px",
+              "margin-top": "4px",
+            }}
+          >
+            <div style={{ "font-size": "11px", "font-weight": "500", "margin-bottom": "6px" }}>已配置的提供商</div>
+            <For each={configuredProviders()}>
+              {(item) => (
+                <div
+                  style={{
+                    display: "flex",
+                    "align-items": "center",
+                    "justify-content": "space-between",
+                    padding: "4px 0",
+                    "font-size": "12px",
+                  }}
+                >
+                  <span>{item.id}</span>
+                  <span style={{ "font-size": "10px", color: "var(--text-weak-base, var(--vscode-descriptionForeground))" }}>
+                    {item.hasKey ? "🔑" : ""} {item.hasUrl ? "🔗" : ""}
+                  </span>
+                </div>
+              )}
+            </For>
+          </div>
+        </Show>
+      </Card>
+
       {/* Model selection */}
+      <h4 style={{ "margin-top": "16px", "margin-bottom": "8px" }}>模型选择</h4>
       <Card>
         <SettingsRow
           title={language.t("settings.providers.defaultModel.title")}

@@ -241,12 +241,15 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     // Re-send ready so the webview can recover after refresh.
     if (serverInfo) {
       const langConfig = vscode.workspace.getConfiguration("vcp-code.new")
+      const workspaceFolders = vscode.workspace.workspaceFolders
+      const workspaceDirectory = workspaceFolders?.[0]?.uri.fsPath ?? ""
       this.postMessage({
         type: "ready",
         serverInfo,
         extensionVersion: this.extensionVersion,
         vscodeLanguage: vscode.env.language,
         languageOverride: langConfig.get<string>("language"),
+        workspaceDirectory,
       })
     }
 
