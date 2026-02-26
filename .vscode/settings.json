@@ -5,11 +5,29 @@
   },
   "files.exclude": {
     "packages/nova-vscode/out": false,
-    "packages/nova-vscode/dist": false
+    "packages/nova-vscode/dist": false,
+    "_tmp": true,
+    "packages/kilo-vscode": true
   },
   "search.exclude": {
     "packages/nova-vscode/out": true,
-    "packages/nova-vscode/dist": true
+    "packages/nova-vscode/dist": true,
+    "_tmp/**": true,
+    "packages/kilo-vscode/**": true
   },
-  "typescript.tsc.autoDetect": "off"
+  "files.watcherExclude": {
+    "**/_tmp/**": true,
+    "**/packages/kilo-vscode/**": true
+  },
+  "typescript.tsc.autoDetect": "off",
+  "typescript.tsserver.watchOptions": {
+    "watchFile": "useFsEvents",
+    "watchDirectory": "useFsEvents",
+    "fallbackPolling": "dynamicPriority",
+    "excludeDirectories": [
+      "**/node_modules/**",
+      "**/_tmp/**",
+      "**/packages/kilo-vscode/**"
+    ]
+  }
 }
