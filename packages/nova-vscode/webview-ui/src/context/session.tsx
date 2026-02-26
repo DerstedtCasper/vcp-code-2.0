@@ -45,12 +45,12 @@ import { computeStatus, calcTotalCost, calcContextUsage } from "./session-utils"
 // Store structure for messages and parts
 interface SessionStore {
   sessions: Record<string, SessionInfo>
-  messages: Record<string, Message[]> // sessionID -> messages
-  parts: Record<string, Part[]> // messageID -> parts
-  todos: Record<string, TodoItem[]> // sessionID -> todos
-  modelSelections: Record<string, ModelSelection> // sessionID -> model
-  agentSelections: Record<string, string> // sessionID -> agent name
-  variantSelections: Record<string, string> // "providerID/modelID" -> variant name
+  messages: Record<string, Message[]> // sessionID  -  messages
+  parts: Record<string, Part[]> // messageID  -  parts
+  todos: Record<string, TodoItem[]> // sessionID  -  todos
+  modelSelections: Record<string, ModelSelection> // sessionID  -  model
+  agentSelections: Record<string, string> // sessionID  -  agent name
+  variantSelections: Record<string, string> // "providerID/modelID"  -  variant name
 }
 
 interface SessionContextValue {
@@ -151,7 +151,7 @@ export const SessionProvider: ParentComponent = (props) => {
   // Current session ID
   const [currentSessionID, setCurrentSessionID] = createSignal<string | undefined>()
 
-  // Per-session status map — keyed by sessionID
+  // Per-session status map  - keyed by sessionID
   const [statusMap, setStatusMap] = createStore<Record<string, SessionStatusInfo>>({})
   const [busySinceMap, setBusySinceMap] = createStore<Record<string, number>>({})
 
@@ -290,7 +290,7 @@ export const SessionProvider: ParentComponent = (props) => {
     clearInterval(agentRetryTimer)
   })
 
-  // Variant (thinking effort) selection — keyed by "providerID/modelID"
+  // Variant (thinking effort) selection  - keyed by "providerID/modelID"
   const variantKey = (sel: ModelSelection) => `${sel.providerID}/${sel.modelID}`
 
   const variantList = () => {
@@ -502,7 +502,7 @@ export const SessionProvider: ParentComponent = (props) => {
     const effectiveMessageID = messageID || part.messageID
 
     if (!effectiveMessageID) {
-      console.warn("[Kilo New] Part updated without messageID:", part.id, part.type)
+      console.warn("[Nova New] Part updated without messageID:", part.id, part.type)
       return
     }
 
@@ -758,7 +758,7 @@ export const SessionProvider: ParentComponent = (props) => {
     busyMode?: BusyInsertMode,
   ) {
     if (!server.isConnected()) {
-      console.warn("[Kilo New] Cannot send message: not connected")
+      console.warn("[Nova New] Cannot send message: not connected")
       return
     }
 
@@ -794,7 +794,7 @@ export const SessionProvider: ParentComponent = (props) => {
   function abort() {
     const sessionID = currentSessionID()
     if (!sessionID) {
-      console.warn("[Kilo New] Cannot abort: no current session")
+      console.warn("[Nova New] Cannot abort: no current session")
       return
     }
 
@@ -806,13 +806,13 @@ export const SessionProvider: ParentComponent = (props) => {
 
   function compact() {
     if (!server.isConnected()) {
-      console.warn("[Kilo New] Cannot compact: not connected")
+      console.warn("[Nova New] Cannot compact: not connected")
       return
     }
 
     const sessionID = currentSessionID()
     if (!sessionID) {
-      console.warn("[Kilo New] Cannot compact: no current session")
+      console.warn("[Nova New] Cannot compact: no current session")
       return
     }
 
@@ -898,7 +898,7 @@ export const SessionProvider: ParentComponent = (props) => {
 
   function createSession() {
     if (!server.isConnected()) {
-      console.warn("[Kilo New] Cannot create session: not connected")
+      console.warn("[Nova New] Cannot create session: not connected")
       return
     }
 
@@ -923,7 +923,7 @@ export const SessionProvider: ParentComponent = (props) => {
 
   function loadSessions() {
     if (!server.isConnected()) {
-      console.warn("[Kilo New] Cannot load sessions: not connected")
+      console.warn("[Nova New] Cannot load sessions: not connected")
       return
     }
     vscode.postMessage({ type: "loadSessions" })
@@ -931,7 +931,7 @@ export const SessionProvider: ParentComponent = (props) => {
 
   function selectSession(id: string) {
     if (!server.isConnected()) {
-      console.warn("[Kilo New] Cannot select session: not connected")
+      console.warn("[Nova New] Cannot select session: not connected")
       return
     }
     setCurrentSessionID(id)
@@ -942,7 +942,7 @@ export const SessionProvider: ParentComponent = (props) => {
 
   function deleteSession(id: string) {
     if (!server.isConnected()) {
-      console.warn("[Kilo New] Cannot delete session: not connected")
+      console.warn("[Nova New] Cannot delete session: not connected")
       return
     }
     vscode.postMessage({ type: "deleteSession", sessionID: id })
@@ -950,7 +950,7 @@ export const SessionProvider: ParentComponent = (props) => {
 
   function renameSession(id: string, title: string) {
     if (!server.isConnected()) {
-      console.warn("[Kilo New] Cannot rename session: not connected")
+      console.warn("[Nova New] Cannot rename session: not connected")
       return
     }
     vscode.postMessage({ type: "renameSession", sessionID: id, title })

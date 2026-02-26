@@ -3,8 +3,9 @@
  * Provides access to the VS Code webview API for posting messages
  */
 
-import { createContext, useContext, onCleanup, ParentComponent } from "solid-js"
-import type { VSCodeAPI, WebviewMessage, ExtensionMessage } from "../types/messages"
+import { createContext, useContext, onCleanup, createSignal } from "solid-js"
+import type { ParentComponent, Accessor } from "solid-js"
+import type { VSCodeAPI, WebviewMessage, ExtensionMessage, VcpStatusUpdateMessage } from "../types/messages"
 
 // Get the VS Code API (only available in webview context)
 let vscodeApi: VSCodeAPI | undefined
@@ -16,9 +17,9 @@ export function getVSCodeAPI(): VSCodeAPI {
       vscodeApi = acquireVsCodeApi()
     } else {
       // Mock for development/testing outside VS Code
-      console.warn("[Kilo New] Running outside VS Code, using mock API")
+      console.warn("[Nova New] Running outside VS Code, using mock API")
       vscodeApi = {
-        postMessage: (msg) => console.log("[Kilo New] Mock postMessage:", msg),
+        postMessage: (msg) => console.log("[Nova New] Mock postMessage:", msg),
         getState: () => undefined,
         setState: () => {},
       }
@@ -33,6 +34,7 @@ interface VSCodeContextValue {
   onMessage: (handler: (message: ExtensionMessage) => void) => () => void
   getState: <T>() => T | undefined
   setState: <T>(state: T) => void
+  lastVcpStatus: Accessor<VcpStatusUpdateMessage["payload"] | null>
 }
 
 const VSCodeContext = createContext<VSCodeContextValue>()
@@ -40,10 +42,14 @@ const VSCodeContext = createContext<VSCodeContextValue>()
 export const VSCodeProvider: ParentComponent = (props) => {
   const api = getVSCodeAPI()
   const handlers = new Set<(message: ExtensionMessage) => void>()
+  const [lastVcpStatus, setLastVcpStatus] = createSignal<VcpStatusUpdateMessage["payload"] | null>(null)
 
   // Listen for messages from the extension
   const messageListener = (event: MessageEvent) => {
     const message = event.data as ExtensionMessage
+    if (message.type === "vcpStatusUpdate") {
+      setLastVcpStatus(message.payload)
+    }
     handlers.forEach((handler) => handler(message))
   }
 
@@ -64,6 +70,7 @@ export const VSCodeProvider: ParentComponent = (props) => {
     },
     getState: <T,>() => api.getState() as T | undefined,
     setState: <T,>(state: T) => api.setState(state),
+    lastVcpStatus,
   }
 
   return <VSCodeContext.Provider value={value}>{props.children}</VSCodeContext.Provider>

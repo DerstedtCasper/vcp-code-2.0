@@ -64,7 +64,7 @@ export const ConfigProvider: ParentComponent = (props) => {
     staged = null
     const mutationID = ++nextMutationID
     const expectedRevision = revision()
-    console.debug("[Kilo New] Config queue: send", { mutationID, expectedRevision, hasPending: !!staged })
+    console.debug("[Nova New] Config queue: send", { mutationID, expectedRevision, hasPending: !!staged })
     const waiter = waitConfigMutation(mutationID)
     vscode.postMessage({
       type: "updateConfig",
@@ -79,14 +79,14 @@ export const ConfigProvider: ParentComponent = (props) => {
     } catch (error) {
       if (typeof error === "object" && error !== null && "type" in error && error.type === "configConflict") {
         const conflict = error as ConfigConflictMessage
-        console.warn("[Kilo New] Config queue: conflict", {
+        console.warn("[Nova New] Config queue: conflict", {
           mutationID,
           revision: conflict.revision,
         })
         setConfig(conflict.config)
         setRevision(conflict.revision)
       } else {
-        console.error("[Kilo New] Config update failed", error)
+        console.error("[Nova New] Config update failed", error)
       }
     }
 
@@ -96,7 +96,7 @@ export const ConfigProvider: ParentComponent = (props) => {
   const enqueueConfigMutation = (partial: Partial<Config>) => {
     const current = staged ?? {}
     staged = mergeConfig(current as Record<string, unknown>, partial as Record<string, unknown>) as Partial<Config>
-    console.debug("[Kilo New] Config queue: enqueue", { running, hasPending: !!staged })
+    console.debug("[Nova New] Config queue: enqueue", { running, hasPending: !!staged })
     if (running) return
     running = true
     void sendNext()
@@ -113,7 +113,7 @@ export const ConfigProvider: ParentComponent = (props) => {
     }
     if (message.type === "configUpdated") {
       if (!inflight) {
-        console.debug("[Kilo New] Config queue: stale configUpdated dropped (no inflight)")
+        console.debug("[Nova New] Config queue: stale configUpdated dropped (no inflight)")
         return
       }
       if (
@@ -121,7 +121,7 @@ export const ConfigProvider: ParentComponent = (props) => {
         typeof revision() === "number" &&
         message.revision < (revision() as number)
       ) {
-        console.warn("[Kilo New] Config queue: stale configUpdated dropped", {
+        console.warn("[Nova New] Config queue: stale configUpdated dropped", {
           inflightMutationID: inflight.mutationID,
           incomingRevision: message.revision,
           currentRevision: revision(),
@@ -138,7 +138,7 @@ export const ConfigProvider: ParentComponent = (props) => {
     }
     if (message.type === "configConflict") {
       if (!inflight) {
-        console.debug("[Kilo New] Config queue: stale configConflict dropped (no inflight)")
+        console.debug("[Nova New] Config queue: stale configConflict dropped (no inflight)")
         return
       }
       setConfig(message.config)
