@@ -1,5 +1,5 @@
 import { ResponseMetaData } from "./types"
-import type { KiloConnectionService } from "../cli-backend"
+import type { NovaConnectionService } from "../cli-backend"
 
 const DEFAULT_MODEL = "mistralai/codestral-2508"
 const PROVIDER_DISPLAY_NAME = "Nova Gateway"
@@ -17,13 +17,13 @@ export type ApiStreamChunk =
     }
 
 export class AutocompleteModel {
-  private connectionService: KiloConnectionService | null = null
+  private connectionService: NovaConnectionService | null = null
   public profileName: string | null = null
   public profileType: string | null = null
   public loaded = false
   public hasNovacodeProfileWithNoBalance = false
 
-  constructor(connectionService?: KiloConnectionService) {
+  constructor(connectionService?: NovaConnectionService) {
     if (connectionService) {
       this.connectionService = connectionService
       this.loaded = true
@@ -33,7 +33,7 @@ export class AutocompleteModel {
   /**
    * Set the connection service (can be called after construction when service becomes available)
    */
-  public setConnectionService(service: KiloConnectionService): void {
+  public setConnectionService(service: NovaConnectionService): void {
     this.connectionService = service
   }
 
@@ -102,7 +102,7 @@ export class AutocompleteModel {
     onChunk: (chunk: ApiStreamChunk) => void,
   ): Promise<ResponseMetaData> {
     // FIM is the primary strategy; this method is a fallback.
-    // For now, throw — callers should use generateFimResponse via supportsFim().
+    // For now, throw  - callers should use generateFimResponse via supportsFim().
     throw new Error("Chat-based completions are not supported via CLI backend. Use FIM (supportsFim() returns true).")
   }
 
@@ -116,7 +116,7 @@ export class AutocompleteModel {
 
   /**
    * Check if the model has valid credentials.
-   * With CLI backend, credentials are managed by the backend — we just need a connection.
+   * With CLI backend, credentials are managed by the backend  - we just need a connection.
    */
   public hasValidCredentials(): boolean {
     if (!this.connectionService) {

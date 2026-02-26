@@ -48,7 +48,7 @@ export class HttpClient {
     this.authHeader = `Basic ${Buffer.from(`${this.authUsername}:${config.password}`).toString("base64")}`
 
     // Safe debug logging: no secrets.
-    console.log("[Kilo New] HTTP: 🔐 Auth configured", {
+    console.log("[Nova New] HTTP: 🔐 Auth configured", {
       username: this.authUsername,
       passwordLength: config.password.length,
     })
@@ -89,7 +89,7 @@ export class HttpClient {
       const errorMessage = extractHttpErrorMessage(response.statusText, rawText)
 
       if (!options?.silent) {
-        console.error("[Kilo New] HTTP: ❌ Request failed", {
+        console.error("[Nova New] HTTP:  - Request failed", {
           method,
           path,
           status: response.status,
@@ -107,7 +107,7 @@ export class HttpClient {
         return undefined as T
       }
 
-      console.error("[Kilo New] HTTP: ❌ Empty response body", {
+      console.error("[Nova New] HTTP:  - Empty response body", {
         method,
         path,
         status: response.status,
@@ -118,7 +118,7 @@ export class HttpClient {
     try {
       return JSON.parse(rawText) as T
     } catch (error) {
-      console.error("[Kilo New] HTTP: ❌ Invalid JSON response", {
+      console.error("[Nova New] HTTP:  - Invalid JSON response", {
         method,
         path,
         status: response.status,
@@ -156,7 +156,7 @@ export class HttpClient {
 
   /**
    * Get the status of all sessions.
-   * Returns a map of sessionID → SessionStatusInfo.
+   * Returns a map of sessionID  - SessionStatusInfo.
    */
   async getSessionStatuses(directory: string): Promise<Record<string, SessionStatusInfo>> {
     return this.request<Record<string, SessionStatusInfo>>("GET", "/session/status", undefined, { directory })
@@ -445,14 +445,14 @@ export class HttpClient {
   }
 
   /**
-   * Fetch Kilo notifications for the current user from the nova-gateway.
+   * Fetch Nova notifications for the current user from the nova-gateway.
    * Returns an empty array if not logged in or if the request fails.
    */
   async getNotifications(): Promise<NovacodeNotification[]> {
     try {
       return await this.request<NovacodeNotification[]>("GET", "/kilo/notifications")
     } catch (err) {
-      console.warn("[Kilo] Failed to fetch notifications:", err)
+      console.warn("[Nova] Failed to fetch notifications:", err)
       return []
     }
   }
@@ -471,7 +471,7 @@ export class HttpClient {
 
   /**
    * Stream a FIM (Fill-in-the-Middle) completion from the Nova Gateway via the CLI backend.
-   * The CLI backend handles auth — no API key needed in the extension.
+   * The CLI backend handles auth  - no API key needed in the extension.
    *
    * @param prefix - Code before the cursor
    * @param suffix - Code after the cursor

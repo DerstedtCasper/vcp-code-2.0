@@ -53,7 +53,7 @@ export function parseSSEDataLine(line: string): SSEChunkResult | null {
     }
     return result
   } catch (err) {
-    console.warn("[Kilo New] Failed to parse SSE data line", { err, line })
+    console.warn("[Nova New] Failed to parse SSE data line", { err, line })
     return null
   }
 }

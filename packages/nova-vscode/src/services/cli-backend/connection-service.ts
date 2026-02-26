@@ -15,7 +15,7 @@ type NotificationDismissListener = (notificationId: string) => void
  * Shared connection service that owns the single ServerManager, HttpClient, and SSEClient.
  * Multiple NovaProvider instances subscribe to it for SSE events and state changes.
  */
-export class KiloConnectionService {
+export class NovaConnectionService {
   private readonly serverManager: ServerManager
   private client: HttpClient | null = null
   private sseClient: SSEClient | null = null
@@ -69,7 +69,7 @@ export class KiloConnectionService {
    */
   getHttpClient(): HttpClient {
     if (!this.client) {
-      throw new Error("Not connected — call connect() first")
+      throw new Error("Not connected  - call connect() first")
     }
     return this.client
   }
@@ -120,7 +120,7 @@ export class KiloConnectionService {
   }
 
   /**
-   * Record a messageID -> sessionID mapping, typically from message.updated or from HTTP message history.
+   * Record a messageID  -  sessionID mapping, typically from message.updated or from HTTP message history.
    */
   recordMessageSessionId(messageId: string, sessionId: string): void {
     if (!messageId || !sessionId) {
@@ -220,7 +220,7 @@ export class KiloConnectionService {
 
     let didConnect = false
 
-    // Wire SSE events → broadcast to all registered listeners
+    // Wire SSE events  - broadcast to all registered listeners
     this.sseClient.onEvent((event) => {
       for (const listener of this.eventListeners) {
         listener(event)
@@ -234,7 +234,7 @@ export class KiloConnectionService {
       rejectConnected = null
     })
 
-    // Wire SSE state → broadcast to all registered state listeners
+    // Wire SSE state  - broadcast to all registered state listeners
     this.sseClient.onStateChange((sseState) => {
       this.setState(sseState)
 

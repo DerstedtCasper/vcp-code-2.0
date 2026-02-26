@@ -3,14 +3,14 @@ import { AutocompleteContext, VisibleCodeContext } from "../types"
 import { removePrefixOverlap } from "../continuedev/core/autocomplete/postprocessing/removePrefixOverlap.js"
 import { AutocompleteTelemetry } from "../classic-auto-complete/AutocompleteTelemetry"
 import { postprocessAutocompleteSuggestion } from "../classic-auto-complete/uselessSuggestionFilter"
-import type { KiloConnectionService } from "../../cli-backend"
+import type { NovaConnectionService } from "../../cli-backend"
 import { finalizeChatSuggestion, buildChatPrefix } from "./chat-autocomplete-utils"
 
 export class ChatTextAreaAutocomplete {
   private model: AutocompleteModel
   private telemetry: AutocompleteTelemetry
 
-  constructor(connectionService: KiloConnectionService) {
+  constructor(connectionService: NovaConnectionService) {
     this.model = new AutocompleteModel(connectionService)
     this.telemetry = new AutocompleteTelemetry("chat-textarea")
   }

@@ -261,7 +261,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
           data: profileData,
         })
       } catch (error) {
-        console.error("[Nova New] NovaProvider: â?syncWebviewState failed to fetch profile:", error)
+        console.error("[Nova New] NovaProvider:  - syncWebviewState failed to fetch profile:", error)
       }
     }
   }
@@ -393,7 +393,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
 
       switch (message.type) {
         case "webviewReady":
-          console.log("[Nova New] NovaProvider: âœ?webviewReady received")
+          console.log("[Nova New] NovaProvider:  - webviewReady received")
           this.isWebviewReady = true
           await this.syncWebviewState("webviewReady")
           break
@@ -689,7 +689,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
             }
             await this.syncWebviewState("sse-connected")
           } catch (error) {
-            console.error("[Nova New] NovaProvider: â?Failed during connected state handling:", error)
+            console.error("[Nova New] NovaProvider:  - Failed during connected state handling:", error)
             this.postMessage({
               type: "error",
               message: error instanceof Error ? error.message : "Failed to sync after connecting",
@@ -730,9 +730,9 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       await this.fetchAndSendNotifications()
       this.sendNotificationSettings()
 
-      console.log("[Nova New] NovaProvider: âœ?initializeConnection completed successfully")
+      console.log("[Nova New] NovaProvider:  - initializeConnection completed successfully")
     } catch (error) {
-      console.error("[Nova New] NovaProvider: â?Failed to initialize connection:", error)
+      console.error("[Nova New] NovaProvider:  - Failed to initialize connection:", error)
       this.connectionState = "error"
       this.postMessage({
         type: "connectionState",
@@ -812,7 +812,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       // Update currentSession so fallback logic in handleSendMessage/handleAbort
       // references the correct session after switching to a historical session.
       // Non-blocking: don't let a failure here prevent messages from loading.
-      // 404s are expected for cross-worktree sessions â€?use silent to suppress HTTP error logs.
+      // 404s are expected for cross-worktree sessions  - use silent to suppress HTTP error logs.
       this.httpClient
         .getSession(sessionID, workspaceDir, true)
         .then((session) => {
@@ -865,7 +865,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       })
       this.sendVcpStatusUpdate(sessionID)
     } catch (error) {
-      // Silently ignore aborted requests â€?the user switched to a different session
+      // Silently ignore aborted requests  - the user switched to a different session
       if (abort.signal.aborted) return
       console.error("[Nova New] NovaProvider: Failed to load messages:", error)
       this.postMessage({
@@ -964,7 +964,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
   }
 
   /**
-   * Handle enhance prompt request â€?calls backend LLM to rewrite/polish the user's prompt.
+   * Handle enhance prompt request  - calls backend LLM to rewrite/polish the user's prompt.
    */
   private async handleEnhancePrompt(text: string, requestId: string): Promise<void> {
     if (!this.httpClient) {
@@ -1054,13 +1054,13 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Fetch providers from the backend and send to webview.
    *
    * The backend `/provider` endpoint returns `all` as an array-like object with
-   * numeric keys ("0", "1", â€?. The webview and sendMessage both need providers
+   * numeric keys ("0", "1",  - . The webview and sendMessage both need providers
    * keyed by their real `provider.id` (e.g. "anthropic", "openai"). We re-key
    * the map here so the rest of the code can use provider.id everywhere.
    */
   private async fetchAndSendProviders(): Promise<void> {
     if (!this.httpClient) {
-      // httpClient not ready â€?serve from cache if available
+      // httpClient not ready  - serve from cache if available
       if (this.cachedProvidersMessage) {
         this.postMessage(this.cachedProvidersMessage)
       }
@@ -1517,7 +1517,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
 
   /**
    * Handle login request from the webview.
-   * Uses the provider OAuth flow: authorize â†?open browser â†?callback (polls until complete).
+   * Uses the provider OAuth flow: authorize  - open browser  - callback (polls until complete).
    * Sends device auth messages so the webview can display a QR code, verification code, and timer.
    */
   private async handleLogin(): Promise<void> {
@@ -1602,7 +1602,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       return
     }
 
-    // Org switch succeeded â€?refresh profile and providers independently (best-effort)
+    // Org switch succeeded  - refresh profile and providers independently (best-effort)
     try {
       const profileData = await client.getProfile()
       this.postMessage({ type: "profileData", data: profileData })
@@ -1617,7 +1617,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
   }
 
   /**
-   * Handle openFile request from the webview â€?open a file in the VS Code editor.
+   * Handle openFile request from the webview  - open a file in the VS Code editor.
    */
   private handleOpenFile(filePath: string, line?: number, column?: number): void {
     const absolute = /^(?:\/|[a-zA-Z]:[\\/])/.test(filePath)
@@ -1749,8 +1749,8 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     // Extract sessionID from the event
     const sessionID = this.extractSessionID(event)
 
-    // Events without sessionID (server.connected, server.heartbeat) â†?always forward
-    // Events with sessionID â†?only forward if this webview tracks that session
+    // Events without sessionID (server.connected, server.heartbeat)  - always forward
+    // Events with sessionID  - only forward if this webview tracks that session
     // message.part.updated is always session-scoped; if we can't determine the session, drop it to avoid cross-webview leakage.
     if (!sessionID && event.type === "message.part.updated") {
       return
@@ -2115,7 +2115,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     }
 
     void this.webview.postMessage(message).then(undefined, (error) => {
-      console.error("[Nova New] NovaProvider: â?postMessage failed", error)
+      console.error("[Nova New] NovaProvider:  - postMessage failed", error)
     })
   }
 
@@ -2160,7 +2160,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       .filter((p): p is string => p !== undefined && controller.validateAccess(path.resolve(workspaceDir, p)))
       .slice(0, 200)
 
-    // Open tabs â€?use instanceof TabInputText to exclude notebooks, diffs, custom editors
+    // Open tabs  - use instanceof TabInputText to exclude notebooks, diffs, custom editors
     const openTabSet = new Set<string>()
     for (const group of vscode.window.tabGroups.all) {
       for (const tab of group.tabs) {
@@ -2228,7 +2228,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
 
   /**
    * Dispose of the provider and clean up subscriptions.
-   * Does NOT kill the server â€?that's the connection service's job.
+   * Does NOT kill the server  - that's the connection service's job.
    */
   dispose(): void {
     this.unsubscribeEvent?.()

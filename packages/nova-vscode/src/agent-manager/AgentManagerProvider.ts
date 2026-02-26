@@ -1,5 +1,5 @@
 import * as vscode from "vscode"
-import type { KiloConnectionService, SessionInfo, HttpClient } from "../services/cli-backend"
+import type { NovaConnectionService, SessionInfo, HttpClient } from "../services/cli-backend"
 import { NovaProvider } from "../NovaProvider"
 import { buildWebviewHtml } from "../utils"
 import { WorktreeManager, type CreateWorktreeResult } from "./WorktreeManager"
@@ -32,9 +32,9 @@ export class AgentManagerProvider implements vscode.Disposable {
 
   constructor(
     private readonly extensionUri: vscode.Uri,
-    private readonly connectionService: KiloConnectionService,
+    private readonly connectionService: NovaConnectionService,
   ) {
-    this.outputChannel = vscode.window.createOutputChannel("Kilo Agent Manager")
+    this.outputChannel = vscode.window.createOutputChannel("Nova Agent Manager")
     this.terminalManager = new SessionTerminalManager((msg) =>
       this.outputChannel.appendLine(`[SessionTerminal] ${msg}`),
     )
@@ -237,7 +237,7 @@ export class AgentManagerProvider implements vscode.Disposable {
 
     let result: CreateWorktreeResult
     try {
-      result = await manager.createWorktree({ prompt: name || "kilo" })
+      result = await manager.createWorktree({ prompt: name || "nova" })
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error)
       this.postToWebview({

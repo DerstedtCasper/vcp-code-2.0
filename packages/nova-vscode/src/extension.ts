@@ -2,7 +2,7 @@ import * as vscode from "vscode"
 import { NovaProvider } from "./NovaProvider"
 import { AgentManagerProvider } from "./agent-manager/AgentManagerProvider"
 import { EXTENSION_DISPLAY_NAME } from "./constants"
-import { KiloConnectionService } from "./services/cli-backend"
+import { NovaConnectionService } from "./services/cli-backend"
 import { registerAutocompleteProvider } from "./services/autocomplete"
 import { BrowserAutomationService } from "./services/browser-automation"
 import { TelemetryProxy } from "./services/telemetry"
@@ -15,7 +15,7 @@ export function activate(context: vscode.ExtensionContext) {
   const telemetry = TelemetryProxy.getInstance()
 
   // Create shared connection service (one server for all webviews)
-  const connectionService = new KiloConnectionService(context)
+  const connectionService = new NovaConnectionService(context)
 
   // Create browser automation service (manages Playwright MCP registration)
   const browserAutomationService = new BrowserAutomationService(connectionService)
@@ -77,10 +77,10 @@ export function activate(context: vscode.ExtensionContext) {
       void vscode.env.openExternal(vscode.Uri.parse("https://opencode.ai/docs"))
     }),
     vscode.commands.registerCommand("vcp-code.new.popoutButtonClicked", () => {
-      return openKiloInNewTab(context, connectionService)
+      return openNovaInNewTab(context, connectionService)
     }),
     vscode.commands.registerCommand("vcp-code.new.openInNewTab", () => {
-      return openKiloInNewTab(context, connectionService)
+      return openNovaInNewTab(context, connectionService)
     }),
     vscode.commands.registerCommand("vcp-code.new.exportConfig", async () => {
       await provider.exportGlobalConfig()
@@ -89,7 +89,7 @@ export function activate(context: vscode.ExtensionContext) {
       await provider.importGlobalConfig()
     }),
     vscode.commands.registerCommand("vcp-code.new.openInTab", () => {
-      return openKiloInNewTab(context, connectionService)
+      return openNovaInNewTab(context, connectionService)
     }),
     vscode.commands.registerCommand("vcp-code.new.agentManager.previousSession", () => {
       agentManagerProvider.postMessage({ type: "action", action: "sessionPrevious" })
@@ -157,7 +157,7 @@ export function deactivate() {
   TelemetryProxy.getInstance().shutdown()
 }
 
-async function openKiloInNewTab(context: vscode.ExtensionContext, connectionService: KiloConnectionService) {
+async function openNovaInNewTab(context: vscode.ExtensionContext, connectionService: NovaConnectionService) {
   const lastCol = Math.max(...vscode.window.visibleTextEditors.map((e) => e.viewColumn || 0), 0)
   const hasVisibleEditors = vscode.window.visibleTextEditors.length > 0
 

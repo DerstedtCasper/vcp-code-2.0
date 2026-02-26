@@ -118,7 +118,7 @@ export class WorktreeManager {
       return
     }
 
-    // Git doesn't know about this directory — remove it directly
+    // Git doesn't know about this directory  - remove it directly
     if (fs.existsSync(worktreePath)) {
       if (!worktreePath.startsWith(this.dir)) {
         this.log(`Refusing to remove path outside worktrees directory: ${worktreePath}`)
@@ -184,7 +184,7 @@ export class WorktreeManager {
     const gitDir = await this.resolveGitDir()
     const excludePath = path.join(gitDir, "info", "exclude")
     await this.addExcludeEntry(excludePath, ".novacode/worktrees/", "Nova Code agent worktrees")
-    await this.addExcludeEntry(excludePath, ".novacode/agent-manager.json", "Kilo Agent Manager state")
+    await this.addExcludeEntry(excludePath, ".novacode/agent-manager.json", "Nova Agent Manager state")
     await this.addExcludeEntry(excludePath, ".novacode/setup-script", "Nova Code worktree setup script")
   }
 

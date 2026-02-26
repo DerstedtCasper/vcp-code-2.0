@@ -57,11 +57,11 @@ export class TelemetryProxy {
         "Content-Type": "application/json",
       },
       body: payload,
-    }).catch((err) => console.error("[Kilo New] Telemetry capture failed:", err))
+    }).catch((err) => console.error("[Nova New] Telemetry capture failed:", err))
   }
 
   /**
-   * No-op — the CLI server handles PostHog shutdown.
+   * No-op  - the CLI server handles PostHog shutdown.
    */
   shutdown() {}
 }

@@ -33,11 +33,11 @@ vi.mock("vscode", () => {
 
 import * as vscode from "vscode"
 import { registerCommitMessageService } from "../index"
-import type { KiloConnectionService } from "../../cli-backend/connection-service"
+import type { NovaConnectionService } from "../../cli-backend/connection-service"
 
 describe("commit-message service", () => {
   let mockContext: vscode.ExtensionContext
-  let mockConnectionService: KiloConnectionService
+  let mockConnectionService: NovaConnectionService
   let mockHttpClient: { generateCommitMessage: ReturnType<typeof vi.fn> }
 
   beforeEach(() => {
@@ -130,7 +130,7 @@ describe("commit-message service", () => {
       await commandCallback()
 
       expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
-        "Kilo backend is not connected. Please wait for the connection to establish.",
+        "Nova backend is not connected. Please wait for the connection to establish.",
       )
     })
 

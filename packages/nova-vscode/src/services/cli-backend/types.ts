@@ -191,7 +191,7 @@ export interface Provider {
 export interface ProviderListResponse {
   all: Record<string, Provider>
   connected: string[]
-  default: Record<string, string> // providerID → default modelID
+  default: Record<string, string> // providerID  - default modelID
 }
 
 // Model selection (providerID + modelID pair)
@@ -213,7 +213,7 @@ export interface ProviderAuthAuthorization {
   instructions: string
 }
 
-// Kilo notification from nova-gateway
+// Nova notification from nova-gateway
 export interface NovacodeNotificationAction {
   actionText: string
   actionURL: string
@@ -250,7 +250,7 @@ export interface ProfileData {
   currentOrgId: string | null
 }
 
-// MCP server status — discriminated union returned by the backend
+// MCP server status  - discriminated union returned by the backend
 export type McpStatus =
   | { status: "connected" }
   | { status: "disabled" }
@@ -458,7 +458,7 @@ export interface VcpConfig {
   memory?: VcpMemoryConfig
 }
 
-/** Full backend Config object (partial — all fields optional for PATCH) */
+/** Full backend Config object (partial  - all fields optional for PATCH) */
 export interface Config {
   permission?: PermissionConfig
   model?: string

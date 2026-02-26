@@ -25,32 +25,32 @@ export class SSEClient {
    * @param directory - The workspace directory to subscribe to events for
    */
   connect(directory: string): void {
-    console.log("[Kilo New] SSE: 🔌 connect() called with directory:", directory)
+    console.log("[Nova New] SSE: 🔌 connect() called with directory:", directory)
 
     // Return early if already connected
     if (this.eventSource) {
-      console.log("[Kilo New] SSE: ⚠️ Already connected, skipping")
+      console.log("[Nova New] SSE: ⚠️ Already connected, skipping")
       return
     }
 
     // Notify connecting state
-    console.log('[Kilo New] SSE: 🔄 Setting state to "connecting"')
+    console.log('[Nova New] SSE: 🔄 Setting state to "connecting"')
     this.notifyState("connecting")
 
     // Use the global event endpoint so we receive events from all directories
     // (including worktree sessions). Events are filtered client-side by trackedSessionIds.
     const url = `${this.config.baseUrl}/global/event?directory=${encodeURIComponent(directory)}`
-    console.log("[Kilo New] SSE: 🌐 Connecting to URL:", url)
+    console.log("[Nova New] SSE: 🌐 Connecting to URL:", url)
 
     // Create auth header
     const authHeader = `Basic ${Buffer.from(`${this.authUsername}:${this.config.password}`).toString("base64")}`
-    console.log("[Kilo New] SSE: 🔑 Auth header created", {
+    console.log("[Nova New] SSE: 🔑 Auth header created", {
       username: this.authUsername,
       passwordLength: this.config.password.length,
     })
 
     // Create EventSource with headers
-    console.log("[Kilo New] SSE: 🎬 Creating EventSource...")
+    console.log("[Nova New] SSE: 🎬 Creating EventSource...")
     this.eventSource = new EventSource(url, {
       headers: {
         Authorization: authHeader,
@@ -59,31 +59,31 @@ export class SSEClient {
 
     // Set up onopen handler
     this.eventSource.onopen = () => {
-      console.log("[Kilo New] SSE: ✅ EventSource opened successfully")
+      console.log("[Nova New] SSE:  - EventSource opened successfully")
       this.notifyState("connected")
     }
 
     // Set up onmessage handler
     this.eventSource.onmessage = (messageEvent) => {
-      console.log("[Kilo New] SSE: 📨 Received message event:", messageEvent.data)
+      console.log("[Nova New] SSE: 📨 Received message event:", messageEvent.data)
       try {
         const raw = JSON.parse(messageEvent.data)
         const event = unwrapSSEPayload(raw)
         if (!event) {
-          console.warn("[Kilo New] SSE: ⚠️ Received event without type:", raw)
+          console.warn("[Nova New] SSE: ⚠️ Received event without type:", raw)
           return
         }
-        console.log("[Kilo New] SSE: 📦 Parsed event type:", event.type)
+        console.log("[Nova New] SSE: 📦 Parsed event type:", event.type)
         this.notifyEvent(event)
       } catch (error) {
-        console.error("[Kilo New] SSE: ❌ Failed to parse event:", error)
+        console.error("[Nova New] SSE:  - Failed to parse event:", error)
         this.notifyError(error instanceof Error ? error : new Error(String(error)))
       }
     }
 
     // Set up onerror handler
     this.eventSource.onerror = (errorEvent) => {
-      console.error("[Kilo New] SSE: ❌ EventSource error:", errorEvent)
+      console.error("[Nova New] SSE:  - EventSource error:", errorEvent)
       this.notifyError(new Error("EventSource connection error"))
       this.notifyState("disconnected")
     }
@@ -144,7 +144,7 @@ export class SSEClient {
       try {
         handler(event)
       } catch (error) {
-        console.error("[Kilo New] SSE: Error in event handler:", error)
+        console.error("[Nova New] SSE: Error in event handler:", error)
       }
     }
   }
@@ -157,7 +157,7 @@ export class SSEClient {
       try {
         handler(error)
       } catch (err) {
-        console.error("[Kilo New] SSE: Error in error handler:", err)
+        console.error("[Nova New] SSE: Error in error handler:", err)
       }
     }
   }
@@ -170,7 +170,7 @@ export class SSEClient {
       try {
         handler(state)
       } catch (error) {
-        console.error("[Kilo New] SSE: Error in state handler:", error)
+        console.error("[Nova New] SSE: Error in state handler:", error)
       }
     }
   }

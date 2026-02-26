@@ -1,5 +1,5 @@
 import * as vscode from "vscode"
-import type { KiloConnectionService } from "../cli-backend/connection-service"
+import type { NovaConnectionService } from "../cli-backend/connection-service"
 import type { HttpClient } from "../cli-backend/http-client"
 
 let lastGeneratedMessage: string | undefined
@@ -20,7 +20,7 @@ interface GitExtensionExports {
 
 export function registerCommitMessageService(
   context: vscode.ExtensionContext,
-  connectionService: KiloConnectionService,
+  connectionService: NovaConnectionService,
 ): vscode.Disposable[] {
   const command = vscode.commands.registerCommand("vcp-code.new.generateCommitMessage", async () => {
     const extension = vscode.extensions.getExtension<GitExtensionExports>("vscode.git")
@@ -44,11 +44,11 @@ export function registerCommitMessageService(
     try {
       client = connectionService.getHttpClient()
     } catch {
-      vscode.window.showErrorMessage("Kilo backend is not connected. Please wait for the connection to establish.")
+      vscode.window.showErrorMessage("Nova backend is not connected. Please wait for the connection to establish.")
       return
     }
     if (!client) {
-      vscode.window.showErrorMessage("Kilo backend is not connected. Please wait for the connection to establish.")
+      vscode.window.showErrorMessage("Nova backend is not connected. Please wait for the connection to establish.")
       return
     }
 
@@ -64,12 +64,12 @@ export function registerCommitMessageService(
           repository.inputBox.value = message
           lastGeneratedMessage = message
           lastWorkspacePath = path
-          console.log("[Kilo New] Commit message generated successfully")
+          console.log("[Nova New] Commit message generated successfully")
         },
       )
       .then(undefined, (error: unknown) => {
         const msg = error instanceof Error ? error.message : String(error)
-        console.error("[Kilo New] Failed to generate commit message:", msg)
+        console.error("[Nova New] Failed to generate commit message:", msg)
         vscode.window.showErrorMessage(`Failed to generate commit message: ${msg}`)
       })
   })

@@ -7,7 +7,7 @@ import { AutocompleteStatusBar } from "./AutocompleteStatusBar"
 import { AutocompleteCodeActionProvider } from "./AutocompleteCodeActionProvider"
 import { AutocompleteInlineCompletionProvider } from "./classic-auto-complete/AutocompleteInlineCompletionProvider"
 import { AutocompleteTelemetry } from "./classic-auto-complete/AutocompleteTelemetry"
-import type { KiloConnectionService } from "../cli-backend"
+import type { NovaConnectionService } from "../cli-backend"
 
 const CONFIG_SECTION = "vcp-code.new.autocomplete"
 
@@ -60,7 +60,7 @@ export class AutocompleteServiceManager {
   public readonly inlineCompletionProvider: AutocompleteInlineCompletionProvider
   private inlineCompletionProviderDisposable: vscode.Disposable | null = null
 
-  constructor(context: vscode.ExtensionContext, connectionService: KiloConnectionService) {
+  constructor(context: vscode.ExtensionContext, connectionService: NovaConnectionService) {
     if (AutocompleteServiceManager._instance) {
       throw new Error(
         "AutocompleteServiceManager is a singleton. Use AutocompleteServiceManager.getInstance() instead.",
