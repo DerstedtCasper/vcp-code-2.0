@@ -6,12 +6,11 @@
  * 点击展开抽屉，显示 Token 统计、最近请求历史、VCP Backend 实时状态和快捷操作。
  */
 
-import { Component, Show, createSignal, createMemo, For, onCleanup } from "solid-js"
+import { Component, Show, createSignal, createMemo, For } from "solid-js"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
 import { useServer } from "../../context/server"
 import { useVSCode } from "../../context/vscode"
-import type { VCPBridgeRuntimeStats, VCPBridgeStatus } from "../../types/messages"
 
 interface RunRecord {
   id: string
@@ -61,85 +60,20 @@ export const VcpStatusBadge: Component = () => {
 
   const [drawerOpen, setDrawerOpen] = createSignal(false)
 
-  // novacode_change start — VCP Bridge SSE real-time stats (T-3.4 ~ T-3.7)
-  const [bridgeStats, setBridgeStats] = createSignal<VCPBridgeRuntimeStats | null>(null)
-  const [bridgeStatus, setBridgeStatus] = createSignal<VCPBridgeStatus | null>(null)
-  const [sseConnected, setSseConnected] = createSignal(false)
+  // novacode_change start — VCP Bridge stats via postMessage (T-10)
+  // Instead of directly connecting to the backend SSE, we request stats through
+  // the extension host which proxies HTTP requests to the CLI backend.
+  const bridgeStats = () => vscode.lastBridgeStats()
+  const bridgeStatus = () => vscode.lastBridgeStatus()
 
-  const getBackendUrl = () => {
-    const port = (window as any).__OPENCODE_PORT__ || 13338
-    return `http://localhost:${port}`
-  }
-
-  // SSE connection to /vcp/bridge/events for real-time VCPToolBox stats
-  let eventSource: EventSource | null = null
-  let sseRetryTimer: ReturnType<typeof setTimeout> | null = null
-
-  const connectSSE = () => {
-    if (eventSource) {
-      eventSource.close()
-      eventSource = null
-    }
-    try {
-      const es = new EventSource(`${getBackendUrl()}/vcp/bridge/events`)
-      eventSource = es
-
-      es.addEventListener("stats", (e) => {
-        try {
-          const data = JSON.parse(e.data) as VCPBridgeRuntimeStats
-          setBridgeStats(data)
-          setSseConnected(true)
-        } catch { /* ignore parse errors */ }
-      })
-
-      es.addEventListener("heartbeat", () => {
-        setSseConnected(true)
-      })
-
-      es.onerror = () => {
-        setSseConnected(false)
-        es.close()
-        eventSource = null
-        // Retry after 10s
-        sseRetryTimer = setTimeout(connectSSE, 10000)
-      }
-
-      es.onopen = () => {
-        setSseConnected(true)
-      }
-    } catch {
-      setSseConnected(false)
-    }
-  }
-
-  // Also fetch bridge status on demand
-  const fetchBridgeStatus = async () => {
-    try {
-      const res = await fetch(`${getBackendUrl()}/vcp/bridge/status`)
-      if (res.ok) {
-        const data = (await res.json()) as VCPBridgeStatus
-        setBridgeStatus(data)
-      }
-    } catch { /* ignore */ }
-  }
-
-  // Start SSE when drawer opens, stop when closes
+  // When drawer opens, tell extension host to start polling bridge stats.
+  // When drawer closes, extension host will keep the last state but we don't need live updates.
   const onDrawerToggle = (open: boolean) => {
     setDrawerOpen(open)
     if (open) {
-      connectSSE()
-      fetchBridgeStatus()
-    } else {
-      if (eventSource) { eventSource.close(); eventSource = null }
-      if (sseRetryTimer) { clearTimeout(sseRetryTimer); sseRetryTimer = null }
-      setSseConnected(false)
+      vscode.postMessage({ type: "requestVcpBridgeStats" })
     }
   }
-
-  onCleanup(() => {
-    if (eventSource) { eventSource.close(); eventSource = null }
-    if (sseRetryTimer) { clearTimeout(sseRetryTimer); sseRetryTimer = null }
-  })
   // novacode_change end
 
   const isBusy = () => session.status() === "busy"
@@ -179,6 +113,15 @@ export const VcpStatusBadge: Component = () => {
 
   const agentLabel = createMemo(() => remoteStatus()?.currentAgent || session.selectedAgent() || "")
 
+  /** VCPBridge (VCPToolBox WS) connection indicator: 🟢 connected, 🔴 disconnected, ⚪ not configured */
+  const vcpBridgeDot = createMemo(() => {
+    const rs = remoteStatus()
+    if (rs?.vcpBridgeConnected === true) return "🟢"
+    if (rs?.vcpBridgeConnected === false) return "🔴"
+    // null / undefined = not configured
+    return null
+  })
+
   // Token 统计（基于当前会话所有消息）
   const tokenStats = createMemo(() => {
     if (remoteStatus()) {
@@ -210,6 +153,9 @@ export const VcpStatusBadge: Component = () => {
         aria-haspopup="dialog"
       >
         <span class="vcp-status-badge-dot">{statusDot()}</span>
+        <Show when={vcpBridgeDot()}>
+          <span class="vcp-status-badge-bridge-dot" title="VCPToolBox">{vcpBridgeDot()}</span>
+        </Show>
         <span class="vcp-status-badge-model">{modelLabel()}</span>
         <Show when={agentLabel()}>
           <span class="vcp-status-badge-sep">·</span>

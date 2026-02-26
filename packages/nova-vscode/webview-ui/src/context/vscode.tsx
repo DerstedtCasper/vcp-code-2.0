@@ -5,7 +5,7 @@
 
 import { createContext, useContext, onCleanup, createSignal } from "solid-js"
 import type { ParentComponent, Accessor } from "solid-js"
-import type { VSCodeAPI, WebviewMessage, ExtensionMessage, VcpStatusUpdateMessage } from "../types/messages"
+import type { VSCodeAPI, WebviewMessage, ExtensionMessage, VcpStatusUpdateMessage, VCPBridgeRuntimeStats, VCPBridgeStatus } from "../types/messages"
 
 // Get the VS Code API (only available in webview context)
 let vscodeApi: VSCodeAPI | undefined
@@ -35,6 +35,10 @@ interface VSCodeContextValue {
   getState: <T>() => T | undefined
   setState: <T>(state: T) => void
   lastVcpStatus: Accessor<VcpStatusUpdateMessage["payload"] | null>
+  /** Latest VCPBridge (VCPToolBox WS) runtime stats pushed from extension host. */
+  lastBridgeStats: Accessor<VCPBridgeRuntimeStats | null>
+  /** Latest VCPBridge connection status pushed from extension host. */
+  lastBridgeStatus: Accessor<VCPBridgeStatus | null>
 }
 
 const VSCodeContext = createContext<VSCodeContextValue>()
@@ -43,12 +47,18 @@ export const VSCodeProvider: ParentComponent = (props) => {
   const api = getVSCodeAPI()
   const handlers = new Set<(message: ExtensionMessage) => void>()
   const [lastVcpStatus, setLastVcpStatus] = createSignal<VcpStatusUpdateMessage["payload"] | null>(null)
+  const [lastBridgeStats, setLastBridgeStats] = createSignal<VCPBridgeRuntimeStats | null>(null)
+  const [lastBridgeStatus, setLastBridgeStatus] = createSignal<VCPBridgeStatus | null>(null)
 
   // Listen for messages from the extension
   const messageListener = (event: MessageEvent) => {
     const message = event.data as ExtensionMessage
     if (message.type === "vcpStatusUpdate") {
       setLastVcpStatus(message.payload)
+    }
+    if (message.type === "vcpBridgeStats") {
+      setLastBridgeStats(message.stats ?? null)
+      setLastBridgeStatus(message.status ?? null)
     }
     handlers.forEach((handler) => handler(message))
   }
@@ -71,6 +81,8 @@ export const VSCodeProvider: ParentComponent = (props) => {
     getState: <T,>() => api.getState() as T | undefined,
     setState: <T,>(state: T) => api.setState(state),
     lastVcpStatus,
+    lastBridgeStats,
+    lastBridgeStatus,
   }
 
   return <VSCodeContext.Provider value={value}>{props.children}</VSCodeContext.Provider>

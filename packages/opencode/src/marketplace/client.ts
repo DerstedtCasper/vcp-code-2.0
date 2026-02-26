@@ -131,24 +131,46 @@ export namespace MarketplaceClient {
 
   // ── Internal helpers ─────────────────────────────────────────────
 
-  async function fetchYAML<T>(url: string, label: string): Promise<T | undefined> {
-    try {
-      const response = await fetch(url)
-      if (!response.ok) {
-        log.warn("failed to fetch marketplace YAML", { url, status: response.status })
+  async function fetchYAML<T>(url: string, label: string, retries = 2): Promise<T | undefined> {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 15_000) // 15s timeout
+        log.info("marketplace fetch attempt", { url, label, attempt })
+        const response = await fetch(url, { signal: controller.signal })
+        clearTimeout(timeout)
+        if (!response.ok) {
+          log.warn("marketplace YAML fetch non-ok", { url, status: response.status, statusText: response.statusText, attempt })
+          if (attempt < retries) continue
+          return undefined
+        }
+        const text = await response.text()
+        if (!text || text.trim().length === 0) {
+          log.warn("marketplace YAML response empty", { url, label })
+          return undefined
+        }
+        const parsed = parseYAML(text)
+        // Kilo Marketplace YAML format wraps data in { items: [...] }
+        if (parsed && typeof parsed === "object" && "items" in parsed && Array.isArray((parsed as any).items)) {
+          log.info("marketplace YAML parsed (items wrapper)", { url, label, count: (parsed as any).items.length })
+          return (parsed as any).items as T
+        }
+        if (Array.isArray(parsed)) {
+          log.info("marketplace YAML parsed (array)", { url, label, count: parsed.length })
+        }
+        return parsed as T
+      } catch (err: any) {
+        const isAbort = err?.name === "AbortError"
+        log.error("marketplace YAML fetch error", { url, label, attempt, isAbort, message: err?.message ?? String(err) })
+        if (attempt < retries) {
+          // Wait a bit before retrying
+          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)))
+          continue
+        }
         return undefined
       }
-      const text = await response.text()
-      const parsed = parseYAML(text)
-      // Kilo Marketplace YAML format wraps data in { items: [...] }
-      if (parsed && typeof parsed === "object" && "items" in parsed && Array.isArray((parsed as any).items)) {
-        return (parsed as any).items as T
-      }
-      return parsed as T
-    } catch (err) {
-      log.error("failed to parse marketplace YAML", { url, label, err })
-      return undefined
     }
+    return undefined
   }
 
   function matchItem(item: { id: string; description?: string; name?: string; tags?: string[] }, query: string): boolean {

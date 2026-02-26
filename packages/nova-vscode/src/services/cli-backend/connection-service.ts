@@ -11,9 +11,21 @@ type StateListener = (state: ConnectionState) => void
 type SSEEventFilter = (event: SSEEvent) => boolean
 type NotificationDismissListener = (notificationId: string) => void
 
+/** Retry configuration */
+const RETRY_CONFIG = {
+  maxAttempts: 10,
+  initialDelayMs: 1000,
+  maxDelayMs: 30000,
+  backoffFactor: 2,
+} as const
+
 /**
  * Shared connection service that owns the single ServerManager, HttpClient, and SSEClient.
  * Multiple NovaProvider instances subscribe to it for SSE events and state changes.
+ *
+ * Features:
+ * - Exponential-backoff retry on initial connection failure (up to 10 attempts)
+ * - Automatic reconnect when SSE drops unexpectedly
  */
 export class NovaConnectionService {
   private readonly serverManager: ServerManager
@@ -23,6 +35,15 @@ export class NovaConnectionService {
   private config: ServerConfig | null = null
   private state: ConnectionState = "disconnected"
   private connectPromise: Promise<void> | null = null
+  private disposed = false
+
+  /** Workspace dir cached from the first connect() call so that reconnect can reuse it. */
+  private lastWorkspaceDir: string | null = null
+
+  /** Timer handle for scheduled reconnection attempts. */
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  /** Current retry attempt counter (resets on success). */
+  private retryAttempt = 0
 
   private readonly eventListeners: Set<SSEEventListener> = new Set()
   private readonly stateListeners: Set<StateListener> = new Set()
@@ -39,7 +60,8 @@ export class NovaConnectionService {
   }
 
   /**
-   * Lazily start server + SSE. Multiple callers share the same promise.
+   * Lazily start server + SSE **with exponential-backoff retry**.
+   * Multiple callers share the same promise.
    */
   async connect(workspaceDir: string): Promise<void> {
     if (this.connectPromise) {
@@ -49,19 +71,111 @@ export class NovaConnectionService {
       return
     }
 
+    this.lastWorkspaceDir = workspaceDir
+
     // Mark as connecting early so concurrent callers won't start another connection attempt.
     this.setState("connecting")
 
-    this.connectPromise = this.doConnect(workspaceDir)
+    this.connectPromise = this.connectWithRetry(workspaceDir)
     try {
       await this.connectPromise
     } catch (error) {
-      // If doConnect() fails before SSE can emit a state transition, avoid leaving consumers stuck in "connecting".
+      // All retries exhausted – surface error.  A future call to connect() can try again.
       this.setState("error")
       throw error
     } finally {
       this.connectPromise = null
     }
+  }
+
+  /**
+   * Internal: attempt doConnect() up to RETRY_CONFIG.maxAttempts times with exponential backoff.
+   */
+  private async connectWithRetry(workspaceDir: string): Promise<void> {
+    this.retryAttempt = 0
+    let lastError: Error | undefined
+
+    for (let attempt = 1; attempt <= RETRY_CONFIG.maxAttempts; attempt++) {
+      if (this.disposed) {
+        throw new Error("Connection service disposed")
+      }
+
+      this.retryAttempt = attempt
+      console.log(
+        `[Nova New] ConnectionService: 🔄 Connection attempt ${attempt}/${RETRY_CONFIG.maxAttempts}...`,
+      )
+
+      try {
+        await this.doConnect(workspaceDir)
+        // Success – reset counter
+        this.retryAttempt = 0
+        console.log("[Nova New] ConnectionService: ✅ Connected successfully on attempt", attempt)
+        return
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error))
+        console.warn(
+          `[Nova New] ConnectionService: ⚠️ Attempt ${attempt} failed:`,
+          lastError.message,
+        )
+
+        if (attempt < RETRY_CONFIG.maxAttempts && !this.disposed) {
+          const delay = Math.min(
+            RETRY_CONFIG.initialDelayMs * Math.pow(RETRY_CONFIG.backoffFactor, attempt - 1),
+            RETRY_CONFIG.maxDelayMs,
+          )
+          console.log(`[Nova New] ConnectionService: ⏳ Retrying in ${delay}ms...`)
+          // Let consumers know we are retrying (still "connecting")
+          this.setState("connecting")
+          await this.sleep(delay)
+        }
+      }
+    }
+
+    throw lastError ?? new Error("All connection attempts failed")
+  }
+
+  /**
+   * Schedule an automatic reconnection attempt after an unexpected SSE disconnect.
+   * Only fires if we had previously been connected.
+   */
+  private scheduleReconnect(): void {
+    if (this.disposed || !this.lastWorkspaceDir) {
+      return
+    }
+    // Don't stack reconnect timers
+    if (this.reconnectTimer) {
+      return
+    }
+
+    const delay = Math.min(
+      RETRY_CONFIG.initialDelayMs * Math.pow(RETRY_CONFIG.backoffFactor, this.retryAttempt),
+      RETRY_CONFIG.maxDelayMs,
+    )
+    this.retryAttempt++
+    console.log(
+      `[Nova New] ConnectionService: 🔁 Scheduling reconnect in ${delay}ms (retry #${this.retryAttempt})`,
+    )
+
+    this.reconnectTimer = setTimeout(async () => {
+      this.reconnectTimer = null
+      if (this.disposed || this.state === "connected") {
+        return
+      }
+      try {
+        // Force a fresh connection by clearing the existing promise
+        this.connectPromise = null
+        // Invalidate server instance so ServerManager restarts if the process died
+        this.serverManager.invalidate()
+        await this.connect(this.lastWorkspaceDir!)
+      } catch (error) {
+        console.error("[Nova New] ConnectionService: ❌ Reconnect failed:", error)
+        // connect() already sets state to "error" and will not throw if retries succeed
+      }
+    }, delay)
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms))
   }
 
   /**
@@ -171,9 +285,14 @@ export class NovaConnectionService {
   }
 
   /**
-   * Clean up everything: kill server, close SSE, clear listeners.
+   * Clean up everything: kill server, close SSE, clear listeners, cancel pending reconnects.
    */
   dispose(): void {
+    this.disposed = true
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = null
+    }
     this.sseClient?.dispose()
     this.serverManager.dispose()
     this.eventListeners.clear()
@@ -240,16 +359,24 @@ export class NovaConnectionService {
 
       if (sseState === "connected") {
         didConnect = true
+        this.retryAttempt = 0 // reset on successful connection
         resolveConnected?.()
         resolveConnected = null
         rejectConnected = null
         return
       }
 
-      if (!didConnect && sseState === "disconnected") {
-        rejectConnected?.(new Error(`SSE connection ended in state: ${sseState}`))
-        resolveConnected = null
-        rejectConnected = null
+      if (sseState === "disconnected") {
+        if (!didConnect) {
+          // Never connected – reject the initial promise so the retry loop can retry
+          rejectConnected?.(new Error(`SSE connection ended in state: ${sseState}`))
+          resolveConnected = null
+          rejectConnected = null
+        } else {
+          // We *were* connected but SSE dropped – trigger automatic reconnect
+          console.warn("[Nova New] ConnectionService: ⚠️ SSE disconnected after being connected, scheduling reconnect...")
+          this.scheduleReconnect()
+        }
       }
     })
 

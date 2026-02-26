@@ -2,6 +2,7 @@ import * as path from "path"
 import { promises as fs } from "fs"
 import * as vscode from "vscode"
 import { z } from "zod"
+import { parse as parseYAML } from "yaml"
 import {
   type HttpClient,
   ConfigConflictError,
@@ -91,6 +92,14 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
   private ignoreController: FileIgnoreController | null = null
   private ignoreControllerDir: string | null = null
 
+  /** Pending config updates that could not be sent to the backend (queued for flush on reconnect). */
+  private pendingConfigUpdates: Array<Record<string, unknown>> = []
+
+  /** VCPBridge (VCPToolBox WebSocket) connection state cached from CLI backend. null = not configured. */
+  private vcpBridgeConnected: boolean | null = null
+  /** Timer for periodic VCPBridge stats polling (only when drawer is open). */
+  private vcpBridgePollTimer: ReturnType<typeof setInterval> | null = null
+
   /** Optional interceptor called before the standard message handler.
    *  Return null to consume the message, or return a (possibly transformed) message. */
   private onBeforeMessage: ((msg: Record<string, unknown>) => Promise<Record<string, unknown> | null>) | null = null
@@ -126,6 +135,89 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       return null
     }
   }
+
+  // ── Local opencode.json fallback ──────────────────────────────────────────
+
+  /**
+   * Resolve the path to the global opencode.json config file.
+   * Mirrors the CLI logic: %APPDATA%/kilo/opencode.json (Windows) or ~/.config/kilo/opencode.json (Linux/Mac).
+   */
+  private getLocalConfigPath(): string {
+    const configDir =
+      process.platform === "win32"
+        ? path.join(process.env.APPDATA || path.join(require("os").homedir(), "AppData", "Roaming"), "kilo")
+        : path.join(process.env.XDG_CONFIG_HOME || path.join(require("os").homedir(), ".config"), "kilo")
+    return path.join(configDir, "opencode.json")
+  }
+
+  /**
+   * Read the local opencode.json, returning the parsed object (or empty object on error).
+   */
+  private async readLocalConfig(): Promise<Record<string, unknown>> {
+    try {
+      const raw = await fs.readFile(this.getLocalConfigPath(), "utf-8")
+      return JSON.parse(raw)
+    } catch {
+      return {}
+    }
+  }
+
+  /**
+   * Merge a partial config into the local opencode.json and write it back.
+   */
+  private async writeLocalConfig(partial: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const configPath = this.getLocalConfigPath()
+    const existing = await this.readLocalConfig()
+    const merged = this.deepMerge(existing, partial)
+    await fs.mkdir(path.dirname(configPath), { recursive: true })
+    await fs.writeFile(configPath, JSON.stringify(merged, null, 2), "utf-8")
+    console.log("[Nova New] NovaProvider: 💾 Config saved locally to", configPath)
+    return merged
+  }
+
+  /**
+   * Simple deep merge – nested objects are merged, everything else is replaced.
+   */
+  private deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
+    const result: Record<string, unknown> = { ...target }
+    for (const key of Object.keys(source)) {
+      const sv = source[key]
+      const tv = target[key]
+      if (sv && typeof sv === "object" && !Array.isArray(sv) && tv && typeof tv === "object" && !Array.isArray(tv)) {
+        result[key] = this.deepMerge(tv as Record<string, unknown>, sv as Record<string, unknown>)
+      } else {
+        result[key] = sv
+      }
+    }
+    return result
+  }
+
+  /**
+   * Flush any queued config updates to the backend.
+   * Called when the connection transitions to "connected".
+   */
+  private async flushPendingConfigUpdates(): Promise<void> {
+    if (!this.pendingConfigUpdates.length) return
+    const client = this.httpClient
+    if (!client) return
+
+    console.log(`[Nova New] NovaProvider: 🔄 Flushing ${this.pendingConfigUpdates.length} pending config updates to backend`)
+    // Merge all pending partials into one
+    let merged: Record<string, unknown> = {}
+    for (const partial of this.pendingConfigUpdates) {
+      merged = this.deepMerge(merged, partial)
+    }
+    this.pendingConfigUpdates = []
+
+    try {
+      await client.updateConfig(merged)
+      console.log("[Nova New] NovaProvider: ✅ Pending config updates flushed to backend")
+    } catch (error) {
+      console.error("[Nova New] NovaProvider: ❌ Failed to flush pending config:", error)
+    }
+  }
+
+  // ── End local config fallback ─────────────────────────────────────────────
 
   private sanitizeTokenCount(value: unknown): number {
     return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : 0
@@ -207,6 +299,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       payload: {
         status,
         connected,
+        vcpBridgeConnected: this.vcpBridgeConnected,
         currentModel: activeSessionID
           ? (this.sessionModelSelection.get(activeSessionID) ?? this.defaultModelSelection.modelID)
           : this.defaultModelSelection.modelID,
@@ -219,6 +312,87 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
         lastRunId: activeSessionID,
       },
     })
+  }
+
+  // ── VCPBridge (VCPToolBox WS) status relay ────────────────────────────────
+
+  /**
+   * Fetch VCPBridge status + stats from CLI backend and push to webview.
+   * Called on-demand when webview opens the status drawer, or once on connect.
+   */
+  private async fetchAndSendVcpBridgeStats(): Promise<void> {
+    const client = this.httpClient
+    if (!client) {
+      this.postMessage({ type: "vcpBridgeStats", stats: null, status: null })
+      return
+    }
+
+    try {
+      const serverConfig = this.connectionService.getServerConfig()
+      if (!serverConfig) return
+
+      const baseUrl = serverConfig.baseUrl
+      const authHeader = `Basic ${Buffer.from(`kilo:${serverConfig.password}`).toString("base64")}`
+
+      const [statsRes, statusRes] = await Promise.allSettled([
+        fetch(`${baseUrl}/vcp/bridge/stats`, {
+          headers: { Authorization: authHeader },
+          signal: AbortSignal.timeout(5000),
+        }),
+        fetch(`${baseUrl}/vcp/bridge/status`, {
+          headers: { Authorization: authHeader },
+          signal: AbortSignal.timeout(5000),
+        }),
+      ])
+
+      const stats = statsRes.status === "fulfilled" && statsRes.value.ok
+        ? (await statsRes.value.json()) as Record<string, unknown>
+        : null
+      const status = statusRes.status === "fulfilled" && statusRes.value.ok
+        ? (await statusRes.value.json()) as Record<string, unknown>
+        : null
+
+      // Update cached bridge connection state
+      const prevBridgeConnected = this.vcpBridgeConnected
+      if (stats && typeof stats.connected === "boolean") {
+        this.vcpBridgeConnected = stats.connected
+      } else if (status && typeof status.connected === "boolean") {
+        this.vcpBridgeConnected = status.connected
+      }
+
+      // If bridge connection state changed, re-push vcpStatusUpdate
+      if (prevBridgeConnected !== this.vcpBridgeConnected) {
+        this.sendVcpStatusUpdate()
+      }
+
+      this.postMessage({ type: "vcpBridgeStats", stats: stats as any, status: status as any })
+    } catch (err) {
+      console.warn("[Nova New] NovaProvider: fetchVcpBridgeStats error:", err)
+      this.postMessage({ type: "vcpBridgeStats", stats: null, status: null })
+    }
+  }
+
+  /**
+   * Start polling VCPBridge stats every 5s (called when webview opens the drawer).
+   */
+  private startVcpBridgePoll(): void {
+    this.stopVcpBridgePoll()
+    // Fetch immediately
+    void this.fetchAndSendVcpBridgeStats()
+    // Then poll
+    this.vcpBridgePollTimer = setInterval(() => {
+      void this.fetchAndSendVcpBridgeStats()
+    }, 5000)
+  }
+
+  /**
+   * Stop VCPBridge stats polling.
+   */
+  private stopVcpBridgePoll(): void {
+    if (this.vcpBridgePollTimer) {
+      clearInterval(this.vcpBridgePollTimer)
+      this.vcpBridgePollTimer = null
+    }
   }
 
   /**
@@ -655,6 +829,42 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
           )
           break
         }
+        // ── Kilo-style: extension host fetches models directly (no backend proxy needed) ──
+        case "requestOpenAiModels": {
+          void this.handleRequestOpenAiModels(message.baseUrl, message.apiKey, message.requestId)
+          break
+        }
+        // ── Kilo-style: extension host fetches marketplace YAML directly ──
+        case "requestMarketplace": {
+          void this.handleRequestMarketplace(message.category, message.requestId)
+          break
+        }
+        // ── Marketplace proxy: list items, install, installed, refresh ──
+        case "requestMarketplaceList": {
+          void this.handleMarketplaceListDirect(message.tab ?? "skills", message.query, message.requestId)
+          break
+        }
+        case "requestMarketplaceInstalled": {
+          void this.handleMarketplaceProxy("GET", "/marketplace/installed", message.requestId)
+          break
+        }
+        case "requestMarketplaceRefresh": {
+          // Clear cache and re-fetch all categories
+          this.marketplaceCache.clear()
+          void this.handleMarketplaceListDirect("skills", undefined, `${message.requestId}-skills`)
+          void this.handleMarketplaceListDirect("modes", undefined, `${message.requestId}-modes`)
+          void this.handleMarketplaceListDirect("mcps", undefined, `${message.requestId}-mcps`)
+          break
+        }
+        case "requestMarketplaceInstall": {
+          void this.handleMarketplaceInstall(message.body, message.requestId)
+          break
+        }
+        // ── VCPBridge stats request (webview drawer opened) ──
+        case "requestVcpBridgeStats": {
+          this.startVcpBridgePoll()
+          break
+        }
       }
     })
   }
@@ -702,12 +912,16 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
 
         if (state === "connected") {
           try {
+            // Flush any config updates queued while backend was offline
+            await this.flushPendingConfigUpdates()
             const client = this.httpClient
             if (client) {
               const profileData = await client.getProfile()
               this.postMessage({ type: "profileData", data: profileData })
             }
             await this.syncWebviewState("sse-connected")
+            // Fetch VCPBridge state once so the capsule badge knows VCPToolBox WS status immediately
+            void this.fetchAndSendVcpBridgeStats()
           } catch (error) {
             console.error("[Nova New] NovaProvider:  - Failed during connected state handling:", error)
             this.postMessage({
@@ -985,6 +1199,284 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
   }
 
   /**
+   * Kilo-style: Extension host directly fetches models from provider API.
+   * No backend proxy needed — avoids "Failed to fetch" when backend isn't running.
+   * The extension host has full Node.js network access without CORS restrictions.
+   */
+  private async handleRequestOpenAiModels(baseUrl?: string, apiKey?: string, requestId?: string): Promise<void> {
+    if (!baseUrl) {
+      this.postMessage({ type: "openAiModels", openAiModels: [], error: "No base URL provided", requestId })
+      return
+    }
+
+    try {
+      let modelsUrl = baseUrl.trim().replace(/\/+$/, "")
+      if (!modelsUrl.endsWith("/models")) {
+        modelsUrl += "/models"
+      }
+
+      const startTime = Date.now()
+
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 15000)
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      }
+      if (apiKey) {
+        headers["Authorization"] = `Bearer ${apiKey}`
+      }
+
+      const response = await fetch(modelsUrl, {
+        method: "GET",
+        headers,
+        signal: controller.signal,
+      })
+      clearTimeout(timeout)
+
+      const latencyMs = Date.now() - startTime
+
+      if (!response.ok) {
+        const body = await response.text().catch(() => "")
+        this.postMessage({
+          type: "openAiModels",
+          openAiModels: [],
+          error: `HTTP ${response.status}: ${body.slice(0, 200)}`,
+          latencyMs,
+          requestId,
+        })
+        return
+      }
+
+      const data = await response.json() as Record<string, unknown>
+      const modelList = (Array.isArray(data.data) ? data.data : Array.isArray(data.models) ? data.models : []) as Array<{ id?: string }>
+      const modelIds = modelList
+        .map((m) => (typeof m === "string" ? m : m?.id))
+        .filter((id): id is string => typeof id === "string" && id.length > 0)
+
+      this.postMessage({
+        type: "openAiModels",
+        openAiModels: modelIds,
+        latencyMs,
+        requestId,
+      })
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      this.postMessage({
+        type: "openAiModels",
+        openAiModels: [],
+        error: errorMessage.includes("aborted") ? "Request timeout (15s)" : errorMessage,
+        requestId,
+      })
+    }
+  }
+
+  /**
+   * Kilo-style: Extension host directly fetches marketplace YAML from GitHub.
+   * Avoids requiring the backend proxy to be running.
+   */
+  private async handleRequestMarketplace(category?: string, requestId?: string): Promise<void> {
+    const cat = category || "skills"
+    const url = `https://raw.githubusercontent.com/Kilo-Org/kilo-marketplace/main/${cat}/marketplace.yaml`
+
+    try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 15000)
+
+      const response = await fetch(url, { signal: controller.signal })
+      clearTimeout(timeout)
+
+      if (!response.ok) {
+        this.postMessage({
+          type: "marketplaceData",
+          category: cat,
+          items: [],
+          error: `HTTP ${response.status}`,
+          requestId,
+        })
+        return
+      }
+
+      const text = await response.text()
+      // Forward raw YAML to webview for parsing
+      this.postMessage({
+        type: "marketplaceData",
+        category: cat,
+        raw: text,
+        requestId,
+      })
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      this.postMessage({
+        type: "marketplaceData",
+        category: cat,
+        items: [],
+        error: errorMessage.includes("aborted") ? "Request timeout (15s)" : errorMessage,
+        requestId,
+      })
+    }
+  }
+
+  // ── In-memory marketplace cache ──────────────────────────────────
+  private marketplaceCache: Map<string, { items: unknown[]; expiresAt: number }> = new Map()
+
+  /**
+   * Directly fetch marketplace YAML from GitHub, parse it, and send items to webview.
+   * Does NOT depend on the CLI backend being running.
+   */
+  private async handleMarketplaceListDirect(
+    tab: string,
+    query?: string,
+    requestId?: string,
+    isRefresh?: boolean,
+  ): Promise<void> {
+    const MARKETPLACE_BASE = "https://raw.githubusercontent.com/Kilo-Org/kilo-marketplace/main"
+    const CACHE_TTL = 600_000 // 10 minutes
+
+    // Clear cache on refresh
+    if (isRefresh) {
+      this.marketplaceCache.clear()
+    }
+
+    // Check cache
+    const cacheKey = tab
+    const cached = this.marketplaceCache.get(cacheKey)
+    if (cached && cached.expiresAt > Date.now() && !isRefresh) {
+      const items = query ? this.filterMarketplaceItems(cached.items, query) : cached.items
+      this.postMessage({ type: "marketplaceProxyResult", data: items, requestId, tab })
+      return
+    }
+
+    const url = `${MARKETPLACE_BASE}/${tab}/marketplace.yaml`
+    try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 20_000)
+      const response = await fetch(url, { signal: controller.signal })
+      clearTimeout(timeout)
+
+      if (!response.ok) {
+        this.postMessage({
+          type: "marketplaceProxyResult",
+          error: `GitHub HTTP ${response.status}: ${response.statusText}`,
+          requestId,
+          tab,
+        })
+        return
+      }
+
+      const text = await response.text()
+      let items: unknown[] = []
+
+      try {
+        const parsed = parseYAML(text)
+        // Kilo YAML format: { items: [...] } or just an array
+        if (parsed && typeof parsed === "object" && "items" in parsed && Array.isArray((parsed as any).items)) {
+          items = (parsed as any).items
+        } else if (Array.isArray(parsed)) {
+          items = parsed
+        }
+      } catch (yamlErr) {
+        console.error("[Marketplace] YAML parse error:", yamlErr)
+        this.postMessage({ type: "marketplaceProxyResult", error: "YAML parse error", requestId, tab })
+        return
+      }
+
+      // Cache the full list
+      this.marketplaceCache.set(cacheKey, { items, expiresAt: Date.now() + CACHE_TTL })
+
+      // Apply query filter if provided
+      const result = query ? this.filterMarketplaceItems(items, query) : items
+      this.postMessage({ type: "marketplaceProxyResult", data: result, requestId, tab })
+
+      // On refresh, also notify success
+      if (isRefresh) {
+        this.postMessage({ type: "marketplaceProxyResult", data: result, requestId, tab })
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      this.postMessage({
+        type: "marketplaceProxyResult",
+        error: msg.includes("aborted") ? "Request timeout (20s)" : msg,
+        requestId,
+        tab,
+      })
+    }
+  }
+
+  private filterMarketplaceItems(items: unknown[], query: string): unknown[] {
+    const q = query.toLowerCase()
+    return items.filter((item: any) => {
+      const fields = [item.id, item.name, item.description, ...(item.tags ?? [])]
+      return fields.some((f: string) => f && String(f).toLowerCase().includes(q))
+    })
+  }
+
+  /**
+   * Generic marketplace proxy: Extension host fetches from backend and forwards to webview.
+   * This avoids the webview needing to know the backend port.
+   */
+  private async handleMarketplaceProxy(method: string, path: string, requestId?: string, tab?: string): Promise<void> {
+    const config = this.connectionService.getServerConfig()
+    if (!config) {
+      this.postMessage({ type: "marketplaceProxyResult", error: "Backend not connected", requestId, tab })
+      return
+    }
+    try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 15000)
+      const url = `${config.baseUrl}${path}`
+      const response = await fetch(url, {
+        method,
+        signal: controller.signal,
+        headers: config.password ? { Authorization: `Bearer ${config.password}` } : {},
+      })
+      clearTimeout(timeout)
+
+      if (!response.ok) {
+        this.postMessage({ type: "marketplaceProxyResult", error: `HTTP ${response.status}`, requestId, tab })
+        return
+      }
+
+      const data = await response.json()
+      this.postMessage({ type: "marketplaceProxyResult", data, requestId, tab })
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      this.postMessage({ type: "marketplaceProxyResult", error: msg.includes("aborted") ? "Timeout (15s)" : msg, requestId, tab })
+    }
+  }
+
+  /**
+   * Marketplace install proxy: POST body to backend /marketplace/install.
+   */
+  private async handleMarketplaceInstall(body: unknown, requestId?: string): Promise<void> {
+    const config = this.connectionService.getServerConfig()
+    if (!config) {
+      this.postMessage({ type: "marketplaceInstallResult", error: "Backend not connected", requestId })
+      return
+    }
+    try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 30000)
+      const response = await fetch(`${config.baseUrl}/marketplace/install`, {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          ...(config.password ? { Authorization: `Bearer ${config.password}` } : {}),
+        },
+        body: JSON.stringify(body),
+      })
+      clearTimeout(timeout)
+
+      const data = await response.json()
+      this.postMessage({ type: "marketplaceInstallResult", data, requestId })
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      this.postMessage({ type: "marketplaceInstallResult", error: msg.includes("aborted") ? "Timeout (30s)" : msg, requestId })
+    }
+  }
+
+  /**
    * Handle enhance prompt request  - calls backend LLM to rewrite/polish the user's prompt.
    */
   private async handleEnhancePrompt(text: string, requestId: string): Promise<void> {
@@ -1166,6 +1658,20 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     if (!this.httpClient) {
       if (this.cachedConfigMessage) {
         this.postMessage(this.cachedConfigMessage)
+        return
+      }
+      // Backend not available – try to load config from local opencode.json directly
+      try {
+        const localConfig = await this.readLocalConfig()
+        if (Object.keys(localConfig).length > 0) {
+          const message = { type: "configLoaded", config: localConfig, revision: -1 }
+          this.cachedConfigMessage = message
+          this.postMessage(message)
+          console.log("[Nova New] NovaProvider: 📄 Loaded config from local opencode.json (backend unavailable)")
+          return
+        }
+      } catch {
+        // Ignore read errors
       }
       return
     }
@@ -1178,6 +1684,42 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       // then fall back to merged instance config for older backends.
       const config = await client.getGlobalConfig().catch(() => client.getConfig(workspaceDir))
       const revision = await client.getGlobalConfigRevision().catch(() => undefined)
+
+      // ── Config backup guard ──────────────────────────────────────
+      // If we got a meaningful config (has provider entries), back it up to
+      // globalState so it survives edge-case data loss on extension updates.
+      const hasProviders = config && typeof config === "object" && config.provider && Object.keys(config.provider).length > 0
+      if (hasProviders) {
+        await this.extensionContext?.globalState.update("nova.configBackup", JSON.stringify(config))
+        await this.extensionContext?.globalState.update("nova.configBackupVersion", this.extensionVersion)
+        console.log("[Nova New] NovaProvider: Config backed up to globalState", { providers: Object.keys(config.provider ?? {}).length })
+      } else {
+        // Config came back empty — try to restore from backup
+        const backupJson = this.extensionContext?.globalState.get<string>("nova.configBackup")
+        if (backupJson) {
+          try {
+            const backup = JSON.parse(backupJson)
+            const backupVersion = this.extensionContext?.globalState.get<string>("nova.configBackupVersion") ?? "unknown"
+            console.warn("[Nova New] NovaProvider: Config is empty, restoring from backup (version:", backupVersion, ")")
+            // Push the backup back to the backend
+            await client.updateConfig(backup).catch((err: unknown) => {
+              console.error("[Nova New] NovaProvider: Failed to restore config backup:", err)
+            })
+            // Re-fetch to get the restored config
+            const restored = await client.getGlobalConfig().catch(() => config)
+            const message = {
+              type: "configLoaded",
+              config: restored,
+              revision,
+            }
+            this.cachedConfigMessage = message
+            this.postMessage(message)
+            return
+          } catch (parseErr) {
+            console.error("[Nova New] NovaProvider: Failed to parse config backup:", parseErr)
+          }
+        }
+      }
 
       const message = {
         type: "configLoaded",
@@ -1296,38 +1838,51 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * the full merged config back to the webview.
    */
   private async handleUpdateConfig(partial: Record<string, unknown>, expectedRevision?: number): Promise<void> {
-    if (!this.httpClient) {
-      this.postMessage({ type: "error", message: "Not connected to CLI backend" })
-      return
+    // ── Primary path: use the CLI backend ──
+    if (this.httpClient) {
+      try {
+        const updated = await this.httpClient.updateConfig(partial, expectedRevision)
+
+        const message = {
+          type: "configUpdated",
+          config: updated.config,
+          revision: updated.revision,
+        }
+        this.cachedConfigMessage = { type: "configLoaded", config: updated.config, revision: updated.revision }
+        this.postMessage(message)
+        await this.fetchAndSendSkills()
+        return
+      } catch (error) {
+        if (error instanceof ConfigConflictError) {
+          this.postMessage({
+            type: "configConflict",
+            error: error.payload.error,
+            code: error.payload.code,
+            config: error.payload.config,
+            revision: error.payload.revision,
+            expectedRevision: error.payload.expectedRevision,
+          })
+          return
+        }
+        console.error("[Nova New] NovaProvider: Failed to update config via backend:", error)
+        // Fall through to local fallback
+      }
     }
 
+    // ── Fallback: write directly to local opencode.json ──
+    console.log("[Nova New] NovaProvider: ⚡ Using local config fallback (backend unavailable)")
     try {
-      const updated = await this.httpClient.updateConfig(partial, expectedRevision)
-
-      const message = {
-        type: "configUpdated",
-        config: updated.config,
-        revision: updated.revision,
-      }
-      this.cachedConfigMessage = { type: "configLoaded", config: updated.config, revision: updated.revision }
-      this.postMessage(message)
-      await this.fetchAndSendSkills()
+      const merged = await this.writeLocalConfig(partial)
+      // Queue for flush when backend reconnects
+      this.pendingConfigUpdates.push(partial)
+      // Notify webview
+      this.cachedConfigMessage = { type: "configLoaded", config: merged, revision: -1 }
+      this.postMessage({ type: "configUpdated", config: merged, revision: -1 })
     } catch (error) {
-      if (error instanceof ConfigConflictError) {
-        this.postMessage({
-          type: "configConflict",
-          error: error.payload.error,
-          code: error.payload.code,
-          config: error.payload.config,
-          revision: error.payload.revision,
-          expectedRevision: error.payload.expectedRevision,
-        })
-        return
-      }
-      console.error("[Nova New] NovaProvider: Failed to update config:", error)
+      console.error("[Nova New] NovaProvider: Failed to save config locally:", error)
       this.postMessage({
         type: "error",
-        message: error instanceof Error ? error.message : "Failed to update config",
+        message: error instanceof Error ? error.message : "Failed to save config",
       })
     }
   }
@@ -2566,6 +3121,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Does NOT kill the server  - that's the connection service's job.
    */
   dispose(): void {
+    this.stopVcpBridgePoll()
     this.unsubscribeEvent?.()
     this.unsubscribeState?.()
     this.unsubscribeNotificationDismiss?.()

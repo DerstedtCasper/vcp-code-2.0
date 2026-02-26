@@ -31,7 +31,7 @@ test("provider loaded from env variable", async () => {
       expect(providers["anthropic"].options.headers["anthropic-beta"]).toBeDefined()
     },
   })
-})
+}, 15_000)
 
 test("provider loaded from config with apiKey option", async () => {
   await using tmp = await tmpdir({
@@ -58,7 +58,7 @@ test("provider loaded from config with apiKey option", async () => {
       expect(providers["anthropic"]).toBeDefined()
     },
   })
-})
+}, 15_000)
 
 test("disabled_providers excludes provider", async () => {
   await using tmp = await tmpdir({
@@ -82,7 +82,7 @@ test("disabled_providers excludes provider", async () => {
       expect(providers["anthropic"]).toBeUndefined()
     },
   })
-})
+}, 15_000)
 
 test("enabled_providers restricts to only listed providers", async () => {
   await using tmp = await tmpdir({

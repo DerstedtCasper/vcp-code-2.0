@@ -21,7 +21,9 @@ export namespace ConfigMarkdown {
     if (!match) return content
 
     const frontmatter = match[1]
-    const lines = frontmatter.split("\n")
+    // detect line ending style used in the frontmatter
+    const lineEnding = frontmatter.includes("\r\n") ? "\r\n" : "\n"
+    const lines = frontmatter.split(/\r?\n/)
     const result: string[] = []
 
     for (const line of lines) {
@@ -63,7 +65,7 @@ export namespace ConfigMarkdown {
       result.push(line)
     }
 
-    const processed = result.join("\n")
+    const processed = result.join(lineEnding)
     return content.replace(frontmatter, () => processed)
   }
 

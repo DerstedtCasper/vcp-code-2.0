@@ -619,6 +619,7 @@ test("does not try to install dependencies in read-only KILO_CONFIG_DIR", async 
 })
 
 test("installs dependencies in writable KILO_CONFIG_DIR", async () => {
+  // dependency installation can be slow on Windows, especially when run alongside other tests
   await using tmp = await tmpdir<string>({
     init: async (dir) => {
       const cfg = path.join(dir, "configdir")
@@ -645,7 +646,7 @@ test("installs dependencies in writable KILO_CONFIG_DIR", async () => {
     if (prev === undefined) delete process.env.KILO_CONFIG_DIR
     else process.env.KILO_CONFIG_DIR = prev
   }
-})
+}, 15_000)
 
 test("resolves scoped npm plugins in config", async () => {
   await using tmp = await tmpdir({
@@ -687,8 +688,16 @@ test("resolves scoped npm plugins in config", async () => {
       const config = await Config.get()
       const pluginEntries = config.plugin ?? []
 
-      const baseUrl = pathToFileURL(path.join(tmp.path, "opencode.json")).href
-      const expected = import.meta.resolve("@scope/plugin", baseUrl)
+      // import.meta.resolve may fail for scoped packages in temp dirs (Bun limitation)
+      // so we check the result matches the expected pattern instead of exact URL
+      let expected: string
+      try {
+        const baseUrl = pathToFileURL(path.join(tmp.path, "opencode.json")).href
+        expected = import.meta.resolve("@scope/plugin", baseUrl)
+      } catch {
+        // Fallback: construct the expected path manually
+        expected = pathToFileURL(path.join(tmp.path, "node_modules", "@scope", "plugin", "index.js")).href
+      }
 
       expect(pluginEntries.includes(expected)).toBe(true)
 

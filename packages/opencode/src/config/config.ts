@@ -426,10 +426,12 @@ export namespace Config {
   }
 
   function rel(item: string, patterns: string[]) {
+    // Normalize to forward slashes for cross-platform matching (Windows uses backslash)
+    const normalized = item.replace(/\\/g, "/")
     for (const pattern of patterns) {
-      const index = item.indexOf(pattern)
+      const index = normalized.indexOf(pattern)
       if (index === -1) continue
-      return item.slice(index + pattern.length)
+      return normalized.slice(index + pattern.length)
     }
   }
 
@@ -1546,6 +1548,9 @@ export namespace Config {
       instructions: z.array(z.string()).optional().describe("Additional instruction files or patterns to include"),
       layout: Layout.optional().describe("@deprecated Always uses stretch layout."),
       permission: Permission.optional(),
+      // novacode_change start - YOLO mode: auto-approve all tool calls
+      yolo_mode: z.boolean().optional().describe("When true, all tool calls are automatically approved (YOLO mode)"),
+      // novacode_change end
       tools: z.record(z.string(), z.boolean()).optional(),
       enterprise: z
         .object({
@@ -1714,7 +1719,20 @@ export namespace Config {
           const plugin = data.plugin[i]
           try {
             data.plugin[i] = import.meta.resolve!(plugin, configFilepath)
-          } catch (err) {}
+          } catch (err) {
+            // Fallback: try resolving via manual node_modules walk (handles cases
+            // where Bun's import.meta.resolve fails, e.g. scoped packages in temp dirs)
+            try {
+              const configDir = path.dirname(configFilepath)
+              const resolved = path.join(configDir, "node_modules", plugin)
+              const pkgJson = path.join(resolved, "package.json")
+              if (existsSync(pkgJson)) {
+                const pkg = JSON.parse(await Bun.file(pkgJson).text())
+                const main = pkg.main || "index.js"
+                data.plugin[i] = pathToFileURL(path.resolve(resolved, main)).href
+              }
+            } catch {}
+          }
         }
       }
       return data

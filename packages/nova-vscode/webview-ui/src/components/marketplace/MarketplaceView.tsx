@@ -14,6 +14,7 @@ import { Button } from "@novacode/nova-ui/button"
 import { TextField } from "@novacode/nova-ui/text-field"
 import { showToast } from "@novacode/nova-ui/toast"
 import { useLanguage } from "../../context/language"
+import { useVSCode } from "../../context/vscode"
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -69,13 +70,6 @@ interface InstalledItems {
 
 type TabType = "skills" | "modes" | "mcps"
 
-// ─── Helper: get port ────────────────────────────────────────────────
-
-function getBaseUrl(): string {
-  const port = (window as any).__OPENCODE_PORT__ || 13338
-  return `http://localhost:${port}`
-}
-
 // ─── Install Dialog ──────────────────────────────────────────────────
 
 const MCPInstallDialog: Component<{
@@ -84,6 +78,7 @@ const MCPInstallDialog: Component<{
   onInstalled: () => void
 }> = (props) => {
   const language = useLanguage()
+  const vscode = useVSCode()
   const [selectedMethodIndex, setSelectedMethodIndex] = createSignal(0)
   const [params, setParams] = createSignal<Record<string, string>>({})
   const [installing, setInstalling] = createSignal(false)
@@ -117,32 +112,31 @@ const MCPInstallDialog: Component<{
     return true
   })
 
-  async function doInstall() {
+  function doInstall() {
     setInstalling(true)
-    try {
-      const res = await fetch(`${getBaseUrl()}/marketplace/install`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "mcp",
-          id: props.item.id,
-          selectedContentIndex: selectedMethodIndex(),
-          params: params(),
-        }),
-      })
-      const result = await res.json()
-      if (result.success) {
+    const rid = `mcp-install-${Date.now()}`
+    const unsub = vscode.onMessage((msg: any) => {
+      if (msg.type !== "marketplaceInstallResult" || msg.requestId !== rid) return
+      unsub()
+      setInstalling(false)
+      if (msg.data?.success) {
         showToast({ variant: "success", title: language.t("marketplace.install.success") })
         props.onInstalled()
         props.onClose()
       } else {
-        showToast({ variant: "error", title: result.message || language.t("marketplace.install.failed") })
+        showToast({ variant: "error", title: msg.data?.message || msg.error || language.t("marketplace.install.failed") })
       }
-    } catch (e: any) {
-      showToast({ variant: "error", title: e.message || language.t("marketplace.install.failed") })
-    } finally {
-      setInstalling(false)
-    }
+    })
+    vscode.postMessage({
+      type: "requestMarketplaceInstall",
+      requestId: rid,
+      body: {
+        type: "mcp",
+        id: props.item.id,
+        selectedContentIndex: selectedMethodIndex(),
+        params: params(),
+      },
+    })
   }
 
   return (
@@ -235,27 +229,27 @@ const MCPInstallDialog: Component<{
 
 const SkillCard: Component<{ item: SkillItem; installed: boolean }> = (props) => {
   const language = useLanguage()
+  const vscode = useVSCode()
   const [installing, setInstalling] = createSignal(false)
 
-  async function install() {
+  function install() {
     setInstalling(true)
-    try {
-      const res = await fetch(`${getBaseUrl()}/marketplace/install`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "skill", id: props.item.id }),
-      })
-      const result = await res.json()
-      if (result.success) {
+    const rid = `skill-install-${Date.now()}`
+    const unsub = vscode.onMessage((msg: any) => {
+      if (msg.type !== "marketplaceInstallResult" || msg.requestId !== rid) return
+      unsub()
+      setInstalling(false)
+      if (msg.data?.success) {
         showToast({ variant: "success", title: language.t("marketplace.install.success") })
       } else {
-        showToast({ variant: "error", title: result.message || language.t("marketplace.install.failed") })
+        showToast({ variant: "error", title: msg.data?.message || msg.error || language.t("marketplace.install.failed") })
       }
-    } catch (e: any) {
-      showToast({ variant: "error", title: e.message })
-    } finally {
-      setInstalling(false)
-    }
+    })
+    vscode.postMessage({
+      type: "requestMarketplaceInstall",
+      requestId: rid,
+      body: { type: "skill", id: props.item.id },
+    })
   }
 
   return (
@@ -291,27 +285,27 @@ const SkillCard: Component<{ item: SkillItem; installed: boolean }> = (props) =>
 
 const ModeCard: Component<{ item: ModeItem; installed: boolean }> = (props) => {
   const language = useLanguage()
+  const vscode = useVSCode()
   const [installing, setInstalling] = createSignal(false)
 
-  async function install() {
+  function install() {
     setInstalling(true)
-    try {
-      const res = await fetch(`${getBaseUrl()}/marketplace/install`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "mode", id: props.item.id }),
-      })
-      const result = await res.json()
-      if (result.success) {
+    const rid = `mode-install-${Date.now()}`
+    const unsub = vscode.onMessage((msg: any) => {
+      if (msg.type !== "marketplaceInstallResult" || msg.requestId !== rid) return
+      unsub()
+      setInstalling(false)
+      if (msg.data?.success) {
         showToast({ variant: "success", title: language.t("marketplace.install.success") })
       } else {
-        showToast({ variant: "error", title: result.message || language.t("marketplace.install.failed") })
+        showToast({ variant: "error", title: msg.data?.message || msg.error || language.t("marketplace.install.failed") })
       }
-    } catch (e: any) {
-      showToast({ variant: "error", title: e.message })
-    } finally {
-      setInstalling(false)
-    }
+    })
+    vscode.postMessage({
+      type: "requestMarketplaceInstall",
+      requestId: rid,
+      body: { type: "mode", id: props.item.id },
+    })
   }
 
   return (
@@ -390,6 +384,7 @@ const MCPCard: Component<{
 
 export const MarketplaceView: Component = () => {
   const language = useLanguage()
+  const vscode = useVSCode()
   const [tab, setTab] = createSignal<TabType>("skills")
   const [query, setQuery] = createSignal("")
   const [skills, setSkills] = createSignal<SkillItem[]>([])
@@ -401,61 +396,73 @@ export const MarketplaceView: Component = () => {
 
   let searchTimer: ReturnType<typeof setTimeout> | undefined
 
-  // ─── Data Fetching ─────────────────────────────────────────────────
-
-  async function fetchTab(t: TabType, q?: string) {
-    setLoading(true)
-    try {
-      const qs = q ? `?q=${encodeURIComponent(q)}` : ""
-      const url = `${getBaseUrl()}/marketplace/${t}${qs}`
-      console.log("[Marketplace] fetching", url)
-      const res = await fetch(url)
-      if (!res.ok) {
-        console.warn("[Marketplace] fetch failed", res.status, res.statusText)
-        return
-      }
-      const data = await res.json()
-      console.log("[Marketplace]", t, "received", Array.isArray(data) ? data.length : typeof data, "items")
-      const items = Array.isArray(data) ? data : []
-      if (t === "skills") setSkills(items)
-      else if (t === "modes") setModes(items)
-      else if (t === "mcps") setMCPs(items)
-    } catch (err) {
-      console.error("[Marketplace] fetchTab error:", err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function fetchInstalled() {
-    try {
-      const res = await fetch(`${getBaseUrl()}/marketplace/installed`)
-      const data = await res.json()
-      setInstalled(data)
-    } catch {
-      // ignore
-    }
-  }
-
-  async function doRefresh() {
-    setLoading(true)
-    try {
-      await fetch(`${getBaseUrl()}/marketplace/refresh`, { method: "POST" })
-      await Promise.all([fetchTab(tab(), query()), fetchInstalled()])
-      showToast({ variant: "success", title: language.t("marketplace.refresh.success") })
-    } catch {
-      showToast({ variant: "error", title: language.t("marketplace.refresh.failed") })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // ─── Effects ───────────────────────────────────────────────────────
+  // ─── Message listener for marketplace proxy results ────────────────
 
   onMount(() => {
+    const unsub = vscode.onMessage((msg: any) => {
+      if (msg.type === "marketplaceProxyResult") {
+        setLoading(false)
+        if (msg.error) {
+          console.warn("[Marketplace] proxy error:", msg.error)
+          return
+        }
+        const items = Array.isArray(msg.data) ? msg.data : []
+        if (msg.tab === "skills") setSkills(items)
+        else if (msg.tab === "modes") setModes(items)
+        else if (msg.tab === "mcps") setMCPs(items)
+        else if (!msg.tab) {
+          // installed or refresh result
+          if (msg.requestId?.startsWith("installed-")) {
+            setInstalled(msg.data ?? { mcps: [], modes: [], skills: [] })
+          } else if (msg.requestId?.startsWith("refresh-")) {
+            // After refresh, re-fetch current tab + installed
+            fetchTab(tab(), query())
+            fetchInstalled()
+            showToast({ variant: "success", title: language.t("marketplace.refresh.success") })
+          }
+        }
+      }
+    })
+    onCleanup(() => unsub())
+
+    // Initial load
     fetchTab("skills")
     fetchInstalled()
   })
+
+  // ─── Data Fetching via postMessage ─────────────────────────────────
+
+  function fetchTab(t: TabType, q?: string) {
+    setLoading(true)
+    console.log("[Marketplace] fetching", t, q)
+    vscode.postMessage({
+      type: "requestMarketplaceList",
+      tab: t,
+      query: q,
+      requestId: `list-${t}-${Date.now()}`,
+    })
+  }
+
+  function fetchInstalled() {
+    vscode.postMessage({
+      type: "requestMarketplaceInstalled",
+      requestId: `installed-${Date.now()}`,
+    })
+  }
+
+  function doRefresh() {
+    setLoading(true)
+    // Send refresh request — extension host clears cache and re-fetches all 3 categories
+    vscode.postMessage({
+      type: "requestMarketplaceRefresh",
+      requestId: `refresh-${Date.now()}`,
+    })
+    // Also re-fetch installed
+    fetchInstalled()
+    showToast({ variant: "success", title: language.t("marketplace.refresh.success") })
+  }
+
+  // ─── Effects ───────────────────────────────────────────────────────
 
   createEffect(() => {
     const currentTab = tab()

@@ -434,6 +434,7 @@ export interface VcpConfig {
 
 export interface Config {
   permission?: PermissionConfig
+  yolo_mode?: boolean
   model?: string
   small_model?: string
   default_agent?: string
@@ -830,6 +831,8 @@ export interface VcpStatusUpdateMessage {
   payload: {
     status: "idle" | "busy" | "error"
     connected: boolean
+    /** VCPToolBox WebSocket connection state (null = VCPBridge not configured) */
+    vcpBridgeConnected?: boolean | null
     currentModel?: string
     currentProfile?: string
     currentAgent?: string
@@ -882,6 +885,13 @@ export interface VCPBridgeStatus {
   reconnectAttempts: number
   lastConnected?: number
   lastError?: string
+}
+
+/** Extension → Webview: pushed VCPBridge runtime stats (plugins, logs, servers, etc.) */
+export interface VcpBridgeStatsMessage {
+  type: "vcpBridgeStats"
+  stats: VCPBridgeRuntimeStats | null
+  status: VCPBridgeStatus | null
 }
 // novacode_change end
 
@@ -1045,6 +1055,7 @@ export type ExtensionMessage =
   | VcpToolRequestResultMessage
   | VcpMemoryRefreshMessage
   | VcpStatusUpdateMessage
+  | VcpBridgeStatsMessage
   | AgentManagerSessionMetaMessage
   | AgentManagerRepoInfoMessage
   | AgentManagerWorktreeSetupMessage
@@ -1058,6 +1069,10 @@ export type ExtensionMessage =
   | VariantsLoadedMessage
   | EnhancePromptResultMessage
   | EnhancePromptErrorMessage
+  | OpenAiModelsResultMessage
+  | MarketplaceProxyResultMessage
+  | MarketplaceInstallResultMessage
+  | MarketplaceDataMessage
 
 // ============================================
 // Messages FROM webview TO extension
@@ -1182,6 +1197,78 @@ export interface EnhancePromptRequest {
   type: "enhancePrompt"
   text: string
   contextItems?: Array<{ type: string; label: string; path?: string }>
+  requestId?: string
+}
+
+// ── Provider model fetching via postMessage (Kilo-style) ──
+
+export interface RequestOpenAiModelsMessage {
+  type: "requestOpenAiModels"
+  baseUrl: string
+  apiKey: string
+  requestId?: string
+}
+
+export interface OpenAiModelsResultMessage {
+  type: "openAiModels"
+  openAiModels: string[]
+  latencyMs?: number
+  error?: string
+  requestId?: string
+}
+
+// ── Marketplace proxy via postMessage ──
+
+export interface RequestMarketplaceYamlMessage {
+  type: "requestMarketplace"
+  category?: string
+  requestId?: string
+}
+
+export interface RequestMarketplaceListMessage {
+  type: "requestMarketplaceList"
+  tab?: string
+  query?: string
+  requestId?: string
+}
+
+export interface RequestMarketplaceInstalledMessage {
+  type: "requestMarketplaceInstalled"
+  requestId?: string
+}
+
+export interface RequestMarketplaceRefreshMessage {
+  type: "requestMarketplaceRefresh"
+  requestId?: string
+}
+
+export interface RequestMarketplaceInstallMessage {
+  type: "requestMarketplaceInstall"
+  body: unknown
+  requestId?: string
+}
+
+export interface MarketplaceProxyResultMessage {
+  type: "marketplaceProxyResult"
+  data?: unknown
+  error?: string
+  tab?: string
+  requestId?: string
+}
+
+export interface MarketplaceInstallResultMessage {
+  type: "marketplaceInstallResult"
+  data?: { success: boolean; message?: string; installedPath?: string }
+  error?: string
+  requestId?: string
+}
+
+export interface MarketplaceDataMessage {
+  type: "marketplaceData"
+  category?: string
+  raw?: string
+  items?: unknown[]
+  error?: string
   requestId?: string
 }
 
@@ -1471,6 +1558,11 @@ export interface RequestVariantsMessage {
   type: "requestVariants"
 }
 
+// Request VCPBridge stats from extension (webview → extension)
+export interface RequestVcpBridgeStatsMessage {
+  type: "requestVcpBridgeStats"
+}
+
 export type WebviewMessage =
   | SendMessageRequest
   | AbortRequest
@@ -1540,6 +1632,13 @@ export type WebviewMessage =
   | RequestVariantsMessage
   | CompactContextRequest
   | EnhancePromptRequest
+  | RequestOpenAiModelsMessage
+  | RequestMarketplaceYamlMessage
+  | RequestMarketplaceListMessage
+  | RequestMarketplaceInstalledMessage
+  | RequestMarketplaceRefreshMessage
+  | RequestMarketplaceInstallMessage
+  | RequestVcpBridgeStatsMessage
 
 // ============================================
 // VS Code API type

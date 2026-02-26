@@ -221,7 +221,7 @@
     },
     "packages/nova-vscode": {
       "name": "vcp-code",
-      "version": "7.0.35",
+      "version": "1.0.41",
       "dependencies": {
         "@anthropic-ai/sdk": "^0.39.0",
         "@novacode/nova-i18n": "workspace:*",
@@ -242,6 +242,7 @@
         "solid-js": "^1.9.11",
         "uri-js": "^4.4.1",
         "web-tree-sitter": "^0.24.7",
+        "yaml": "2.8.2",
         "zod": "^3.24.2",
       },
       "devDependencies": {

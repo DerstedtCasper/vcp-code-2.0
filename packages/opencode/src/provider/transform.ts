@@ -72,6 +72,20 @@ export namespace ProviderTransform {
         .filter((msg): msg is ModelMessage => msg !== undefined && msg.content !== "")
     }
 
+    // OpenRouter / Nova Gateway: strip thinking/reasoning/redacted_thinking parts
+    // that the gateway doesn't support forwarding. Drop messages that become empty.
+    if (model.api.npm === "@novacode/nova-gateway" || model.api.npm === "@openrouter/ai-sdk-provider") {
+      const THINKING_TYPES = new Set(["thinking", "reasoning", "redacted_thinking"])
+      msgs = msgs
+        .map((msg) => {
+          if (!Array.isArray(msg.content)) return msg
+          const filtered = msg.content.filter((part: any) => !THINKING_TYPES.has(part.type))
+          if (filtered.length === 0) return undefined
+          return { ...msg, content: filtered }
+        })
+        .filter((msg): msg is ModelMessage => msg !== undefined)
+    }
+
     if (
       model.providerID === "mistral" ||
       model.api.id.toLowerCase().includes("mistral") ||
@@ -383,19 +397,30 @@ export namespace ProviderTransform {
 
       // novacode_change start
       case "@novacode/nova-gateway":
-        if (model.id.includes("claude")) {
-          // for models that support adaptive thinking, effort is ignored
-          // for models that don't support adaptive thinking, effort is translated into a token budget
-          return {
-            none: { reasoning: { enabled: false } },
-            low: { reasoning: { enabled: true, effort: "low" }, verbosity: "low" },
-            medium: { reasoning: { enabled: true, effort: "medium" }, verbosity: "medium" },
-            high: { reasoning: { enabled: true, effort: "high" }, verbosity: "high" },
-            max: { reasoning: { enabled: true, effort: "xhigh" }, verbosity: "max" },
-          }
+        // Claude via gateway: reasoning is not supported through the gateway proxy,
+        // so return empty variants to disable reasoning controls.
+        if (model.api.id.includes("anthropic") || model.api.id.includes("claude") ||
+            model.id.includes("claude")) {
+          return {}
         }
+        // Codex models via gateway: use object-based reasoning format
+        if (model.id.includes("codex") || model.api.id.includes("codex")) {
+          return Object.fromEntries(
+            OPENAI_EFFORTS.map((effort) => [effort, { reasoning: { effort } }]),
+          )
+        }
+        // GPT / Gemini-3 via gateway: use OpenAI-compatible reasoning efforts
         if (!model.id.includes("gpt") && !model.id.includes("gemini-3")) return {}
-        return Object.fromEntries(OPENAI_EFFORTS.map((effort) => [effort, { reasoning: { effort } }]))
+        return Object.fromEntries(
+          OPENAI_EFFORTS.map((effort) => [
+            effort,
+            {
+              reasoningEffort: effort,
+              reasoningSummary: "auto",
+              include: ["reasoning.encrypted_content"],
+            },
+          ]),
+        )
       // novacode_change end
 
       // TODO: YOU CANNOT SET max_tokens if this is set!!!
