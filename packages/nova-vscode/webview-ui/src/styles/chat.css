@@ -213,6 +213,48 @@
   padding: 8px 8px 0;
 }
 
+.file-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 8px 0;
+}
+
+.file-attachment-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 220px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.15));
+  background: var(--vscode-badge-background, rgba(128, 128, 128, 0.18));
+  color: var(--vscode-badge-foreground, var(--vscode-foreground));
+  font-size: 11px;
+}
+
+.file-attachment-pill-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-attachment-pill-remove {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.75;
+}
+
+.file-attachment-pill-remove:hover {
+  opacity: 1;
+  color: var(--vscode-errorForeground);
+}
+
 .image-attachment {
   position: relative;
   width: 48px;
@@ -1484,6 +1526,167 @@
 }
 
 /* ============================================
+   VCP Bridge — Runtime Stats Section (T-3.4)
+   ============================================ */
+
+.vcp-bridge-conn-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.vcp-bridge-conn-dot--connected {
+  background: #22c55e;
+  box-shadow: 0 0 4px rgba(34, 197, 94, 0.6);
+}
+
+.vcp-bridge-conn-dot--disconnected {
+  background: #6b7280;
+}
+
+.vcp-bridge-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 2px 0;
+}
+
+.vcp-bridge-status-label {
+  color: var(--vscode-descriptionForeground);
+  flex-shrink: 0;
+}
+
+.vcp-bridge-status-value {
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vcp-bridge-status-value--ok {
+  color: #22c55e;
+}
+
+.vcp-bridge-status-value--err {
+  color: var(--vscode-errorForeground, #ef4444);
+}
+
+.vcp-bridge-resource-row {
+  display: flex;
+  gap: 10px;
+  font-size: 11px;
+  padding: 3px 0;
+}
+
+.vcp-bridge-resource-item {
+  color: var(--vscode-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.vcp-bridge-sub-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--vscode-descriptionForeground);
+  margin: 6px 0 3px;
+}
+
+.vcp-bridge-plugins,
+.vcp-bridge-servers,
+.vcp-bridge-logs {
+  display: flex;
+  flex-direction: column;
+}
+
+.vcp-bridge-plugin-row,
+.vcp-bridge-server-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  padding: 1px 0;
+}
+
+.vcp-bridge-plugin-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.vcp-bridge-plugin-dot--running {
+  background: #22c55e;
+}
+
+.vcp-bridge-plugin-dot--error {
+  background: #ef4444;
+}
+
+.vcp-bridge-plugin-dot--completed {
+  background: #3b82f6;
+}
+
+.vcp-bridge-plugin-dot--idle {
+  background: #6b7280;
+}
+
+.vcp-bridge-plugin-name {
+  font-weight: 500;
+  color: var(--vscode-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 120px;
+}
+
+.vcp-bridge-plugin-step {
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vcp-bridge-log-entry {
+  display: flex;
+  gap: 4px;
+  font-size: 10px;
+  padding: 1px 0;
+  color: var(--vscode-foreground);
+  overflow: hidden;
+}
+
+.vcp-bridge-log-entry--error {
+  color: var(--vscode-errorForeground, #ef4444);
+}
+
+.vcp-bridge-log-entry--warn {
+  color: #f59e0b;
+}
+
+.vcp-bridge-log-time {
+  color: var(--vscode-descriptionForeground);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.vcp-bridge-log-plugin {
+  color: var(--vscode-descriptionForeground);
+  flex-shrink: 0;
+}
+
+.vcp-bridge-log-msg {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================
    SettingsRow (enhanced)
    ============================================ */
 
@@ -1612,4 +1815,352 @@
 @keyframes prompt-enhance-spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
+}
+
+/* ============================================
+   Marketplace View
+   ============================================ */
+
+.mp-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 16px;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.mp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mp-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--vscode-foreground);
+  margin: 0;
+}
+
+/* ── Tabs ────────────────────────────────────── */
+
+.mp-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--vscode-editorWidget-border, rgba(128,128,128,0.25));
+  padding-bottom: 0;
+}
+
+.mp-tab {
+  all: unset;
+  cursor: pointer;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: var(--vscode-descriptionForeground);
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mp-tab:hover {
+  color: var(--vscode-foreground);
+}
+
+.mp-tab--active {
+  color: var(--vscode-foreground);
+  border-bottom-color: var(--vscode-focusBorder, #007acc);
+  font-weight: 600;
+}
+
+.mp-tab-count {
+  background: var(--vscode-badge-background, rgba(128,128,128,0.2));
+  color: var(--vscode-badge-foreground, var(--vscode-foreground));
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 9px;
+  font-weight: 500;
+}
+
+/* ── Search ──────────────────────────────────── */
+
+.mp-search {
+  max-width: 400px;
+}
+
+/* ── Content area ────────────────────────────── */
+
+.mp-content {
+  flex: 1;
+  min-height: 0;
+}
+
+.mp-loading,
+.mp-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 120px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 14px;
+}
+
+/* ── Card grid ───────────────────────────────── */
+
+.mp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.mp-card {
+  border: 1px solid var(--vscode-editorWidget-border, rgba(128,128,128,0.25));
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--vscode-editor-background);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.15s;
+}
+
+.mp-card:hover {
+  border-color: var(--vscode-focusBorder, #007acc);
+}
+
+.mp-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mp-card-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.mp-card-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--vscode-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mp-card-badge {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 9px;
+  background: var(--vscode-badge-background, rgba(128,128,128,0.2));
+  color: var(--vscode-badge-foreground);
+  flex-shrink: 0;
+}
+
+.mp-card-author {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.mp-card-desc {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mp-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.mp-tag {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: var(--vscode-textCodeBlock-background, rgba(128,128,128,0.1));
+  color: var(--vscode-descriptionForeground);
+}
+
+.mp-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.mp-installed-badge {
+  font-size: 12px;
+  color: #22c55e;
+  font-weight: 500;
+}
+
+.mp-card-link {
+  font-size: 12px;
+  color: var(--vscode-textLink-foreground, #3794ff);
+  text-decoration: none;
+  margin-left: auto;
+}
+
+.mp-card-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Install Dialog ──────────────────────────── */
+
+.mp-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9000;
+}
+
+.mp-dialog {
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-editorWidget-border, rgba(128,128,128,0.3));
+  border-radius: 10px;
+  width: min(520px, 92vw);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+}
+
+.mp-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--vscode-editorWidget-border, rgba(128,128,128,0.2));
+}
+
+.mp-dialog-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.mp-dialog-close {
+  all: unset;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--vscode-descriptionForeground);
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.mp-dialog-close:hover {
+  background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.15));
+}
+
+.mp-dialog-body {
+  padding: 16px 18px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mp-dialog-desc {
+  font-size: 13px;
+  color: var(--vscode-descriptionForeground);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.mp-dialog-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mp-dialog-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.mp-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--vscode-editorWidget-border, rgba(128,128,128,0.2));
+}
+
+/* Method tabs inside dialog */
+
+.mp-method-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.mp-method-tab {
+  all: unset;
+  cursor: pointer;
+  padding: 5px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  background: var(--vscode-textCodeBlock-background, rgba(128,128,128,0.1));
+  color: var(--vscode-descriptionForeground);
+  transition: background 0.15s, color 0.15s;
+}
+
+.mp-method-tab:hover {
+  background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.2));
+}
+
+.mp-method-tab--active {
+  background: var(--vscode-focusBorder, #007acc);
+  color: #fff;
+}
+
+/* Prerequisites */
+
+.mp-prereqs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.mp-prereq-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--vscode-editorWarning-foreground, #cca700);
+  color: #000;
+  font-weight: 500;
+}
+
+/* Parameters */
+
+.mp-param-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mp-param-label {
+  font-size: 12px;
+  color: var(--vscode-foreground);
+}
+
+.mp-param-optional {
+  font-weight: 400;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
 }

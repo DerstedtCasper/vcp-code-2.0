@@ -1185,6 +1185,95 @@ export namespace Config {
             .describe("Preferred handoff style for subtask reports."),
         })
         .optional(),
+      // novacode_change start - VCP Bridge (WebSocket connection to VCPToolBox)
+      toolbox: z
+        .object({
+          enabled: z.boolean().optional().default(false).describe("Enable WebSocket bridge to VCPToolBox backend."),
+          url: z.string().optional().default("ws://localhost:5800").describe("VCPToolBox WebSocket server URL."),
+          key: z.string().optional().describe("VCP_Key for WebSocket authentication."),
+          channels: z
+            .array(z.enum(["VCPInfo", "VCPLog", "DistributedServer", "ChromeObserver", "ChromeControl", "AdminPanel"]))
+            .optional()
+            .default(["VCPInfo", "VCPLog"])
+            .describe("VCPToolBox WebSocket channels to subscribe to."),
+          reconnectInterval: z
+            .number()
+            .int()
+            .min(1000)
+            .max(60000)
+            .optional()
+            .default(5000)
+            .describe("Reconnect interval in milliseconds."),
+        })
+        .optional(),
+      // novacode_change end
+      // novacode_change start - Marketplace configuration
+      marketplace: z
+        .object({
+          enabled: z.boolean().optional().default(true).describe("Enable marketplace for browsing and installing skills, modes, and MCP servers."),
+          sources: z
+            .array(
+              z.object({
+                name: z.string().describe("Display name of the marketplace source."),
+                baseUrl: z.string().describe("GitHub raw content base URL for marketplace YAML files."),
+                type: z.enum(["kilo", "custom"]).optional().default("kilo"),
+              }),
+            )
+            .optional()
+            .default([
+              {
+                name: "Kilo Marketplace",
+                baseUrl: "https://raw.githubusercontent.com/Kilo-Org/kilo-marketplace/main",
+                type: "kilo" as const,
+              },
+            ])
+            .describe("Marketplace upstream sources."),
+          cacheTTL: z
+            .number()
+            .int()
+            .min(60)
+            .optional()
+            .default(3600)
+            .describe("Cache TTL in seconds for marketplace data."),
+        })
+        .optional(),
+      // novacode_change end
+      // novacode_change start - Code index configuration
+      codeIndex: z
+        .object({
+          enabled: z.boolean().optional().default(false).describe("Enable local code indexing with semantic search."),
+          embedding: z
+            .object({
+              provider: z.enum(["openai", "gemini", "ollama", "custom"]).optional().default("openai"),
+              baseUrl: z.string().optional().describe("Custom embedding API base URL."),
+              apiKey: z.string().optional().describe("API key for the embedding provider."),
+              model: z.string().optional().default("text-embedding-3-small").describe("Embedding model name."),
+              dimensions: z.number().int().optional().default(1536).describe("Embedding vector dimensions."),
+              batchSize: z.number().int().min(1).max(500).optional().default(100).describe("Batch size for embedding requests."),
+            })
+            .optional(),
+          vectorStore: z
+            .object({
+              type: z.enum(["qdrant", "hnswlib"]).optional().default("hnswlib"),
+              qdrantUrl: z.string().optional().describe("Qdrant server URL for remote vector storage."),
+              qdrantApiKey: z.string().optional().describe("Qdrant API key."),
+              collectionName: z.string().optional().default("vcp-code-index"),
+              localPath: z.string().optional().describe("Local path for hnswlib storage."),
+            })
+            .optional(),
+          search: z
+            .object({
+              scoreThreshold: z.number().min(0).max(1).optional().default(0.7),
+              maxResults: z.number().int().min(1).max(100).optional().default(10),
+            })
+            .optional(),
+          exclude: z
+            .array(z.string())
+            .optional()
+            .default(["node_modules", ".git", "dist", "build", ".next", "__pycache__"]),
+        })
+        .optional(),
+      // novacode_change end
       memory: z
         .object({
           enabled: z.boolean().optional().describe("Enable VCP long-term memory runtime."),

@@ -4,7 +4,7 @@
  * and exposes an updateConfig method to apply partial updates.
  */
 
-import { createContext, useContext, createSignal, onCleanup, ParentComponent, Accessor } from "solid-js"
+import { createContext, useContext, createSignal, onCleanup, ParentComponent, Accessor, createMemo } from "solid-js"
 import { useVSCode } from "./vscode"
 import type { Config, ConfigConflictMessage, ConfigUpdatedMessage, ExtensionMessage } from "../types/messages"
 
@@ -12,9 +12,27 @@ interface ConfigContextValue {
   config: Accessor<Config>
   loading: Accessor<boolean>
   updateConfig: (partial: Partial<Config>) => void
+  updateScopedConfig: (scopeID: string, partial: Partial<Config>) => void
+  getScopedConfig: (scopeID: string) => Config
+  hasScopedDraft: (scopeID: string) => boolean
+  saveScopedConfig: (scopeID: string) => void
+  discardScopedConfig: (scopeID: string) => void
+  saveAllScopedConfig: () => void
+  hasAnyScopedDraft: Accessor<boolean>
 }
 
 const ConfigContext = createContext<ConfigContextValue>()
+const ConfigScopeContext = createContext<Accessor<string | undefined>>()
+
+const hasPatch = (value: unknown): boolean => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false
+  return Object.keys(value).length > 0
+}
+
+export const ConfigScopeProvider: ParentComponent<{ scopeID: string }> = (props) => {
+  const value = () => props.scopeID
+  return <ConfigScopeContext.Provider value={value}>{props.children}</ConfigScopeContext.Provider>
+}
 
 export const ConfigProvider: ParentComponent = (props) => {
   const vscode = useVSCode()
@@ -22,6 +40,7 @@ export const ConfigProvider: ParentComponent = (props) => {
   const [config, setConfig] = createSignal<Config>({})
   const [loading, setLoading] = createSignal(true)
   const [revision, setRevision] = createSignal<number | undefined>(undefined)
+  const [scopedDrafts, setScopedDrafts] = createSignal<Record<string, Partial<Config>>>({})
   let staged: Partial<Config> | null = null
   let running = false
   let nextMutationID = 0
@@ -47,6 +66,13 @@ export const ConfigProvider: ParentComponent = (props) => {
           : value
     }
     return next as T
+  }
+
+  const mergePatch = (left: Partial<Config>, right: Partial<Config>): Partial<Config> =>
+    mergeConfig(left as Record<string, unknown>, right as Record<string, unknown>) as Partial<Config>
+
+  const applyLocalConfig = (partial: Partial<Config>) => {
+    setConfig((prev) => mergeConfig(prev as Record<string, unknown>, partial as Record<string, unknown>) as Config)
   }
 
   const waitConfigMutation = (mutationID: number) =>
@@ -100,6 +126,56 @@ export const ConfigProvider: ParentComponent = (props) => {
     if (running) return
     running = true
     void sendNext()
+  }
+
+  const updateScopedConfig = (scopeID: string, partial: Partial<Config>) => {
+    if (!scopeID) return
+    setScopedDrafts((prev) => {
+      const current = prev[scopeID] ?? {}
+      return {
+        ...prev,
+        [scopeID]: mergePatch(current, partial),
+      }
+    })
+  }
+
+  const getScopedConfig = (scopeID: string): Config => {
+    const draft = scopedDrafts()[scopeID]
+    if (!draft || !hasPatch(draft)) return config()
+    return mergeConfig(config() as Record<string, unknown>, draft as Record<string, unknown>) as Config
+  }
+
+  const hasScopedDraft = (scopeID: string): boolean => hasPatch(scopedDrafts()[scopeID])
+
+  const saveScopedConfig = (scopeID: string) => {
+    const patch = scopedDrafts()[scopeID]
+    if (!patch || !hasPatch(patch)) return
+    setScopedDrafts((prev) => {
+      const next = { ...prev }
+      delete next[scopeID]
+      return next
+    })
+    applyLocalConfig(patch)
+    enqueueConfigMutation(patch)
+  }
+
+  const discardScopedConfig = (scopeID: string) => {
+    if (!hasPatch(scopedDrafts()[scopeID])) return
+    setScopedDrafts((prev) => {
+      const next = { ...prev }
+      delete next[scopeID]
+      return next
+    })
+  }
+
+  const saveAllScopedConfig = () => {
+    const drafts = scopedDrafts()
+    const entries = Object.values(drafts).filter((patch) => hasPatch(patch))
+    if (entries.length === 0) return
+    const merged = entries.reduce<Partial<Config>>((acc, patch) => mergePatch(acc, patch), {})
+    setScopedDrafts({})
+    applyLocalConfig(merged)
+    enqueueConfigMutation(merged)
   }
 
   // Register handler immediately (not in onMount) so we never miss
@@ -178,15 +254,26 @@ export const ConfigProvider: ParentComponent = (props) => {
 
   function updateConfig(partial: Partial<Config>) {
     // Optimistically update local state
-    setConfig((prev) => mergeConfig(prev as Record<string, unknown>, partial as Record<string, unknown>) as Config)
+    applyLocalConfig(partial)
     // Send to extension for persistence
     enqueueConfigMutation(partial)
   }
+
+  const hasAnyScopedDraft = createMemo(() =>
+    Object.values(scopedDrafts()).some((patch) => hasPatch(patch)),
+  )
 
   const value: ConfigContextValue = {
     config,
     loading,
     updateConfig,
+    updateScopedConfig,
+    getScopedConfig,
+    hasScopedDraft,
+    saveScopedConfig,
+    discardScopedConfig,
+    saveAllScopedConfig,
+    hasAnyScopedDraft,
   }
 
   return <ConfigContext.Provider value={value}>{props.children}</ConfigContext.Provider>
@@ -197,5 +284,28 @@ export function useConfig(): ConfigContextValue {
   if (!context) {
     throw new Error("useConfig must be used within a ConfigProvider")
   }
-  return context
+  const scopeIDAccessor = useContext(ConfigScopeContext)
+  if (!scopeIDAccessor) {
+    return context
+  }
+
+  const scopedConfig = createMemo(() => {
+    const scopeID = scopeIDAccessor()
+    return scopeID ? context.getScopedConfig(scopeID) : context.config()
+  })
+
+  const scopedValue: ConfigContextValue = {
+    ...context,
+    config: scopedConfig,
+    updateConfig: (partial) => {
+      const scopeID = scopeIDAccessor()
+      if (scopeID) {
+        context.updateScopedConfig(scopeID, partial)
+        return
+      }
+      context.updateConfig(partial)
+    },
+  }
+
+  return scopedValue
 }

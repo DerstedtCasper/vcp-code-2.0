@@ -1449,8 +1449,10 @@ export type Command = {
   description?: string
   agent?: string
   model?: string
+  source?: "command" | "mcp" | "skill" | "vcp-plugin"
   template: string
   subtask?: boolean
+  hints?: Array<string>
 }
 
 export type Model = {

@@ -7,6 +7,7 @@ import PROMPT_INITIALIZE from "./template/initialize.txt"
 import PROMPT_REVIEW from "./template/review.txt"
 import { MCP } from "../mcp"
 import { Skill } from "../skill"
+import { VCPBridge } from "../vcp-bridge" // novacode_change - VCP Bridge integration
 import { localReviewCommand, localReviewUncommittedCommand } from "@/novacode/review/command" // novacode_change
 
 export namespace Command {
@@ -28,7 +29,7 @@ export namespace Command {
       description: z.string().optional(),
       agent: z.string().optional(),
       model: z.string().optional(),
-      source: z.enum(["command", "mcp", "skill"]).optional(),
+      source: z.enum(["command", "mcp", "skill", "vcp-plugin"]).optional(),
       // workaround for zod not supporting async functions natively so we use getters
       // https://zod.dev/v4/changelog?id=zfunction
       template: z.promise(z.string()).or(z.string()),
@@ -144,6 +145,29 @@ export namespace Command {
         hints: [],
       }
     }
+
+    // novacode_change start - Add VCP plugin commands
+    if (VCPBridge.isConnected()) {
+      try {
+        const vcpCommands = await VCPBridge.getPluginCommands()
+        for (const cmd of vcpCommands) {
+          const name = cmd.name
+          if (result[name]) continue // Skip if already exists
+          result[name] = {
+            name,
+            description: cmd.description || `[VCP Plugin: ${cmd.pluginName}]`,
+            source: "vcp-plugin",
+            template: `Execute VCP plugin command: ${name}` + (cmd.parameters?.length
+              ? `\nParameters: ${cmd.parameters.map((p) => `${p.name}${p.required ? " (required)" : ""}`).join(", ")}`
+              : ""),
+            hints: cmd.parameters?.filter((p) => p.required).map((_, i) => `$${i + 1}`) || [],
+          }
+        }
+      } catch {
+        // VCP plugin commands are optional; silently skip on failure
+      }
+    }
+    // novacode_change end
 
     return result
   })

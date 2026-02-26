@@ -43,6 +43,9 @@ import { QuestionRoutes } from "./routes/question"
 import { PermissionRoutes } from "./routes/permission"
 import { GlobalRoutes } from "./routes/global"
 import { MDNS } from "./mdns"
+import { VCPBridge } from "../vcp-bridge" // novacode_change - VCP Bridge
+import { Marketplace } from "../marketplace" // novacode_change - Marketplace
+import { CodeIndex } from "../code-index" // novacode_change - Code Index T-1.9
 
 // @ts-ignore This global is needed to prevent ai-sdk from logging warnings to stdout https://github.com/vercel/ai/blob/2dc67e0ef538307f21368db32d5a12345d98831b/packages/ai/src/logger/log-warnings.ts#L85
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -254,6 +257,563 @@ export namespace Server {
         .route("/", FileRoutes())
         .route("/mcp", McpRoutes())
         .route("/tui", TuiRoutes())
+        // novacode_change start - VCP Bridge REST endpoints
+        .get(
+          "/vcp/bridge/status",
+          describeRoute({
+            summary: "Get VCP Bridge status",
+            description: "Get the current connection status of the VCP Bridge to VCPToolBox.",
+            operationId: "vcp.bridge.status",
+            responses: {
+              200: {
+                description: "VCP Bridge status",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.any()),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            return c.json(VCPBridge.getStatus())
+          },
+        )
+        .get(
+          "/vcp/bridge/stats",
+          describeRoute({
+            summary: "Get VCP runtime stats",
+            description: "Get aggregated runtime statistics from VCPToolBox including plugin status, resource usage, and recent logs.",
+            operationId: "vcp.bridge.stats",
+            responses: {
+              200: {
+                description: "VCP runtime stats",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.any()),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            return c.json(VCPBridge.getStats())
+          },
+        )
+        .get(
+          "/vcp/bridge/commands",
+          describeRoute({
+            summary: "Get VCP plugin commands",
+            description: "Get slash commands registered by VCPToolBox plugins.",
+            operationId: "vcp.bridge.commands",
+            responses: {
+              200: {
+                description: "List of VCP plugin commands",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.any()),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            const commands = await VCPBridge.getPluginCommands()
+            return c.json(commands)
+          },
+        )
+        .get(
+          "/vcp/bridge/events",
+          describeRoute({
+            summary: "Subscribe to VCP Bridge events",
+            description: "Server-Sent Events stream for real-time VCPToolBox updates.",
+            operationId: "vcp.bridge.events",
+            responses: {
+              200: {
+                description: "VCP event stream",
+                content: {
+                  "text/event-stream": {
+                    schema: resolver(z.any()),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            return streamSSE(c, async (stream) => {
+              // Send initial stats
+              stream.writeSSE({
+                event: "stats",
+                data: JSON.stringify(VCPBridge.getStats()),
+              })
+
+              // Subscribe to stats updates
+              const unsub = VCPBridge.onStatsUpdate((stats) => {
+                stream.writeSSE({
+                  event: "stats",
+                  data: JSON.stringify(stats),
+                })
+              })
+
+              // Heartbeat
+              const heartbeat = setInterval(() => {
+                stream.writeSSE({
+                  event: "heartbeat",
+                  data: JSON.stringify({ time: Date.now() }),
+                })
+              }, 30000)
+
+              await new Promise<void>((resolve) => {
+                stream.onAbort(() => {
+                  clearInterval(heartbeat)
+                  unsub()
+                  resolve()
+                })
+              })
+            })
+          },
+        )
+        // novacode_change end
+        // novacode_change start - Marketplace REST API
+        .get(
+          "/marketplace/catalog",
+          describeRoute({
+            summary: "Get marketplace catalog",
+            description: "Fetch all marketplace items (skills, modes, MCPs) from configured upstream sources.",
+            operationId: "marketplace.catalog",
+            responses: {
+              200: {
+                description: "Marketplace catalogs array",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.array(z.any())),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            const catalogs = await Marketplace.getCatalogs()
+            return c.json(catalogs)
+          },
+        )
+        .post(
+          "/marketplace/refresh",
+          describeRoute({
+            summary: "Refresh marketplace catalog",
+            description: "Force refetch marketplace data from all upstream sources.",
+            operationId: "marketplace.refresh",
+            responses: {
+              200: {
+                description: "Refreshed catalogs",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.array(z.any())),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            Marketplace.invalidateCache()
+            const catalogs = await Marketplace.refresh()
+            return c.json(catalogs)
+          },
+        )
+        .get(
+          "/marketplace/skills",
+          describeRoute({
+            summary: "List marketplace skills",
+            description: "List available skills from the marketplace, optionally filtered by query.",
+            operationId: "marketplace.skills",
+            responses: {
+              200: {
+                description: "Skills list",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.array(z.any())),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            const query = c.req.query("q")
+            const skills = await Marketplace.listSkills(query)
+            return c.json(skills)
+          },
+        )
+        .get(
+          "/marketplace/modes",
+          describeRoute({
+            summary: "List marketplace modes",
+            description: "List available modes from the marketplace, optionally filtered by query.",
+            operationId: "marketplace.modes",
+            responses: {
+              200: {
+                description: "Modes list",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.any()),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            const query = c.req.query("q")
+            const modes = await Marketplace.listModes(query)
+            return c.json(modes)
+          },
+        )
+        .get(
+          "/marketplace/mcps",
+          describeRoute({
+            summary: "List marketplace MCPs",
+            description: "List available MCP servers from the marketplace, optionally filtered by query.",
+            operationId: "marketplace.mcps",
+            responses: {
+              200: {
+                description: "MCPs list",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.any()),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            const query = c.req.query("q")
+            const mcps = await Marketplace.listMCPs(query)
+            return c.json(mcps)
+          },
+        )
+        .get(
+          "/marketplace/search",
+          describeRoute({
+            summary: "Search marketplace",
+            description: "Search across all marketplace items (skills, modes, MCPs).",
+            operationId: "marketplace.search",
+            responses: {
+              200: {
+                description: "Search results",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.array(z.any())),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            const query = c.req.query("q") ?? ""
+            const type = c.req.query("type") as "skill" | "mode" | "mcp" | undefined
+            const results = await Marketplace.search(query, type)
+            return c.json(results)
+          },
+        )
+        .post(
+          "/marketplace/install",
+          describeRoute({
+            summary: "Install marketplace item",
+            description: "Install a skill, mode, or MCP server from the marketplace into local configuration.",
+            operationId: "marketplace.install",
+            responses: {
+              200: {
+                description: "Installation result",
+                content: {
+                  "application/json": {
+                    schema: resolver(
+                      z.object({
+                        success: z.boolean(),
+                        message: z.string(),
+                        installedPath: z.string().optional(),
+                      }),
+                    ),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            const body = await c.req.json()
+            const result = await Marketplace.install(body)
+            return c.json(result)
+          },
+        )
+        .get(
+          "/marketplace/installed",
+          describeRoute({
+            summary: "List installed marketplace items",
+            description: "List MCPs and modes currently installed in the configuration.",
+            operationId: "marketplace.installed",
+            responses: {
+              200: {
+                description: "Installed items",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.any()),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            const installed = await Marketplace.getInstalledList()
+            return c.json(installed)
+          },
+        )
+        .post(
+          "/provider/fetch-models",
+          describeRoute({
+            summary: "Fetch models from provider",
+            description:
+              "Proxy endpoint to fetch the model list from a remote OpenAI-compatible provider. " +
+              "Avoids CORS issues when calling from the webview.",
+            operationId: "provider.fetchModels",
+            responses: {
+              200: {
+                description: "Model list from provider",
+                content: {
+                  "application/json": {
+                    schema: resolver(
+                      z.object({
+                        ok: z.boolean(),
+                        models: z.array(z.object({ id: z.string() })).optional(),
+                        error: z.string().optional(),
+                      }),
+                    ),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            try {
+              const { base_url, api_key } = await c.req.json<{
+                base_url: string
+                api_key: string
+              }>()
+              if (!base_url) return c.json({ ok: false, error: "base_url is required" })
+              // The frontend now sends a fully resolved models URL (e.g. https://api.openai.com/v1/models).
+              // As a safety net, if the URL doesn't end with /models, try appending it.
+              let url = base_url.replace(/\/+$/, "")
+              if (!url.endsWith("/models")) {
+                // Try the URL as-is first (some providers use non-standard paths)
+                // but the primary strategy is: the frontend resolves the correct URL.
+                if (!url.match(/\/v\d+/)) url += "/v1"
+                url += "/models"
+              }
+              const headers: Record<string, string> = {
+                Accept: "application/json",
+              }
+              if (api_key) headers.Authorization = `Bearer ${api_key}`
+              const res = await fetch(url, {
+                method: "GET",
+                headers,
+                signal: AbortSignal.timeout(15_000),
+              })
+              if (!res.ok) {
+                const body = await res.text().catch(() => "")
+                return c.json({
+                  ok: false,
+                  error: `Provider returned HTTP ${res.status}${body ? `: ${body.slice(0, 500)}` : ""}`,
+                })
+              }
+              const body = (await res.json()) as {
+                data?: Array<{ id?: string; name?: string }>
+                models?: Array<{ id?: string; name?: string }>
+              }
+              // OpenAI-compatible: { data: [...] }. Some providers return { models: [...] }.
+              const rawModels = body.data ?? body.models ?? []
+              const models = rawModels
+                .map((m) => ({ id: m.id ?? m.name ?? "" }))
+                .filter((m) => m.id)
+              if (models.length === 0) {
+                return c.json({
+                  ok: false,
+                  error: "Provider responded but returned 0 models. Check URL and API key.",
+                })
+              }
+              return c.json({ ok: true, models })
+            } catch (err: any) {
+              const msg = String(err?.message ?? err)
+              // Provide user-friendly hints for common errors
+              if (msg.includes("ECONNREFUSED") || msg.includes("ENOTFOUND")) {
+                return c.json({ ok: false, error: `Cannot reach provider: ${msg}` })
+              }
+              if (msg.includes("timeout") || msg.includes("AbortError")) {
+                return c.json({ ok: false, error: "Request timed out (15s). Check the URL and network." })
+              }
+              return c.json({ ok: false, error: msg })
+            }
+          },
+        )
+        // novacode_change end
+        // novacode_change start - Code Index management endpoints (T-1.9)
+        .get(
+          "/code-index/status",
+          describeRoute({
+            summary: "Get code index status",
+            description: "Get the current status of the codebase semantic index (idle, indexing, error, disabled).",
+            operationId: "codeIndex.status",
+            responses: {
+              200: {
+                description: "Index status",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.any()),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            return c.json({
+              status: CodeIndex.status(),
+              enabled: CodeIndex.isEnabled(),
+              progress: CodeIndex.progress(),
+            })
+          },
+        )
+        .get(
+          "/code-index/stats",
+          describeRoute({
+            summary: "Get code index statistics",
+            description: "Get statistics about the code index (chunk count, file count, last indexed time).",
+            operationId: "codeIndex.stats",
+            responses: {
+              200: {
+                description: "Index statistics",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.any()),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            return c.json(CodeIndex.stats())
+          },
+        )
+        .post(
+          "/code-index/rebuild",
+          describeRoute({
+            summary: "Rebuild code index",
+            description: "Trigger a full rebuild of the codebase semantic index. This will re-scan, re-parse, and re-embed all files.",
+            operationId: "codeIndex.rebuild",
+            responses: {
+              200: {
+                description: "Rebuild started",
+                content: {
+                  "application/json": {
+                    schema: resolver(
+                      z.object({
+                        success: z.boolean(),
+                        message: z.string(),
+                      }),
+                    ),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            if (!CodeIndex.isEnabled()) {
+              return c.json({ success: false, message: "Code index is disabled. Enable it in settings first." })
+            }
+            // Run rebuild in background
+            CodeIndex.rebuild().catch((err) => {
+              log.error("code index rebuild failed", { err })
+            })
+            return c.json({ success: true, message: "Rebuild started" })
+          },
+        )
+        .post(
+          "/code-index/clear",
+          describeRoute({
+            summary: "Clear code index",
+            description: "Clear all indexed data from the vector store.",
+            operationId: "codeIndex.clear",
+            responses: {
+              200: {
+                description: "Index cleared",
+                content: {
+                  "application/json": {
+                    schema: resolver(
+                      z.object({
+                        success: z.boolean(),
+                        message: z.string(),
+                      }),
+                    ),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            try {
+              await CodeIndex.clear()
+              return c.json({ success: true, message: "Index cleared" })
+            } catch (err: any) {
+              return c.json({ success: false, message: String(err?.message ?? err) })
+            }
+          },
+        )
+        .get(
+          "/code-index/events",
+          describeRoute({
+            summary: "Subscribe to code index events",
+            description: "Server-Sent Events stream for real-time code index progress updates.",
+            operationId: "codeIndex.events",
+            responses: {
+              200: {
+                description: "Index event stream",
+                content: {
+                  "text/event-stream": {
+                    schema: resolver(z.any()),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            return streamSSE(c, async (stream) => {
+              // Send initial progress
+              stream.writeSSE({
+                event: "progress",
+                data: JSON.stringify(CodeIndex.progress()),
+              })
+
+              // Subscribe to progress updates
+              const unsub = CodeIndex.onProgress((progress) => {
+                stream.writeSSE({
+                  event: "progress",
+                  data: JSON.stringify(progress),
+                })
+              })
+
+              // Heartbeat
+              const heartbeat = setInterval(() => {
+                stream.writeSSE({
+                  event: "heartbeat",
+                  data: JSON.stringify({ time: Date.now() }),
+                })
+              }, 30000)
+
+              await new Promise<void>((resolve) => {
+                stream.onAbort(() => {
+                  clearInterval(heartbeat)
+                  unsub()
+                  resolve()
+                })
+              })
+            })
+          },
+        )
+        // novacode_change end
         .post(
           "/instance/dispose",
           describeRoute({

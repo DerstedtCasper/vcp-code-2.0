@@ -1,6 +1,8 @@
-import { Component, createSignal, onCleanup, onMount } from "solid-js"
+import { Component, Show, createMemo, createSignal, onCleanup, onMount } from "solid-js"
 import { Switch } from "@novacode/nova-ui/switch"
+import { Button } from "@novacode/nova-ui/button"
 import { Card } from "@novacode/nova-ui/card"
+import { showToast } from "@novacode/nova-ui/toast"
 import { useVSCode } from "../../context/vscode"
 import { useLanguage } from "../../context/language"
 import type { BrowserSettings } from "../../types/messages"
@@ -15,6 +17,11 @@ const BrowserTab: Component = () => {
     useSystemChrome: true,
     headless: false,
   })
+  const [saved, setSaved] = createSignal<BrowserSettings>({
+    enabled: false,
+    useSystemChrome: true,
+    headless: false,
+  })
 
   onMount(() => {
     postMessage({ type: "requestBrowserSettings" })
@@ -24,14 +31,38 @@ const BrowserTab: Component = () => {
   const unsubscribe = onMessage((msg) => {
     if (msg.type === "browserSettingsLoaded") {
       setSettings(msg.settings)
+      setSaved(msg.settings)
     }
   })
   onCleanup(unsubscribe)
 
+  const isDirty = createMemo(() => JSON.stringify(settings()) !== JSON.stringify(saved()))
+
   const update = (key: keyof BrowserSettings, value: boolean) => {
     setSettings((prev) => ({ ...prev, [key]: value }))
-    postMessage({ type: "updateSetting", key: `browserAutomation.${key}`, value })
   }
+
+  const save = () => {
+    if (!isDirty()) return
+    const next = settings()
+    postMessage({ type: "updateSetting", key: "browserAutomation.enabled", value: next.enabled })
+    postMessage({ type: "updateSetting", key: "browserAutomation.useSystemChrome", value: next.useSystemChrome })
+    postMessage({ type: "updateSetting", key: "browserAutomation.headless", value: next.headless })
+    setSaved(next)
+    showToast({ variant: "success", title: t("settings.save.toast.title") })
+  }
+
+  const discard = () => setSettings(saved())
+
+  onMount(() => {
+    const onSave = (event: Event) => {
+      const tab = (event as CustomEvent<{ tab?: string }>).detail?.tab
+      if (tab !== "browser") return
+      save()
+    }
+    window.addEventListener("vcp-settings-save", onSave as EventListener)
+    onCleanup(() => window.removeEventListener("vcp-settings-save", onSave as EventListener))
+  })
 
   return (
     <div style={{ display: "flex", "flex-direction": "column", gap: "16px" }}>
@@ -89,6 +120,19 @@ const BrowserTab: Component = () => {
           </Switch>
         </SettingsRow>
       </Card>
+      <Show when={isDirty()}>
+        <div class="sticky-save-bar">
+          <div class="sticky-save-bar-hint">{t("settings.providers.unsaved")}</div>
+          <div class="sticky-save-bar-actions">
+            <Button size="small" variant="ghost" onClick={discard}>
+              {t("settings.providers.revert")}
+            </Button>
+            <Button size="small" onClick={save}>
+              {t("common.save")}
+            </Button>
+          </div>
+        </div>
+      </Show>
     </div>
   )
 }

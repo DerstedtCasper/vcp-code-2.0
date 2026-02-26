@@ -19,6 +19,7 @@ import { LanguageProvider, useLanguage } from "./context/language"
 import { ChatView } from "./components/chat"
 import { NovaNotifications } from "./components/chat/NovaNotifications"
 import { VcpStatusBadge } from "./components/chat/VcpStatusBadge"
+import { MarketplaceView } from "./components/marketplace/MarketplaceView"
 import SessionList from "./components/history/SessionList"
 import { NotificationsProvider } from "./context/notifications"
 import type { Message as SDKMessage, Part as SDKPart } from "@novacode/sdk/v2"
@@ -26,24 +27,6 @@ import "./styles/chat.css"
 
 type ViewType = "newTask" | "marketplace" | "history" | "profile" | "settings" | "vcp"
 const VALID_VIEWS = new Set<string>(["newTask", "marketplace", "history", "profile", "settings", "vcp"])
-
-const DummyView: Component<{ title: string }> = (props) => {
-  return (
-    <div
-      style={{
-        display: "flex",
-        "justify-content": "center",
-        "align-items": "center",
-        height: "100%",
-        "min-height": "200px",
-        "font-size": "24px",
-        color: "var(--vscode-foreground)",
-      }}
-    >
-      <h1>{props.title}</h1>
-    </div>
-  )
-}
 
 // Keep the standalone VCP view for diagnostics and command-based navigation ("vcpButtonClicked"/"navigate:vcp").
 const VCPView: Component = () => {
@@ -298,7 +281,8 @@ const AppContent: Component = () => {
         setCurrentView("profile")
         break
       case "vcpButtonClicked":
-        setCurrentView("vcp")
+        setSettingsTab("vcpConfig")
+        setCurrentView("settings")
         break
       case "settingsButtonClicked":
         setSettingsTab("providers")
@@ -312,6 +296,13 @@ const AppContent: Component = () => {
   }
 
   onMount(() => {
+    const onOpenSettingsTab = (event: Event) => {
+      const detail = (event as CustomEvent<{ tab?: string }>).detail
+      if (!detail?.tab) return
+      setSettingsTab(detail.tab)
+      setCurrentView("settings")
+    }
+
     const handler = (event: MessageEvent) => {
       const message = event.data
       if (message?.type === "action" && message.action) {
@@ -324,7 +315,11 @@ const AppContent: Component = () => {
       }
     }
     window.addEventListener("message", handler)
-    onCleanup(() => window.removeEventListener("message", handler))
+    window.addEventListener("openSettingsTab", onOpenSettingsTab as EventListener)
+    onCleanup(() => {
+      window.removeEventListener("message", handler)
+      window.removeEventListener("openSettingsTab", onOpenSettingsTab as EventListener)
+    })
   })
 
   const handleSelectSession = (id: string) => {
@@ -343,7 +338,7 @@ const AppContent: Component = () => {
           <ChatView onSelectSession={handleSelectSession} />
         </Match>
         <Match when={currentView() === "marketplace"}>
-          <DummyView title={language.t("view.marketplace.title")} />
+          <MarketplaceView />
         </Match>
         <Match when={currentView() === "history"}>
           <SessionList onSelectSession={handleSelectSession} />

@@ -1,8 +1,10 @@
-import { Component, createEffect, createSignal } from "solid-js"
+import { Component, For, Show, createEffect, createMemo, createSignal, onCleanup, onMount } from "solid-js"
 import { Button } from "@novacode/nova-ui/button"
 import { Icon } from "@novacode/nova-ui/icon"
 import { Tabs } from "@novacode/nova-ui/tabs"
 import { Tooltip } from "@novacode/nova-ui/tooltip"
+import { TextField } from "@novacode/nova-ui/text-field"
+import { showToast } from "@novacode/nova-ui/toast"
 import { useLanguage } from "../context/language"
 import ProvidersTab from "./settings/ProvidersTab"
 import AgentBehaviourTab from "./settings/AgentBehaviourTab"
@@ -19,20 +21,106 @@ import ExperimentalTab from "./settings/ExperimentalTab"
 import LanguageTab from "./settings/LanguageTab"
 import AboutVCPCodeTab from "./settings/AboutVCPCodeTab"
 import { useServer } from "../context/server"
+import { ConfigScopeProvider, useConfig } from "../context/config"
 
 export interface SettingsProps {
   onBack?: () => void
   initialTab?: string
 }
 
+interface ScopedSettingsPaneProps {
+  tab: string
+  scopeID: string
+  children: any
+}
+
+const ScopedSettingsPaneBody: Component<{ tab: string; scopeID: string; children: any }> = (props) => {
+  const language = useLanguage()
+  const config = useConfig()
+
+  onMount(() => {
+    const onSave = (event: Event) => {
+      const custom = event as CustomEvent<{ tab?: string }>
+      if (custom.detail?.tab !== props.tab) return
+      if (!config.hasScopedDraft(props.scopeID)) return
+      config.saveScopedConfig(props.scopeID)
+      showToast({ variant: "success", title: language.t("settings.save.toast.title") })
+    }
+    window.addEventListener("vcp-settings-save", onSave as EventListener)
+    onCleanup(() => window.removeEventListener("vcp-settings-save", onSave as EventListener))
+  })
+
+  return (
+    <div style={{ display: "grid", gap: "12px" }}>
+      {props.children}
+      <Show when={config.hasScopedDraft(props.scopeID)}>
+        <div class="sticky-save-bar">
+          <div class="sticky-save-bar-hint">{language.t("settings.providers.unsaved")}</div>
+          <div class="sticky-save-bar-actions">
+            <Button size="small" variant="ghost" onClick={() => config.discardScopedConfig(props.scopeID)}>
+              {language.t("settings.providers.revert")}
+            </Button>
+            <Button size="small" onClick={() => config.saveScopedConfig(props.scopeID)}>
+              {language.t("settings.providers.save")}
+            </Button>
+          </div>
+        </div>
+      </Show>
+    </div>
+  )
+}
+
+const ScopedSettingsPane: Component<ScopedSettingsPaneProps> = (props) => {
+  return (
+    <ConfigScopeProvider scopeID={props.scopeID}>
+      <ScopedSettingsPaneBody tab={props.tab} scopeID={props.scopeID}>
+        {props.children}
+      </ScopedSettingsPaneBody>
+    </ConfigScopeProvider>
+  )
+}
+
 const Settings: Component<SettingsProps> = (props) => {
   const server = useServer()
   const language = useLanguage()
   const [activeTab, setActiveTab] = createSignal(props.initialTab ?? "providers")
+  const [search, setSearch] = createSignal("")
+
+  const tabItems = createMemo(() => [
+    { id: "providers", icon: "providers", label: language.t("settings.providers.title") },
+    { id: "vcpConfig", icon: "settings-gear", label: language.t("settings.vcp.title") },
+    { id: "agentBehaviour", icon: "brain", label: language.t("settings.agentBehaviour.title") },
+    { id: "autoApprove", icon: "checklist", label: language.t("settings.autoApprove.title") },
+    { id: "browser", icon: "window-cursor", label: language.t("settings.browser.title") },
+    { id: "checkpoints", icon: "branch", label: language.t("settings.checkpoints.title") },
+    { id: "display", icon: "eye", label: language.t("settings.display.title") },
+    { id: "autocomplete", icon: "code-lines", label: language.t("settings.autocomplete.title") },
+    { id: "notifications", icon: "circle-check", label: language.t("settings.notifications.title") },
+    { id: "context", icon: "server", label: language.t("settings.context.title") },
+    { id: "terminal", icon: "console", label: language.t("settings.terminal.title") },
+    { id: "prompts", icon: "comment", label: language.t("settings.prompts.title") },
+    { id: "experimental", icon: "settings-gear", label: language.t("settings.experimental.title") },
+    { id: "language", icon: "speech-bubble", label: language.t("settings.language.title") },
+    { id: "aboutVCPCode", icon: "help", label: language.t("settings.aboutVCPCode.title") },
+  ])
+
+  const visibleTabs = createMemo(() => {
+    const query = search().trim().toLowerCase()
+    if (!query) return tabItems()
+    return tabItems().filter((tab) => tab.label.toLowerCase().includes(query) || tab.id.toLowerCase().includes(query))
+  })
 
   createEffect(() => {
     if (!props.initialTab) return
     setActiveTab(props.initialTab)
+  })
+
+  createEffect(() => {
+    const ids = visibleTabs().map((tab) => tab.id)
+    if (ids.length === 0) return
+    if (!ids.includes(activeTab())) {
+      setActiveTab(ids[0]!)
+    }
   })
 
   return (
@@ -53,6 +141,27 @@ const Settings: Component<SettingsProps> = (props) => {
           </Button>
         </Tooltip>
         <h2 style={{ "font-size": "16px", "font-weight": "600", margin: 0 }}>{language.t("sidebar.settings")}</h2>
+        <div style={{ flex: 1 }} />
+        <div style={{ width: "220px" }}>
+          <TextField
+            value={search()}
+            placeholder={language.t("common.search.placeholder")}
+            onChange={setSearch}
+          />
+        </div>
+        <Button
+          size="small"
+          onClick={() => {
+            const tab = activeTab()
+            window.dispatchEvent(
+              new CustomEvent("vcp-settings-save", {
+                detail: { tab },
+              }),
+            )
+          }}
+        >
+          {language.t("common.save")}
+        </Button>
       </div>
 
       {/* Settings tabs */}
@@ -60,71 +169,27 @@ const Settings: Component<SettingsProps> = (props) => {
         orientation="vertical"
         variant="settings"
         value={activeTab()}
-        onValueChange={(value: string) => setActiveTab(value)}
+        onChange={(value: string) => setActiveTab(value)}
         style={{ flex: 1, overflow: "hidden" }}
       >
         <Tabs.List>
-          <Tabs.Trigger value="providers">
-            <Icon name="providers" />
-            {language.t("settings.providers.title")}
-          </Tabs.Trigger>
-          <Tabs.Trigger value="agentBehaviour">
-            <Icon name="brain" />
-            {language.t("settings.agentBehaviour.title")}
-          </Tabs.Trigger>
-          <Tabs.Trigger value="autoApprove">
-            <Icon name="checklist" />
-            {language.t("settings.autoApprove.title")}
-          </Tabs.Trigger>
-          <Tabs.Trigger value="browser">
-            <Icon name="window-cursor" />
-            {language.t("settings.browser.title")}
-          </Tabs.Trigger>
-          <Tabs.Trigger value="checkpoints">
-            <Icon name="branch" />
-            {language.t("settings.checkpoints.title")}
-          </Tabs.Trigger>
-          <Tabs.Trigger value="display">
-            <Icon name="eye" />
-            {language.t("settings.display.title")}
-          </Tabs.Trigger>
-          <Tabs.Trigger value="autocomplete">
-            <Icon name="code-lines" />
-            {language.t("settings.autocomplete.title")}
-          </Tabs.Trigger>
-          <Tabs.Trigger value="notifications">
-            <Icon name="circle-check" />
-            {language.t("settings.notifications.title")}
-          </Tabs.Trigger>
-          <Tabs.Trigger value="context">
-            <Icon name="server" />
-            {language.t("settings.context.title")}
-          </Tabs.Trigger>
-          <Tabs.Trigger value="terminal">
-            <Icon name="console" />
-            {language.t("settings.terminal.title")}
-          </Tabs.Trigger>
-          <Tabs.Trigger value="prompts">
-            <Icon name="comment" />
-            {language.t("settings.prompts.title")}
-          </Tabs.Trigger>
-          <Tabs.Trigger value="experimental">
-            <Icon name="settings-gear" />
-            {language.t("settings.experimental.title")}
-          </Tabs.Trigger>
-          <Tabs.Trigger value="language">
-            <Icon name="speech-bubble" />
-            {language.t("settings.language.title")}
-          </Tabs.Trigger>
-          <Tabs.Trigger value="aboutVCPCode">
-            <Icon name="help" />
-            {language.t("settings.aboutVCPCode.title")}
-          </Tabs.Trigger>
+          <For each={visibleTabs()}>
+            {(tab) => (
+              <Tabs.Trigger value={tab.id}>
+                <Icon name={tab.icon} />
+                {tab.label}
+              </Tabs.Trigger>
+            )}
+          </For>
         </Tabs.List>
 
         <Tabs.Content value="providers">
           <h3>{language.t("settings.providers.title")}</h3>
           <ProvidersTab />
+        </Tabs.Content>
+        <Tabs.Content value="vcpConfig">
+          <h3>{language.t("settings.vcp.title")}</h3>
+          <AgentBehaviourTab pinnedSubtab="vcp" />
         </Tabs.Content>
         <Tabs.Content value="agentBehaviour">
           <h3>{language.t("settings.agentBehaviour.title")}</h3>
@@ -132,7 +197,9 @@ const Settings: Component<SettingsProps> = (props) => {
         </Tabs.Content>
         <Tabs.Content value="autoApprove">
           <h3>{language.t("settings.autoApprove.title")}</h3>
-          <AutoApproveTab />
+          <ScopedSettingsPane tab="autoApprove" scopeID="settings.autoApprove">
+            <AutoApproveTab />
+          </ScopedSettingsPane>
         </Tabs.Content>
         <Tabs.Content value="browser">
           <h3>{language.t("settings.browser.title")}</h3>
@@ -140,11 +207,15 @@ const Settings: Component<SettingsProps> = (props) => {
         </Tabs.Content>
         <Tabs.Content value="checkpoints">
           <h3>{language.t("settings.checkpoints.title")}</h3>
-          <CheckpointsTab />
+          <ScopedSettingsPane tab="checkpoints" scopeID="settings.checkpoints">
+            <CheckpointsTab />
+          </ScopedSettingsPane>
         </Tabs.Content>
         <Tabs.Content value="display">
           <h3>{language.t("settings.display.title")}</h3>
-          <DisplayTab />
+          <ScopedSettingsPane tab="display" scopeID="settings.display">
+            <DisplayTab />
+          </ScopedSettingsPane>
         </Tabs.Content>
         <Tabs.Content value="autocomplete">
           <h3>{language.t("settings.autocomplete.title")}</h3>
@@ -156,19 +227,27 @@ const Settings: Component<SettingsProps> = (props) => {
         </Tabs.Content>
         <Tabs.Content value="context">
           <h3>{language.t("settings.context.title")}</h3>
-          <ContextTab />
+          <ScopedSettingsPane tab="context" scopeID="settings.context">
+            <ContextTab />
+          </ScopedSettingsPane>
         </Tabs.Content>
         <Tabs.Content value="terminal">
           <h3>{language.t("settings.terminal.title")}</h3>
-          <TerminalTab />
+          <ScopedSettingsPane tab="terminal" scopeID="settings.terminal">
+            <TerminalTab />
+          </ScopedSettingsPane>
         </Tabs.Content>
         <Tabs.Content value="prompts">
           <h3>{language.t("settings.prompts.title")}</h3>
-          <PromptsTab />
+          <ScopedSettingsPane tab="prompts" scopeID="settings.prompts">
+            <PromptsTab />
+          </ScopedSettingsPane>
         </Tabs.Content>
         <Tabs.Content value="experimental">
           <h3>{language.t("settings.experimental.title")}</h3>
-          <ExperimentalTab />
+          <ScopedSettingsPane tab="experimental" scopeID="settings.experimental">
+            <ExperimentalTab />
+          </ScopedSettingsPane>
         </Tabs.Content>
         <Tabs.Content value="language">
           <h3>{language.t("settings.language.title")}</h3>

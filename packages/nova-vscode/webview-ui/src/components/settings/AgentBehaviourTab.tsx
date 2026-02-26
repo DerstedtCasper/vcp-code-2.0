@@ -1,4 +1,4 @@
-import { Component, createSignal, createMemo, For, Show, onCleanup, onMount } from "solid-js"
+﻿import { Component, createSignal, createMemo, createEffect, For, Show, onCleanup, onMount } from "solid-js"
 import { Select } from "@novacode/nova-ui/select"
 import { TextField } from "@novacode/nova-ui/text-field"
 import { Card } from "@novacode/nova-ui/card"
@@ -8,11 +8,11 @@ import { Switch } from "@novacode/nova-ui/switch"
 import { Accordion } from "@novacode/nova-ui/accordion"
 import { showToast } from "@novacode/nova-ui/toast"
 
-import { useConfig } from "../../context/config"
+import { ConfigScopeProvider, useConfig } from "../../context/config"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
 import { useVSCode } from "../../context/vscode"
-import type { AgentConfig, ExtensionMessage, SkillInfo, VcpConfig, ProviderConfig } from "../../types/messages"
+import type { AgentConfig, Config, ExtensionMessage, SkillInfo, VcpConfig, ProviderConfig } from "../../types/messages"
 import WorkflowsEditor from "./WorkflowsEditor"
 
 type SubtabId = "agents" | "mcpServers" | "vcp" | "rules" | "workflows" | "skills"
@@ -20,6 +20,10 @@ type SubtabId = "agents" | "mcpServers" | "vcp" | "rules" | "workflows" | "skill
 interface SubtabConfig {
   id: SubtabId
   labelKey: string
+}
+
+interface AgentBehaviourTabProps {
+  pinnedSubtab?: SubtabId
 }
 
 const subtabs: SubtabConfig[] = [
@@ -38,18 +42,61 @@ interface SelectOption {
 
 import SettingsRow from "./SettingsRow"
 
-const AgentBehaviourTab: Component = () => {
+const AgentBehaviourTab: Component<AgentBehaviourTabProps> = (props) => {
   const language = useLanguage()
   const vscode = useVSCode()
-  const { config, updateConfig } = useConfig()
+  const configStore = useConfig()
   const session = useSession()
-  const [activeSubtab, setActiveSubtab] = createSignal<SubtabId>("agents")
+  const [activeSubtab, setActiveSubtab] = createSignal<SubtabId>(props.pinnedSubtab ?? "agents")
+  const [subtabSearch, setSubtabSearch] = createSignal("")
   const [selectedAgent, setSelectedAgent] = createSignal<string>("")
   const [newSkillPath, setNewSkillPath] = createSignal("")
   const [newSkillUrl, setNewSkillUrl] = createSignal("")
   const [newInstruction, setNewInstruction] = createSignal("")
   const [loadedSkills, setLoadedSkills] = createSignal<SkillInfo[]>([])
   const [skillsLoading, setSkillsLoading] = createSignal(true)
+  const scopeID = createMemo(() => `settings.agentBehaviour.${props.pinnedSubtab ?? activeSubtab()}`)
+  const scopedConfig = createMemo(() => configStore.getScopedConfig(scopeID()))
+  const stageConfig = (partial: Partial<Config>) => configStore.updateScopedConfig(scopeID(), partial)
+  const isDirty = createMemo(() => configStore.hasScopedDraft(scopeID()))
+
+  const saveCurrentScope = () => {
+    if (!isDirty()) return
+    configStore.saveScopedConfig(scopeID())
+    showToast({ variant: "success", title: language.t("settings.save.toast.title") })
+  }
+
+  const discardCurrentScope = () => {
+    if (!isDirty()) return
+    configStore.discardScopedConfig(scopeID())
+    showToast({ variant: "success", title: language.t("settings.providers.revert.toast.title") })
+  }
+
+  createEffect(() => {
+    if (!props.pinnedSubtab) return
+    setActiveSubtab(props.pinnedSubtab)
+  })
+
+  const visibleSubtabs = createMemo(() => {
+    if (props.pinnedSubtab) {
+      return subtabs.filter((tab) => tab.id === props.pinnedSubtab)
+    }
+    const query = subtabSearch().trim().toLowerCase()
+    if (!query) return subtabs
+    return subtabs.filter(
+      (tab) =>
+        tab.id.toLowerCase().includes(query) ||
+        language.t(tab.labelKey).toLowerCase().includes(query),
+    )
+  })
+
+  createEffect(() => {
+    const ids = visibleSubtabs().map((tab) => tab.id)
+    if (ids.length === 0) return
+    if (!ids.includes(activeSubtab())) {
+      setActiveSubtab(ids[0]!)
+    }
+  })
 
   const unsubscribeSkills = vscode.onMessage((message: ExtensionMessage) => {
     if (message.type !== "skillsLoaded") return
@@ -76,12 +123,24 @@ const AgentBehaviourTab: Component = () => {
     }, retryMs)
 
     onCleanup(() => window.clearInterval(retryTimer))
+
+    const onSave = (event: Event) => {
+      const custom = event as CustomEvent<{ tab?: string }>
+      const targetTab = custom.detail?.tab
+      if (!targetTab) return
+      const isAgentTab = targetTab === "agentBehaviour" && !props.pinnedSubtab
+      const isPinnedVcpTab = targetTab === "vcpConfig" && props.pinnedSubtab === "vcp"
+      if (!isAgentTab && !isPinnedVcpTab) return
+      saveCurrentScope()
+    }
+    window.addEventListener("vcp-settings-save", onSave as EventListener)
+    onCleanup(() => window.removeEventListener("vcp-settings-save", onSave as EventListener))
   })
 
   const agentNames = createMemo(() => {
     const names = session.agents().map((a) => a.name)
     // Also include any agents from config that might not be in the agent list
-    const configAgents = Object.keys(config().agent ?? {})
+    const configAgents = Object.keys(scopedConfig().agent ?? {})
     for (const name of configAgents) {
       if (!names.includes(name)) {
         names.push(name)
@@ -105,13 +164,13 @@ const AgentBehaviourTab: Component = () => {
     if (!name) {
       return {}
     }
-    return config().agent?.[name] ?? {}
+    return scopedConfig().agent?.[name] ?? {}
   })
 
   const updateAgentConfig = (name: string, partial: Partial<AgentConfig>) => {
-    const existing = config().agent ?? {}
+    const existing = scopedConfig().agent ?? {}
     const current = existing[name] ?? {}
-    updateConfig({
+    stageConfig({
       agent: {
         ...existing,
         [name]: { ...current, ...partial },
@@ -119,7 +178,7 @@ const AgentBehaviourTab: Component = () => {
     })
   }
 
-  const instructions = () => config().instructions ?? []
+  const instructions = () => scopedConfig().instructions ?? []
 
   const addInstruction = () => {
     const value = newInstruction().trim()
@@ -129,7 +188,7 @@ const AgentBehaviourTab: Component = () => {
     const current = [...instructions()]
     if (!current.includes(value)) {
       current.push(value)
-      updateConfig({ instructions: current })
+      stageConfig({ instructions: current })
     }
     setNewInstruction("")
   }
@@ -137,11 +196,11 @@ const AgentBehaviourTab: Component = () => {
   const removeInstruction = (index: number) => {
     const current = [...instructions()]
     current.splice(index, 1)
-    updateConfig({ instructions: current })
+    stageConfig({ instructions: current })
   }
 
-  const skillPaths = () => config().skills?.paths ?? []
-  const skillUrls = () => config().skills?.urls ?? []
+  const skillPaths = () => scopedConfig().skills?.paths ?? []
+  const skillUrls = () => scopedConfig().skills?.urls ?? []
 
   const addSkillPath = () => {
     const value = newSkillPath().trim()
@@ -151,7 +210,7 @@ const AgentBehaviourTab: Component = () => {
     const current = [...skillPaths()]
     if (!current.includes(value)) {
       current.push(value)
-      updateConfig({ skills: { ...config().skills, paths: current } })
+      stageConfig({ skills: { ...scopedConfig().skills, paths: current } })
     }
     setNewSkillPath("")
   }
@@ -159,7 +218,7 @@ const AgentBehaviourTab: Component = () => {
   const removeSkillPath = (index: number) => {
     const current = [...skillPaths()]
     current.splice(index, 1)
-    updateConfig({ skills: { ...config().skills, paths: current } })
+    stageConfig({ skills: { ...scopedConfig().skills, paths: current } })
   }
 
   const addSkillUrl = () => {
@@ -170,7 +229,7 @@ const AgentBehaviourTab: Component = () => {
     const current = [...skillUrls()]
     if (!current.includes(value)) {
       current.push(value)
-      updateConfig({ skills: { ...config().skills, urls: current } })
+      stageConfig({ skills: { ...scopedConfig().skills, urls: current } })
     }
     setNewSkillUrl("")
   }
@@ -178,11 +237,42 @@ const AgentBehaviourTab: Component = () => {
   const removeSkillUrl = (index: number) => {
     const current = [...skillUrls()]
     current.splice(index, 1)
-    updateConfig({ skills: { ...config().skills, urls: current } })
+    stageConfig({ skills: { ...scopedConfig().skills, urls: current } })
   }
 
   const renderAgentsSubtab = () => (
     <div>
+      <Card style={{ "margin-bottom": "12px" }}>
+        <SettingsRow
+          title={language.t("settings.vcp.agentTeam.title")}
+          description={language.t("settings.vcp.agentTeam.description")}
+          last
+        >
+          <div style={{ display: "flex", gap: "8px", "align-items": "center" }}>
+            <Switch
+              checked={scopedConfig().vcp?.agentTeam?.enabled ?? false}
+              onChange={(checked) =>
+                stageConfig({
+                  vcp: {
+                    ...(scopedConfig().vcp ?? {}),
+                    agentTeam: {
+                      ...(scopedConfig().vcp?.agentTeam ?? {}),
+                      enabled: checked,
+                    },
+                  },
+                })
+              }
+              hideLabel
+            >
+              {language.t("settings.vcp.agentTeam.title")}
+            </Switch>
+            <Button size="small" variant="ghost" onClick={() => setActiveSubtab("vcp")}>
+              {language.t("settings.vcp.title")}
+            </Button>
+          </div>
+        </SettingsRow>
+      </Card>
+
       {/* Default agent */}
       <Card style={{ "margin-bottom": "12px" }}>
         <SettingsRow
@@ -192,10 +282,10 @@ const AgentBehaviourTab: Component = () => {
         >
           <Select
             options={defaultAgentOptions()}
-            current={defaultAgentOptions().find((o) => o.value === (config().default_agent ?? ""))}
+            current={defaultAgentOptions().find((o) => o.value === (scopedConfig().default_agent ?? ""))}
             value={(o) => o.value}
             label={(o) => o.label}
-            onSelect={(o) => o && updateConfig({ default_agent: o.value || undefined })}
+            onSelect={(o) => o && stageConfig({ default_agent: o.value || undefined })}
             variant="secondary"
             size="small"
             triggerVariant="settings"
@@ -303,7 +393,7 @@ const AgentBehaviourTab: Component = () => {
   )
 
   const renderMcpSubtab = () => {
-    const mcpEntries = createMemo(() => Object.entries(config().mcp ?? {}))
+    const mcpEntries = createMemo(() => Object.entries(scopedConfig().mcp ?? {}))
 
     return (
       <div>
@@ -359,7 +449,7 @@ const AgentBehaviourTab: Component = () => {
   }
 
   const renderVcpSubtab = () => {
-    const vcp = createMemo<VcpConfig>(() => config().vcp ?? {})
+    const vcp = createMemo<VcpConfig>(() => scopedConfig().vcp ?? {})
     const contextFold = createMemo(() => vcp().contextFold ?? {})
     const vcpInfo = createMemo(() => vcp().vcpInfo ?? {})
     const html = createMemo(() => vcp().html ?? {})
@@ -384,7 +474,7 @@ const AgentBehaviourTab: Component = () => {
     ]
 
     const updateVcp = (partial: Partial<VcpConfig>) => {
-      updateConfig({
+      stageConfig({
         vcp: {
           ...vcp(),
           ...partial,
@@ -455,25 +545,22 @@ const AgentBehaviourTab: Component = () => {
       })
     }
 
-    const vcptoolbox = createMemo<ProviderConfig>(() => (config().provider?.vcptoolbox as ProviderConfig) ?? {})
-    const vcptoolboxOptions = createMemo<NonNullable<ProviderConfig["options"]>>(() => vcptoolbox().options ?? {})
-    const updateVcptoolboxOptions = (partial: Partial<NonNullable<ProviderConfig["options"]>>) => {
-      const providers = config().provider ?? {}
-      const current = (providers.vcptoolbox as ProviderConfig) ?? {}
-      const mergedProvider: ProviderConfig = {
-        ...current,
-        options: {
-          ...(current.options ?? {}),
-          ...partial,
+    // novacode_change start - VCP Bridge WebSocket config (replaces duplicate provider fields)
+    const vcpConfig = createMemo(() => (scopedConfig() as any).vcp ?? {})
+    const toolboxConfig = createMemo(() => vcpConfig().toolbox ?? {})
+    const updateToolboxConfig = (partial: Record<string, unknown>) => {
+      const current = vcpConfig()
+      stageConfig({
+        vcp: {
+          ...current,
+          toolbox: {
+            ...(current.toolbox ?? {}),
+            ...partial,
+          },
         },
-      }
-      updateConfig({
-        provider: {
-          ...providers,
-          vcptoolbox: mergedProvider,
-        },
-      })
+      } as any)
     }
+    // novacode_change end
 
     return (
       <div>
@@ -808,50 +895,60 @@ const AgentBehaviourTab: Component = () => {
             </Accordion.Header>
             <Accordion.Content>
               <Card>
+          {/* novacode_change start - WebSocket config only, removed duplicate provider fields */}
           <SettingsRow
-            title={language.t("settings.vcp.vcptoolbox.baseUrl.title")}
-            description={language.t("settings.vcp.vcptoolbox.baseUrl.description")}
+            title={language.t("settings.vcp.toolbox.wsEnabled.title")}
+            description={language.t("settings.vcp.toolbox.wsEnabled.description")}
+          >
+            <Switch
+              checked={toolboxConfig().enabled ?? false}
+              onChange={(checked) => updateToolboxConfig({ enabled: checked })}
+              hideLabel
+            >
+              {language.t("settings.vcp.toolbox.wsEnabled.title")}
+            </Switch>
+          </SettingsRow>
+
+          <SettingsRow
+            title={language.t("settings.vcp.toolbox.wsUrl.title")}
+            description={language.t("settings.vcp.toolbox.wsUrl.description")}
           >
             <TextField
-              value={vcptoolboxOptions().baseURL ?? ""}
-              placeholder="https://api.vcptoolbox.com"
-              onChange={(value) => updateVcptoolboxOptions({ baseURL: normalizeInput(value) })}
+              value={toolboxConfig().url ?? ""}
+              placeholder="ws://localhost:5800"
+              onChange={(value) => updateToolboxConfig({ url: normalizeInput(value) })}
             />
           </SettingsRow>
 
           <SettingsRow
-            title={language.t("settings.vcp.vcptoolbox.modelsPath.title")}
-            description={language.t("settings.vcp.vcptoolbox.modelsPath.description")}
+            title={language.t("settings.vcp.toolbox.wsKey.title")}
+            description={language.t("settings.vcp.toolbox.wsKey.description")}
           >
             <TextField
-              value={vcptoolboxOptions().modelsPath ?? ""}
-              placeholder="/v1/models"
-              onChange={(value) => updateVcptoolboxOptions({ modelsPath: normalizeInput(value) })}
+              type="password"
+              value={toolboxConfig().key ?? ""}
+              placeholder="VCP_Key"
+              onChange={(value) => updateToolboxConfig({ key: normalizeInput(value) })}
             />
           </SettingsRow>
 
           <SettingsRow
-            title={language.t("settings.vcp.vcptoolbox.modelsURL.title")}
-            description={language.t("settings.vcp.vcptoolbox.modelsURL.description")}
-          >
-            <TextField
-              value={vcptoolboxOptions().modelsURL ?? ""}
-              placeholder="https://api.vcptoolbox.com/v1/models"
-              onChange={(value) => updateVcptoolboxOptions({ modelsURL: normalizeInput(value) })}
-            />
-          </SettingsRow>
-
-          <SettingsRow
-            title={language.t("settings.vcp.vcptoolbox.apiKey.title")}
-            description={language.t("settings.vcp.vcptoolbox.apiKey.description")}
+            title={language.t("settings.vcp.toolbox.reconnectInterval.title")}
+            description={language.t("settings.vcp.toolbox.reconnectInterval.description")}
             last
           >
             <TextField
-              value={vcptoolboxOptions().apiKey ?? ""}
-              placeholder="sk-..."
-              onChange={(value) => updateVcptoolboxOptions({ apiKey: normalizeInput(value) })}
+              value={String(toolboxConfig().reconnectInterval ?? 5000)}
+              placeholder="5000"
+              onChange={(value) => {
+                const parsed = Number.parseInt(value, 10)
+                if (Number.isFinite(parsed) && parsed >= 1000) {
+                  updateToolboxConfig({ reconnectInterval: parsed })
+                }
+              }}
             />
           </SettingsRow>
+          {/* novacode_change end */}
               </Card>
             </Accordion.Content>
           </Accordion.Item>
@@ -1117,7 +1214,11 @@ const AgentBehaviourTab: Component = () => {
       case "rules":
         return renderRulesSubtab()
       case "workflows":
-        return <WorkflowsEditor />
+        return (
+          <ConfigScopeProvider scopeID={scopeID()}>
+            <WorkflowsEditor />
+          </ConfigScopeProvider>
+        )
       case "skills":
         return renderSkillsSubtab()
       default:
@@ -1127,53 +1228,96 @@ const AgentBehaviourTab: Component = () => {
 
   return (
     <div>
-      {/* Horizontal subtab bar */}
       <div
         style={{
           display: "flex",
-          gap: "0",
-          "border-bottom": "1px solid var(--vscode-panel-border)",
-          "margin-bottom": "16px",
+          gap: "8px",
+          "align-items": "center",
+          "justify-content": "flex-end",
+          "margin-bottom": "12px",
         }}
       >
-        <For each={subtabs}>
-          {(subtab) => (
-            <button
-              onClick={() => setActiveSubtab(subtab.id)}
-              style={{
-                padding: "8px 16px",
-                border: "none",
-                background: "transparent",
-                color:
-                  activeSubtab() === subtab.id ? "var(--vscode-foreground)" : "var(--vscode-descriptionForeground)",
-                "font-size": "13px",
-                "font-family": "var(--vscode-font-family)",
-                cursor: "pointer",
-                "border-bottom":
-                  activeSubtab() === subtab.id ? "2px solid var(--vscode-foreground)" : "2px solid transparent",
-                "margin-bottom": "-1px",
-              }}
-              onMouseEnter={(e) => {
-                if (activeSubtab() !== subtab.id) {
-                  e.currentTarget.style.color = "var(--vscode-foreground)"
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (activeSubtab() !== subtab.id) {
-                  e.currentTarget.style.color = "var(--vscode-descriptionForeground)"
-                }
-              }}
-            >
-              {language.t(subtab.labelKey)}
-            </button>
-          )}
-        </For>
+        <Show when={!props.pinnedSubtab}>
+          <div style={{ width: "220px" }}>
+            <TextField
+              value={subtabSearch()}
+              placeholder={language.t("common.search.placeholder")}
+              onChange={setSubtabSearch}
+            />
+          </div>
+        </Show>
+        <Button size="small" variant="ghost" onClick={discardCurrentScope} disabled={!isDirty()}>
+          {language.t("settings.providers.revert")}
+        </Button>
+        <Button size="small" onClick={saveCurrentScope} disabled={!isDirty()}>
+          {language.t("common.save")}
+        </Button>
       </div>
+
+      {/* Horizontal subtab bar */}
+      <Show when={!props.pinnedSubtab}>
+        <div
+          style={{
+            display: "flex",
+            gap: "0",
+            "border-bottom": "1px solid var(--vscode-panel-border)",
+            "margin-bottom": "16px",
+          }}
+        >
+          <For each={visibleSubtabs()}>
+            {(subtab) => (
+              <button
+                onClick={() => setActiveSubtab(subtab.id)}
+                style={{
+                  padding: "8px 16px",
+                  border: "none",
+                  background: "transparent",
+                  color:
+                    activeSubtab() === subtab.id ? "var(--vscode-foreground)" : "var(--vscode-descriptionForeground)",
+                  "font-size": "13px",
+                  "font-family": "var(--vscode-font-family)",
+                  cursor: "pointer",
+                  "border-bottom":
+                    activeSubtab() === subtab.id ? "2px solid var(--vscode-foreground)" : "2px solid transparent",
+                  "margin-bottom": "-1px",
+                }}
+                onMouseEnter={(e) => {
+                  if (activeSubtab() !== subtab.id) {
+                    e.currentTarget.style.color = "var(--vscode-foreground)"
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeSubtab() !== subtab.id) {
+                    e.currentTarget.style.color = "var(--vscode-descriptionForeground)"
+                  }
+                }}
+              >
+                {language.t(subtab.labelKey)}
+              </button>
+            )}
+          </For>
+        </div>
+      </Show>
 
       {/* Subtab content */}
       {renderSubtabContent()}
+
+      <Show when={isDirty()}>
+        <div class="sticky-save-bar">
+          <div class="sticky-save-bar-hint">{language.t("settings.providers.unsaved")}</div>
+          <div class="sticky-save-bar-actions">
+            <Button size="small" variant="ghost" onClick={discardCurrentScope}>
+              {language.t("settings.providers.revert")}
+            </Button>
+            <Button size="small" onClick={saveCurrentScope}>
+              {language.t("settings.providers.save")}
+            </Button>
+          </div>
+        </div>
+      </Show>
     </div>
   )
 }
 
 export default AgentBehaviourTab
+

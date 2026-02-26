@@ -6,8 +6,11 @@
 
 import { Component, createSignal, createEffect, on, For, Index, onCleanup, Show, untrack } from "solid-js"
 import { Button } from "@novacode/nova-ui/button"
+import { Dialog } from "@novacode/nova-ui/dialog"
 import { Tooltip } from "@novacode/nova-ui/tooltip"
 import { FileIcon } from "@novacode/nova-ui/file-icon"
+import { showToast } from "@novacode/nova-ui/toast"
+import { useDialog } from "@novacode/nova-ui/context/dialog"
 import { useSession } from "../../context/session"
 import { useServer } from "../../context/server"
 import { useLanguage } from "../../context/language"
@@ -15,15 +18,19 @@ import { useVSCode } from "../../context/vscode"
 import { ModelSelector } from "./ModelSelector"
 import { ModeSwitcher } from "./ModeSwitcher"
 import { ThinkingSelector } from "./ThinkingSelector"
+import { CodebaseIndexDialog } from "./CodebaseIndexDialog"
 import { useAtMention, type MentionResult } from "../../hooks/useAtMention"
-import { useImageAttachments } from "../../hooks/useImageAttachments"
+import { useImageAttachments, ACCEPTED_IMAGE_TYPES } from "../../hooks/useImageAttachments"
 import { useEnhancePrompt } from "../../hooks/useEnhancePrompt"
 import { fileName, dirName, buildHighlightSegments } from "./prompt-input-utils"
 import { SlashCommandPopover, SLASH_COMMANDS, type SlashCommand } from "./SlashCommandPopover"
 import { ContextPills, type ContextItem } from "./ContextPills"
+import type { FileAttachment } from "../../types/messages"
+import AgentBehaviourTab from "../settings/AgentBehaviourTab"
 
 const AUTOCOMPLETE_DEBOUNCE_MS = 500
 const MIN_TEXT_LENGTH = 3
+const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024
 
 // Per-session input text storage (module-level so it survives remounts)
 const drafts = new Map<string, string>()
@@ -36,6 +43,7 @@ export const PromptInput: Component = () => {
   const server = useServer()
   const language = useLanguage()
   const vscode = useVSCode()
+  const dialog = useDialog()
   const mention = useAtMention(vscode, session.agents)
   const imageAttach = useImageAttachments()
 
@@ -60,6 +68,7 @@ export const PromptInput: Component = () => {
   const [slashQuery, setSlashQuery] = createSignal("")
   const [slashIndex, setSlashIndex] = createSignal(0)
   const [slashFeedback, setSlashFeedback] = createSignal("")
+  const [manualAttachments, setManualAttachments] = createSignal<Array<{ id: string; filename: string; mime: string; url: string }>>([])
 
   // ── 上下文 Pills 状态 ────────────────────────────────────────────────
   const [contextItems, setContextItems] = createSignal<ContextItem[]>([])
@@ -83,6 +92,7 @@ export const PromptInput: Component = () => {
   })
 
   let textareaRef: HTMLTextAreaElement | undefined
+  let attachInputRef: HTMLInputElement | undefined
   let highlightRef: HTMLDivElement | undefined
   let dropdownRef: HTMLDivElement | undefined
   let debounceTimer: ReturnType<typeof setTimeout> | undefined
@@ -116,7 +126,94 @@ export const PromptInput: Component = () => {
 
   const isBusy = () => session.status() === "busy"
   const isDisabled = () => !server.isConnected()
-  const canSend = () => (text().trim().length > 0 || imageAttach.images().length > 0) && !isBusy() && !isDisabled()
+  const canSend = () =>
+    (text().trim().length > 0 || imageAttach.images().length > 0 || manualAttachments().length > 0) &&
+    !isBusy() &&
+    !isDisabled()
+
+  const openCodebaseIndexDialog = () => {
+    dialog.show(() => (
+      <Dialog title={language.t("prompt.action.codebaseIndex")} fit>
+        <div style={{ "max-height": "80vh", overflow: "auto", padding: "4px" }}>
+          <CodebaseIndexDialog scopeID="dialog.codebaseIndex" />
+        </div>
+      </Dialog>
+    ))
+  }
+
+  const openAgentBehaviourDialog = () => {
+    dialog.show(() => (
+      <Dialog title={language.t("prompt.action.agentBehaviour")} fit>
+        <div style={{ width: "min(980px, 92vw)", "max-height": "80vh", overflow: "auto", padding: "4px" }}>
+          <AgentBehaviourTab />
+        </div>
+      </Dialog>
+    ))
+  }
+
+  const addAtMention = () => {
+    if (!textareaRef || isDisabled()) return
+    const current = textareaRef.value
+    const start = textareaRef.selectionStart ?? current.length
+    const end = textareaRef.selectionEnd ?? start
+    const nextText = `${current.slice(0, start)}@${current.slice(end)}`
+    const nextPos = start + 1
+    textareaRef.value = nextText
+    setText(nextText)
+    textareaRef.setSelectionRange(nextPos, nextPos)
+    textareaRef.focus()
+    mention.onInput(nextText, nextPos)
+    adjustHeight()
+    syncHighlightScroll()
+  }
+
+  const addManualAttachment = (filename: string, mime: string, url: string) => {
+    setManualAttachments((prev) => {
+      if (prev.some((item) => item.filename === filename && item.url === url)) {
+        return prev
+      }
+      return [...prev, { id: crypto.randomUUID(), filename, mime, url }]
+    })
+  }
+
+  const readAsDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(String(reader.result ?? ""))
+      reader.onerror = () => reject(reader.error ?? new Error("failed to read file"))
+      reader.readAsDataURL(file)
+    })
+
+  const handleFileInput = async (event: Event) => {
+    const target = event.currentTarget as HTMLInputElement
+    const files = target.files ? Array.from(target.files) : []
+    if (files.length === 0) return
+    for (const file of files) {
+      if (file.size > MAX_ATTACHMENT_SIZE) {
+        showToast({
+          variant: "error",
+          title: language.t("prompt.toast.attachmentTooLarge.title"),
+          description: language.t("prompt.toast.attachmentTooLarge.description", {
+            file: file.name,
+            sizeMb: Math.round(MAX_ATTACHMENT_SIZE / 1024 / 1024),
+          }),
+        })
+        continue
+      }
+      if (ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+        imageAttach.add(file)
+        continue
+      }
+      try {
+        const mime = file.type || "application/octet-stream"
+        const dataUrl = await readAsDataUrl(file)
+        addManualAttachment(file.name || "attachment", mime, dataUrl)
+      } catch (error) {
+        console.error("[Nova New] Failed to attach file:", error)
+      }
+    }
+    target.value = ""
+  }
 
   const unsubscribe = vscode.onMessage((message) => {
     if (message.type === "chatCompletionResult") {
@@ -391,8 +488,9 @@ export const PromptInput: Component = () => {
     const imgs = imageAttach.images()
     if (!message && imgs.length === 0) return
     const mentionFiles = mention.parseFileAttachments(message)
+    const extraFiles: FileAttachment[] = manualAttachments().map((item) => ({ mime: item.mime, url: item.url }))
     const imgFiles = imgs.map((img) => ({ mime: img.mime, url: img.dataUrl }))
-    const allFiles = [...mentionFiles, ...imgFiles]
+    const allFiles = [...mentionFiles, ...extraFiles, ...imgFiles]
     const sel = session.selected()
     const attachments = allFiles.length > 0 ? allFiles : undefined
     return {
@@ -409,9 +507,11 @@ export const PromptInput: Component = () => {
     setText("")
     setGhostText("")
     imageAttach.clear()
+    setManualAttachments([])
     if (debounceTimer) clearTimeout(debounceTimer)
     mention.closeMention()
     drafts.delete(sessionKey())
+    if (attachInputRef) attachInputRef.value = ""
     if (textareaRef) textareaRef.style.height = "auto"
   }
 
@@ -559,6 +659,25 @@ export const PromptInput: Component = () => {
           </For>
         </div>
       </Show>
+      <Show when={manualAttachments().length > 0}>
+        <div class="file-attachments">
+          <For each={manualAttachments()}>
+            {(item) => (
+              <div class="file-attachment-pill">
+                <span class="file-attachment-pill-name">{item.filename}</span>
+                <button
+                  type="button"
+                  class="file-attachment-pill-remove"
+                  onClick={() => setManualAttachments((prev) => prev.filter((entry) => entry.id !== item.id))}
+                  aria-label={language.t("prompt.attachment.remove")}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+          </For>
+        </div>
+      </Show>
       <Show when={slashFeedback()}>
         <div
           style={{
@@ -660,6 +779,54 @@ export const PromptInput: Component = () => {
           <ThinkingSelector />
         </div>
         <div class="prompt-input-hint-actions">
+          <Tooltip value={language.t("prompt.action.codebaseIndex")} placement="top">
+            <Button
+              variant="ghost"
+              size="small"
+              onClick={openCodebaseIndexDialog}
+              disabled={isDisabled()}
+              aria-label={language.t("prompt.action.codebaseIndex")}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <ellipse cx="8" cy="3.5" rx="5.5" ry="2.5" />
+                <path d="M2.5 3.5V7c0 1.4 2.5 2.5 5.5 2.5s5.5-1.1 5.5-2.5V3.5" fill="none" stroke="currentColor" stroke-width="1.2" />
+                <path d="M2.5 7v3.5c0 1.4 2.5 2.5 5.5 2.5s5.5-1.1 5.5-2.5V7" fill="none" stroke="currentColor" stroke-width="1.2" />
+              </svg>
+            </Button>
+          </Tooltip>
+          <Tooltip value={language.t("prompt.action.addContext")} placement="top">
+            <Button
+              variant="ghost"
+              size="small"
+              onClick={addAtMention}
+              disabled={isDisabled()}
+              aria-label={language.t("prompt.action.addContext")}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M8 1.5a6.5 6.5 0 1 0 3.56 11.95l-.78-1.02A5.2 5.2 0 1 1 13.2 8v.56c0 .7-.56 1.27-1.25 1.27-.68 0-1.24-.56-1.24-1.24V8A2.7 2.7 0 1 0 8 10.73c.5 0 .96-.14 1.36-.39.5.53 1.22.87 2.03.87 1.5 0 2.73-1.24 2.73-2.77V8A6.5 6.5 0 0 0 8 1.5Zm0 3.44A1.95 1.95 0 1 1 6.06 6.9 1.95 1.95 0 0 1 8 4.94Z" />
+              </svg>
+            </Button>
+          </Tooltip>
+          <Tooltip value={language.t("prompt.action.attachFile")} placement="top">
+            <Button
+              variant="ghost"
+              size="small"
+              onClick={() => attachInputRef?.click()}
+              disabled={isDisabled()}
+              aria-label={language.t("prompt.action.attachFile")}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M11.5 4.5a3 3 0 0 0-4.24 0L3.68 8.08a2 2 0 1 0 2.83 2.83l3.18-3.18a1 1 0 0 0-1.41-1.41L5.45 9.15a.5.5 0 1 1-.71-.71l2.83-2.83a2 2 0 1 1 2.83 2.83l-3.54 3.54a3.5 3.5 0 0 1-4.95-4.95l3.58-3.58a4 4 0 1 1 5.66 5.66l-3.18 3.18" />
+              </svg>
+            </Button>
+          </Tooltip>
+          <input
+            ref={attachInputRef}
+            type="file"
+            multiple
+            style={{ display: "none" }}
+            onChange={handleFileInput}
+          />
           {/* ✨ Enhance 按钮 */}
           <Show when={text().trim().length > 0}>
             <Tooltip value={language.t("prompt.action.enhance")} placement="top">
@@ -690,7 +857,7 @@ export const PromptInput: Component = () => {
               variant="primary"
               size="small"
               onClick={handleSend}
-              disabled={isDisabled() || (text().trim().length === 0 && imageAttach.images().length === 0)}
+              disabled={!canSend()}
               aria-label={language.t("prompt.action.send")}
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -712,6 +879,18 @@ export const PromptInput: Component = () => {
               </Button>
             </Tooltip>
           </Show>
+          <Tooltip value={language.t("prompt.action.agentBehaviour")} placement="top">
+            <Button
+              variant="ghost"
+              size="small"
+              onClick={openAgentBehaviourDialog}
+              aria-label={language.t("prompt.action.agentBehaviour")}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M8 2a3 3 0 1 0 3 3 3 3 0 0 0-3-3Zm-5 11a5 5 0 1 1 10 0v1H3Z" />
+              </svg>
+            </Button>
+          </Tooltip>
         </div>
       </div>
     </div>

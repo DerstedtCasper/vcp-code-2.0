@@ -7,6 +7,7 @@ import { Component, createSignal, For, Show, createEffect, createMemo } from "so
 import { Popover } from "@novacode/nova-ui/popover"
 import { Button } from "@novacode/nova-ui/button"
 import { useSession } from "../../context/session"
+import { useConfig } from "../../context/config"
 import type { AgentInfo } from "../../types/messages"
 
 export interface ModeSwitcherBaseProps {
@@ -201,5 +202,22 @@ export const ModeSwitcherBase: Component<ModeSwitcherBaseProps> = (props) => {
 
 export const ModeSwitcher: Component = () => {
   const session = useSession()
-  return <ModeSwitcherBase agents={session.agents()} value={session.selectedAgent()} onSelect={session.selectAgent} />
+  const { config } = useConfig()
+
+  const visibleAgents = createMemo<AgentInfo[]>(() => {
+    const list = [...session.agents()]
+    const hasAgentTeam = list.some((agent) => agent.name === "agent_team")
+    if ((config().vcp?.agentTeam?.enabled ?? false) && !hasAgentTeam) {
+      list.push({
+        name: "agent_team",
+        description: "Coordinate multi-agent waves with handoff policies.",
+        mode: "primary",
+        native: true,
+        color: "#0ea5e9",
+      })
+    }
+    return list
+  })
+
+  return <ModeSwitcherBase agents={visibleAgents()} value={session.selectedAgent()} onSelect={session.selectAgent} />
 }

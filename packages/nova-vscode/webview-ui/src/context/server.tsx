@@ -53,8 +53,8 @@ export const ServerProvider: ParentComponent = (props) => {
           if (message.languageOverride) {
             setLanguageOverride(message.languageOverride)
           }
-          if ((message as any).workspaceDirectory) {
-            setWorkspaceDirectory((message as any).workspaceDirectory)
+          if (message.workspaceDirectory) {
+            setWorkspaceDirectory(message.workspaceDirectory)
           }
           break
 

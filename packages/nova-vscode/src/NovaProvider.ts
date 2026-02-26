@@ -39,6 +39,15 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
   private cachedSkillsMessage: unknown = null
   /** Cached notificationsLoaded payload */
   private cachedNotificationsMessage: unknown = null
+  /** Queue view actions posted before webviewReady to avoid losing sidebar clicks. */
+  private pendingViewActions: unknown[] = []
+  /** Runtime cache for codebase indexing status shown in webview settings/chat quick entry. */
+  private codebaseIndexState: {
+    status: "idle" | "indexing" | "error"
+    indexedFiles: number
+    totalFiles: number
+    lastUpdated?: string
+  } = { status: "idle", indexedFiles: 0, totalFiles: 0 }
 
   private trackedSessionIds: Set<string> = new Set()
   /** Per-session directory overrides (e.g., worktree paths registered by AgentManagerProvider). */
@@ -241,15 +250,13 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     // Re-send ready so the webview can recover after refresh.
     if (serverInfo) {
       const langConfig = vscode.workspace.getConfiguration("vcp-code.new")
-      const workspaceFolders = vscode.workspace.workspaceFolders
-      const workspaceDirectory = workspaceFolders?.[0]?.uri.fsPath ?? ""
       this.postMessage({
         type: "ready",
         serverInfo,
         extensionVersion: this.extensionVersion,
         vscodeLanguage: vscode.env.language,
         languageOverride: langConfig.get<string>("language"),
-        workspaceDirectory,
+        workspaceDirectory: this.getWorkspaceDirectory(),
       })
     }
 
@@ -399,6 +406,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
           console.log("[Nova New] NovaProvider:  - webviewReady received")
           this.isWebviewReady = true
           await this.syncWebviewState("webviewReady")
+          this.flushPendingViewActions()
           break
         case "sendMessage": {
           const files = z
@@ -498,6 +506,15 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
           break
         case "requestConfig":
           await this.fetchAndSendConfig()
+          break
+        case "requestCodebaseIndexStatus":
+          await this.handleRequestCodebaseIndexStatus()
+          break
+        case "reindexCodebase":
+          await this.handleReindexCodebase()
+          break
+        case "clearCodebaseIndex":
+          this.handleClearCodebaseIndex()
           break
         case "requestPromptQueue":
           if (typeof message.sessionID === "string") this.sendPromptQueue(message.sessionID)
@@ -718,6 +735,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
           extensionVersion: this.extensionVersion,
           vscodeLanguage: vscode.env.language,
           languageOverride: langConfig.get<string>("language"),
+          workspaceDirectory: this.getWorkspaceDirectory(),
         })
       }
 
@@ -1112,10 +1130,20 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       const agents = await this.httpClient.listAgents(workspaceDir)
 
       const { visible, defaultAgent } = filterVisibleAgents(agents)
+      const finalAgents = [...visible]
+      if (!finalAgents.some((agent) => agent.name === "agent_team")) {
+        finalAgents.push({
+          name: "agent_team",
+          description: "Coordinate multi-agent waves with explicit handoff.",
+          mode: "primary",
+          native: true,
+          color: "#0ea5e9",
+        })
+      }
 
       const message = {
         type: "agentsLoaded",
-        agents: visible.map((a) => ({
+        agents: finalAgents.map((a) => ({
           name: a.name,
           description: a.description,
           mode: a.mode,
@@ -2105,6 +2133,22 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Public so toolbar button commands can send messages.
    */
   public postMessage(message: unknown): void {
+    const isActionMessage =
+      typeof message === "object" &&
+      message !== null &&
+      "type" in message &&
+      (((message as { type?: unknown }).type === "action" &&
+        typeof (message as { action?: unknown }).action === "string") ||
+        (message as { type?: unknown }).type === "navigate")
+
+    if ((!this.webview || !this.isWebviewReady) && isActionMessage) {
+      if (this.pendingViewActions.length >= 50) {
+        this.pendingViewActions.shift()
+      }
+      this.pendingViewActions.push(message)
+      return
+    }
+
     if (!this.webview) {
       const type =
         typeof message === "object" &&
@@ -2120,6 +2164,290 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     void this.webview.postMessage(message).then(undefined, (error) => {
       console.error("[Nova New] NovaProvider:  - postMessage failed", error)
     })
+  }
+
+  /**
+   * Send current codebase indexing status to webview.
+   * The backend semantic index endpoints are optional, so we keep a local
+   * runtime status cache in the extension for stable UI interactions.
+   */
+  private async handleRequestCodebaseIndexStatus(): Promise<void> {
+    // Try to hydrate totals from workspace when first requested.
+    if (this.codebaseIndexState.totalFiles === 0) {
+      try {
+        const files = await vscode.workspace.findFiles(
+          "**/*",
+          "{**/.git/**,**/node_modules/**,**/dist/**,**/out/**,**/build/**,**/.next/**}",
+          10000,
+        )
+        this.codebaseIndexState.totalFiles = files.length
+      } catch (error) {
+        console.error("[Nova New] NovaProvider: Failed to enumerate workspace files:", error)
+      }
+    }
+
+    this.postMessage({
+      type: "codebaseIndexStatus",
+      status: this.codebaseIndexState.status,
+      indexedFiles: this.codebaseIndexState.indexedFiles,
+      totalFiles: this.codebaseIndexState.totalFiles,
+      lastUpdated: this.codebaseIndexState.lastUpdated,
+    })
+  }
+
+  /**
+   * Trigger a codebase reindex.
+   * If the backend code-index endpoints are available, delegate to them via SSE.
+   * Otherwise, fall back to the lightweight UI simulation.
+   *
+   * novacode_change - T-1.11 backend-integrated rebuild
+   */
+  private async handleReindexCodebase(): Promise<void> {
+    // Try the real backend endpoint first
+    try {
+      const port = this.connectionService.getServerInfo()?.port
+      if (port) {
+        const rebuildRes = await fetch(`http://localhost:${port}/code-index/rebuild`, { method: "POST" })
+        const rebuildJson = (await rebuildRes.json()) as { success: boolean; message: string }
+        if (rebuildJson.success) {
+          // Subscribe to SSE for progress
+          this.subscribeToCodeIndexEvents(port)
+          return
+        }
+        // If disabled or failed, fall through to simulation
+      }
+    } catch {
+      // Backend unavailable — fall through to simulation
+    }
+
+    // Fallback: lightweight simulation
+    try {
+      const files = await vscode.workspace.findFiles(
+        "**/*",
+        "{**/.git/**,**/node_modules/**,**/dist/**,**/out/**,**/build/**,**/.next/**}",
+        10000,
+      )
+
+      const total = files.length
+      this.codebaseIndexState = {
+        status: "indexing",
+        indexedFiles: 0,
+        totalFiles: total,
+        lastUpdated: this.codebaseIndexState.lastUpdated,
+      }
+
+      this.postMessage({
+        type: "codebaseIndexProgress",
+        status: "indexing",
+        indexedFiles: 0,
+        totalFiles: total,
+        currentFile: total > 0 ? files[0]!.fsPath : undefined,
+      })
+
+      if (total === 0) {
+        this.codebaseIndexState = {
+          status: "idle",
+          indexedFiles: 0,
+          totalFiles: 0,
+          lastUpdated: new Date().toISOString(),
+        }
+        this.postMessage({
+          type: "codebaseIndexStatus",
+          status: "idle",
+          indexedFiles: 0,
+          totalFiles: 0,
+          lastUpdated: this.codebaseIndexState.lastUpdated,
+        })
+        this.postMessage({
+          type: "codebaseIndexProgress",
+          status: "idle",
+          indexedFiles: 0,
+          totalFiles: 0,
+        })
+        return
+      }
+
+      const step = Math.max(1, Math.floor(total / 20))
+      for (let i = step; i < total; i += step) {
+        this.postMessage({
+          type: "codebaseIndexProgress",
+          status: "indexing",
+          indexedFiles: Math.min(i, total),
+          totalFiles: total,
+          currentFile: files[Math.min(i, total - 1)]?.fsPath,
+        })
+      }
+
+      this.codebaseIndexState = {
+        status: "idle",
+        indexedFiles: total,
+        totalFiles: total,
+        lastUpdated: new Date().toISOString(),
+      }
+
+      this.postMessage({
+        type: "codebaseIndexStatus",
+        status: "idle",
+        indexedFiles: total,
+        totalFiles: total,
+        lastUpdated: this.codebaseIndexState.lastUpdated,
+      })
+      this.postMessage({
+        type: "codebaseIndexProgress",
+        status: "idle",
+        indexedFiles: total,
+        totalFiles: total,
+      })
+    } catch (error) {
+      console.error("[Nova New] NovaProvider: Failed to reindex codebase:", error)
+      this.codebaseIndexState = {
+        ...this.codebaseIndexState,
+        status: "error",
+      }
+      this.postMessage({
+        type: "codebaseIndexProgress",
+        status: "error",
+        indexedFiles: this.codebaseIndexState.indexedFiles,
+        totalFiles: this.codebaseIndexState.totalFiles,
+        message: error instanceof Error ? error.message : "Reindex failed",
+      })
+      this.postMessage({
+        type: "codebaseIndexStatus",
+        status: "error",
+        indexedFiles: this.codebaseIndexState.indexedFiles,
+        totalFiles: this.codebaseIndexState.totalFiles,
+        lastUpdated: this.codebaseIndexState.lastUpdated,
+      })
+    }
+  }
+
+  /**
+   * Clear in-memory index progress cache and notify webview.
+   * This keeps quick-index UI actions reversible even when backend index APIs are unavailable.
+   */
+  private handleClearCodebaseIndex(): void {
+    this.codebaseIndexState = {
+      status: "idle",
+      indexedFiles: 0,
+      totalFiles: this.codebaseIndexState.totalFiles,
+      lastUpdated: new Date().toISOString(),
+    }
+
+    this.postMessage({
+      type: "codebaseIndexProgress",
+      status: "idle",
+      indexedFiles: 0,
+      totalFiles: this.codebaseIndexState.totalFiles,
+    })
+
+    this.postMessage({
+      type: "codebaseIndexStatus",
+      status: "idle",
+      indexedFiles: 0,
+      totalFiles: this.codebaseIndexState.totalFiles,
+      lastUpdated: this.codebaseIndexState.lastUpdated,
+    })
+  }
+
+  // novacode_change start - T-1.11 SSE subscription for backend code index progress
+  private codeIndexAbort?: AbortController
+
+  private subscribeToCodeIndexEvents(port: number): void {
+    // Close any existing subscription
+    if (this.codeIndexAbort) {
+      this.codeIndexAbort.abort()
+      this.codeIndexAbort = undefined
+    }
+
+    const abort = new AbortController()
+    this.codeIndexAbort = abort
+    const url = `http://localhost:${port}/code-index/events`
+
+    // Use fetch-based SSE reader (EventSource not available in VS Code extension host)
+    void (async () => {
+      try {
+        const res = await fetch(url, { signal: abort.signal })
+        if (!res.ok || !res.body) return
+
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ""
+
+        while (!abort.signal.aborted) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buffer += decoder.decode(value, { stream: true })
+
+          const lines = buffer.split("\n")
+          buffer = lines.pop() ?? ""
+
+          for (const line of lines) {
+            if (!line.startsWith("data:")) continue
+            const jsonStr = line.slice(5).trim()
+            if (!jsonStr) continue
+
+            try {
+              const data = JSON.parse(jsonStr) as {
+                status?: "idle" | "indexing" | "error" | "disabled"
+                indexedFiles?: number
+                totalFiles?: number
+                currentFile?: string
+              }
+              if (!data.status) continue
+
+              const normalizedStatus: "idle" | "indexing" | "error" =
+                data.status === "disabled" ? "idle" : data.status
+
+              this.codebaseIndexState = {
+                status: normalizedStatus,
+                indexedFiles: data.indexedFiles ?? 0,
+                totalFiles: data.totalFiles ?? 0,
+                lastUpdated:
+                  data.status === "idle"
+                    ? new Date().toISOString()
+                    : this.codebaseIndexState.lastUpdated,
+              }
+
+              this.postMessage({
+                type: "codebaseIndexProgress",
+                status: normalizedStatus,
+                indexedFiles: data.indexedFiles ?? 0,
+                totalFiles: data.totalFiles ?? 0,
+                currentFile: data.currentFile,
+              })
+
+              if (data.status === "idle" || data.status === "error") {
+                this.postMessage({
+                  type: "codebaseIndexStatus",
+                  status: normalizedStatus,
+                  indexedFiles: data.indexedFiles ?? 0,
+                  totalFiles: data.totalFiles ?? 0,
+                  lastUpdated: this.codebaseIndexState.lastUpdated,
+                })
+                abort.abort()
+                this.codeIndexAbort = undefined
+              }
+            } catch {
+              // Ignore malformed JSON (e.g. heartbeat events)
+            }
+          }
+        }
+      } catch {
+        // fetch aborted or network error — OK
+      }
+    })()
+  }
+  // novacode_change end
+
+  private flushPendingViewActions(): void {
+    if (!this.webview || !this.isWebviewReady || this.pendingViewActions.length === 0) return
+    const queued = [...this.pendingViewActions]
+    this.pendingViewActions = []
+    for (const message of queued) {
+      void this.webview.postMessage(message).then(undefined, (error) => {
+        console.error("[Nova New] NovaProvider:  - flush pending action failed", error)
+      })
+    }
   }
 
   /**

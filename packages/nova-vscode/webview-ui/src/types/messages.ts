@@ -313,11 +313,24 @@ export interface ExperimentalConfig {
   continue_loop_on_deny?: boolean
   mcp_timeout?: number
   codebaseIndex?: {
+    enabled?: boolean
     include?: string[]
     exclude?: string[]
     maxFileSizeKb?: number
     storagePath?: string
     autoIndex?: boolean
+    embeddingProvider?: "openai_compatible" | "azure_openai" | "local"
+    embeddingBaseURL?: string
+    embeddingApiKey?: string
+    embeddingModel?: string
+    embeddingDimensions?: number
+    vectorProvider?: "qdrant" | "chroma" | "faiss"
+    vectorURL?: string
+    vectorApiKey?: string
+    scoreThreshold?: number
+    maxResults?: number
+    embeddingBatchSize?: number
+    maxRetryBatch?: number
   }
 }
 
@@ -457,6 +470,7 @@ export interface ReadyMessage {
   extensionVersion?: string
   vscodeLanguage?: string
   languageOverride?: string
+  workspaceDirectory?: string
 }
 
 export interface ConnectionStateMessage {
@@ -823,6 +837,53 @@ export interface VcpStatusUpdateMessage {
     lastRunId?: string
   }
 }
+
+// novacode_change start — VCP Bridge runtime stats (from SSE /vcp/bridge/events)
+export interface VCPBridgeActivePlugin {
+  name: string
+  status: "idle" | "running" | "completed" | "error"
+  currentStep?: string
+  lastActivity?: number
+}
+
+export interface VCPBridgeLogEntry {
+  timestamp: number
+  level: "info" | "warn" | "error" | "debug"
+  message: string
+  plugin?: string
+  toolCallId?: string
+}
+
+export interface VCPBridgeDistributedServer {
+  id: string
+  name: string
+  status: "online" | "offline" | "connecting"
+  lastHeartbeat?: number
+}
+
+export interface VCPBridgeRuntimeStats {
+  connected: boolean
+  toolboxVersion?: string
+  uptime?: number
+  activePlugins: VCPBridgeActivePlugin[]
+  distributedServers: VCPBridgeDistributedServer[]
+  resourceUsage?: {
+    memory?: number
+    cpu?: number
+    activeConnections?: number
+  }
+  recentLogs: VCPBridgeLogEntry[]
+}
+
+export interface VCPBridgeStatus {
+  connected: boolean
+  url?: string
+  channels: string[]
+  reconnectAttempts: number
+  lastConnected?: number
+  lastError?: string
+}
+// novacode_change end
 
 // Agent Manager worktree session metadata
 export interface AgentManagerSessionMetaMessage {
@@ -1207,6 +1268,10 @@ export interface ReindexCodebaseRequestMessage {
   type: "reindexCodebase"
 }
 
+export interface ClearCodebaseIndexRequestMessage {
+  type: "clearCodebaseIndex"
+}
+
 export interface RequestPromptQueueMessage {
   type: "requestPromptQueue"
   sessionID: string
@@ -1441,6 +1506,7 @@ export type WebviewMessage =
   | RequestConfigMessage
   | RequestCodebaseIndexStatusMessage
   | ReindexCodebaseRequestMessage
+  | ClearCodebaseIndexRequestMessage
   | RequestPromptQueueMessage
   | EnqueuePromptMessage
   | DequeuePromptMessage

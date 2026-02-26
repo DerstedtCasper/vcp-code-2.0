@@ -23,7 +23,7 @@
     },
     "packages/app": {
       "name": "@opencode-ai/app",
-      "version": "7.0.33",
+      "version": "7.0.34",
       "dependencies": {
         "@kobalte/core": "catalog:",
         "@novacode/nova-i18n": "workspace:*",
@@ -75,7 +75,7 @@
     },
     "packages/desktop": {
       "name": "@opencode-ai/desktop",
-      "version": "7.0.33",
+      "version": "7.0.34",
       "dependencies": {
         "@opencode-ai/app": "workspace:*",
         "@opencode-ai/ui": "workspace:*",
@@ -108,7 +108,7 @@
     },
     "packages/nova-docs": {
       "name": "@novacode/nova-docs",
-      "version": "7.0.33",
+      "version": "7.0.34",
       "dependencies": {
         "@docsearch/css": "^4",
         "@docsearch/js": "^4",
@@ -136,7 +136,7 @@
     },
     "packages/nova-gateway": {
       "name": "@novacode/nova-gateway",
-      "version": "7.0.33",
+      "version": "7.0.34",
       "dependencies": {
         "@clack/prompts": "1.0.0-alpha.1",
         "@novacode/plugin": "workspace:*",
@@ -168,7 +168,7 @@
     },
     "packages/nova-i18n": {
       "name": "@novacode/nova-i18n",
-      "version": "7.0.33",
+      "version": "7.0.34",
       "devDependencies": {
         "@tsconfig/node22": "catalog:",
         "@types/bun": "catalog:",
@@ -178,7 +178,7 @@
     },
     "packages/nova-telemetry": {
       "name": "@novacode/nova-telemetry",
-      "version": "7.0.33",
+      "version": "7.0.34",
       "dependencies": {
         "@novacode/nova-gateway": "workspace:*",
         "@opentelemetry/api": "1.9.0",
@@ -198,7 +198,7 @@
     },
     "packages/nova-ui": {
       "name": "@novacode/nova-ui",
-      "version": "7.0.33",
+      "version": "7.0.34",
       "dependencies": {
         "@kobalte/core": "0.13.11",
       },
@@ -221,7 +221,7 @@
     },
     "packages/nova-vscode": {
       "name": "vcp-code",
-      "version": "7.0.33",
+      "version": "7.0.35",
       "dependencies": {
         "@anthropic-ai/sdk": "^0.39.0",
         "@novacode/nova-i18n": "workspace:*",
@@ -265,7 +265,7 @@
     },
     "packages/opencode": {
       "name": "@novacode/cli",
-      "version": "7.0.33",
+      "version": "7.0.34",
       "bin": {
         "opencode": "./bin/opencode",
       },
@@ -345,6 +345,7 @@
         "vscode-jsonrpc": "8.2.1",
         "web-tree-sitter": "0.25.10",
         "xdg-basedir": "5.1.0",
+        "yaml": "2.8.2",
         "yargs": "18.0.0",
         "zod": "catalog:",
         "zod-to-json-schema": "3.24.5",
@@ -377,7 +378,7 @@
     },
     "packages/plugin": {
       "name": "@novacode/plugin",
-      "version": "7.0.33",
+      "version": "7.0.34",
       "dependencies": {
         "@novacode/sdk": "workspace:*",
         "zod": "catalog:",
@@ -391,14 +392,14 @@
     },
     "packages/script": {
       "name": "@opencode-ai/script",
-      "version": "7.0.33",
+      "version": "7.0.34",
       "devDependencies": {
         "@types/bun": "catalog:",
       },
     },
     "packages/sdk/js": {
       "name": "@novacode/sdk",
-      "version": "7.0.33",
+      "version": "7.0.34",
       "devDependencies": {
         "@hey-api/openapi-ts": "0.90.10",
         "@tsconfig/node22": "catalog:",
@@ -409,7 +410,7 @@
     },
     "packages/ui": {
       "name": "@opencode-ai/ui",
-      "version": "7.0.33",
+      "version": "7.0.34",
       "dependencies": {
         "@kobalte/core": "catalog:",
         "@novacode/sdk": "workspace:*",
@@ -451,7 +452,7 @@
     },
     "packages/util": {
       "name": "@opencode-ai/util",
-      "version": "7.0.33",
+      "version": "7.0.34",
       "dependencies": {
         "zod": "catalog:",
       },

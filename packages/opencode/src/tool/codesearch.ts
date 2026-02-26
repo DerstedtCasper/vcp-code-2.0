@@ -2,6 +2,7 @@ import z from "zod"
 import { Tool } from "./tool"
 import DESCRIPTION from "./codesearch.txt"
 import { abortAfterAny } from "../util/abort"
+import { CodeIndex } from "../code-index" // novacode_change - T-1.8
 
 const API_CONFIG = {
   BASE_URL: "https://mcp.exa.ai",
@@ -60,6 +61,25 @@ export const CodeSearchTool = Tool.define("codesearch", {
         tokensNum: params.tokensNum,
       },
     })
+
+    // novacode_change start - T-1.8: Try local vector search first, fallback to Exa
+    if (CodeIndex.isEnabled()) {
+      try {
+        const results = await CodeIndex.search(params.query)
+        if (results.length > 0) {
+          const formatted = await CodeIndex.searchFormatted(params.query)
+          return {
+            output: formatted,
+            title: `Code search (local index): ${params.query}`,
+            metadata: {} as Record<string, never>,
+          }
+        }
+        // If local search returns empty, fall through to Exa
+      } catch (err) {
+        // Log but don't fail — fall through to Exa
+      }
+    }
+    // novacode_change end
 
     const codeRequest: McpCodeRequest = {
       jsonrpc: "2.0",

@@ -79,12 +79,14 @@
     "@hono/standard-validator": "0.1.5",
     "@hono/zod-validator": "catalog:",
     "@modelcontextprotocol/sdk": "1.25.2",
+    "@novacode/nova-gateway": "workspace:*",
+    "@novacode/nova-telemetry": "workspace:*",
+    "@novacode/plugin": "workspace:*",
+    "@novacode/sdk": "workspace:*",
     "@octokit/graphql": "9.0.2",
     "@octokit/rest": "catalog:",
     "@openauthjs/openauth": "catalog:",
-    "@novacode/plugin": "workspace:*",
     "@opencode-ai/script": "workspace:*",
-    "@novacode/sdk": "workspace:*",
     "@opencode-ai/util": "workspace:*",
     "@openrouter/ai-sdk-provider": "1.5.4",
     "@opentui/core": "0.1.79",
@@ -115,6 +117,7 @@
     "opentui-spinner": "0.0.6",
     "partial-json": "0.1.7",
     "remeda": "catalog:",
+    "simple-git": "3.31.1",
     "solid-js": "catalog:",
     "strip-ansi": "7.1.2",
     "tree-sitter-bash": "0.25.0",
@@ -123,17 +126,13 @@
     "vscode-jsonrpc": "8.2.1",
     "web-tree-sitter": "0.25.10",
     "xdg-basedir": "5.1.0",
+    "yaml": "2.8.2",
     "yargs": "18.0.0",
     "zod": "catalog:",
-    "zod-to-json-schema": "3.24.5",
-    "@novacode/nova-gateway": "workspace:*",
-    "@novacode/nova-telemetry": "workspace:*",
-    "simple-git": "3.31.1"
+    "zod-to-json-schema": "3.24.5"
   },
   "overrides": {
     "drizzle-orm": "1.0.0-beta.12-a5629fb"
   },
   "peerDependencies": {}
 }
-
-
