@@ -1,8 +1,8 @@
 // novacode_change - new file
 import type { DesktopTheme } from "@opencode-ai/ui/theme/types"
 import { DEFAULT_THEMES as UPSTREAM_THEMES } from "@opencode-ai/ui/theme/default-themes"
-import kiloJson from "./themes/kilo.json"
-import kiloVscodeJson from "./themes/nova-vscode.json"
+import novaJson from "./themes/nova.json"
+import novaVscodeJson from "./themes/nova-vscode.json"
 
 // Re-export all upstream theme constants
 export {
@@ -23,16 +23,21 @@ export {
   auraTheme,
 } from "@opencode-ai/ui/theme/default-themes"
 
-export const kiloTheme = kiloJson as DesktopTheme
-export const kiloVscodeTheme = kiloVscodeJson as DesktopTheme
+export const novaTheme = novaJson as DesktopTheme
+export const novaVscodeTheme = novaVscodeJson as DesktopTheme
 
-export const KILO_THEMES: Record<string, DesktopTheme> = {
-  kilo: kiloTheme,
-  "nova-vscode": kiloVscodeTheme,
+// Keep backward-compatible aliases while migrating brand keys.
+export const kiloTheme = novaTheme
+export const kiloVscodeTheme = novaVscodeTheme
+
+export const NOVA_THEMES: Record<string, DesktopTheme> = {
+  kilo: novaTheme,
+  nova: novaTheme,
+  "nova-vscode": novaVscodeTheme,
 }
 
 // Override DEFAULT_THEMES: Kilo themes first, then upstream
 export const DEFAULT_THEMES: Record<string, DesktopTheme> = {
-  ...KILO_THEMES,
+  ...NOVA_THEMES,
   ...UPSTREAM_THEMES,
 }

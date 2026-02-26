@@ -1,12 +1,11 @@
 /**
  * Language context
  * Provides i18n translations for nova-ui components.
- * Merges UI translations from @opencode-ai/ui and Kilo overrides from @novacode/nova-i18n.
- *
- * Locale priority: user override → VS Code display language → browser language → "en"
+ * Merges app translations, ui translations and nova overrides.
  */
 
-import { createSignal, createMemo, createEffect, ParentComponent, Accessor } from "solid-js"
+import { createContext, useContext, createSignal, createMemo, createEffect } from "solid-js"
+import type { ParentComponent, Accessor } from "solid-js"
 import { I18nProvider } from "@novacode/nova-ui/context"
 import type { UiI18nKey, UiI18nParams } from "@novacode/nova-ui/context"
 import { dict as uiEn } from "@novacode/nova-ui/i18n/en"
@@ -48,43 +47,42 @@ import { dict as novaKo } from "@novacode/nova-i18n/ko"
 import { dict as novaDe } from "@novacode/nova-i18n/de"
 import { dict as novaEs } from "@novacode/nova-i18n/es"
 import { dict as novaFr } from "@novacode/nova-i18n/fr"
-import { dict as kiloDa } from "@novacode/nova-i18n/da"
+import { dict as novaDa } from "@novacode/nova-i18n/da"
 import { dict as novaJa } from "@novacode/nova-i18n/ja"
 import { dict as novaPl } from "@novacode/nova-i18n/pl"
 import { dict as novaRu } from "@novacode/nova-i18n/ru"
 import { dict as novaAr } from "@novacode/nova-i18n/ar"
-import { dict as kiloNo } from "@novacode/nova-i18n/no"
-import { dict as kiloBr } from "@novacode/nova-i18n/br"
-import { dict as kiloTh } from "@novacode/nova-i18n/th"
-import { dict as kiloBs } from "@novacode/nova-i18n/bs"
+import { dict as novaNo } from "@novacode/nova-i18n/no"
+import { dict as novaBr } from "@novacode/nova-i18n/br"
+import { dict as novaTh } from "@novacode/nova-i18n/th"
+import { dict as novaBs } from "@novacode/nova-i18n/bs"
 import { useVSCode } from "./vscode"
 import { normalizeLocale as _normalizeLocale, resolveTemplate as _resolveTemplate } from "./language-utils"
-
-export type { Locale } from "./language-utils"
-export { LOCALES } from "./language-utils"
 import type { Locale } from "./language-utils"
 import { LOCALES } from "./language-utils"
+
+export type { Locale } from "./language-utils"
+export { LOCALES }
 
 export const LOCALE_LABELS: Record<Locale, string> = {
   en: "English",
   zh: "简体中文",
-  zht: "繁體中文",
+  zht: "繁体中文",
   ko: "한국어",
   de: "Deutsch",
-  es: "Español",
-  fr: "Français",
+  es: "Espanol",
+  fr: "Francais",
   da: "Dansk",
   ja: "日本語",
   pl: "Polski",
   ru: "Русский",
   ar: "العربية",
   no: "Norsk",
-  br: "Português (Brasil)",
+  br: "Portugues (Brasil)",
   th: "ภาษาไทย",
   bs: "Bosanski",
 }
 
-// Merge all 3 dict layers: app + ui + kilo (kilo overrides last, English base always present)
 const base = { ...appEn, ...uiEn, ...novaEn }
 const dicts: Record<Locale, Record<string, string>> = {
   en: base,
@@ -94,24 +92,33 @@ const dicts: Record<Locale, Record<string, string>> = {
   de: { ...base, ...appDe, ...uiDe, ...novaDe },
   es: { ...base, ...appEs, ...uiEs, ...novaEs },
   fr: { ...base, ...appFr, ...uiFr, ...novaFr },
-  da: { ...base, ...appDa, ...uiDa, ...kiloDa },
+  da: { ...base, ...appDa, ...uiDa, ...novaDa },
   ja: { ...base, ...appJa, ...uiJa, ...novaJa },
   pl: { ...base, ...appPl, ...uiPl, ...novaPl },
   ru: { ...base, ...appRu, ...uiRu, ...novaRu },
   ar: { ...base, ...appAr, ...uiAr, ...novaAr },
-  no: { ...base, ...appNo, ...uiNo, ...kiloNo },
-  br: { ...base, ...appBr, ...uiBr, ...kiloBr },
-  th: { ...base, ...appTh, ...uiTh, ...kiloTh },
-  bs: { ...base, ...appBs, ...uiBs, ...kiloBs },
+  no: { ...base, ...appNo, ...uiNo, ...novaNo },
+  br: { ...base, ...appBr, ...uiBr, ...novaBr },
+  th: { ...base, ...appTh, ...uiTh, ...novaTh },
+  bs: { ...base, ...appBs, ...uiBs, ...novaBs },
 }
 
 function normalizeLocale(lang: string): Locale {
   return _normalizeLocale(lang)
 }
 
-function resolveTemplate(text: string, params?: UiI18nParams) {
+function resolveTemplate(text: string, params?: UiI18nParams): string {
   return _resolveTemplate(text, params as Record<string, string | number | boolean | undefined>)
 }
+
+interface LanguageContextValue {
+  locale: Accessor<Locale>
+  setLocale: (locale: Locale | "") => void
+  userOverride: Accessor<Locale | "">
+  t: (key: string, params?: UiI18nParams) => string
+}
+
+const LanguageContext = createContext<LanguageContextValue>()
 
 interface LanguageProviderProps {
   vscodeLanguage?: Accessor<string | undefined>
@@ -122,27 +129,17 @@ export const LanguageProvider: ParentComponent<LanguageProviderProps> = (props) 
   const vscode = useVSCode()
   const [userOverride, setUserOverride] = createSignal<Locale | "">("")
 
-  // Initialize from extension-side override
   createEffect(() => {
     const override = props.languageOverride?.()
-    if (override) {
-      setUserOverride(normalizeLocale(override))
-    }
+    if (override) setUserOverride(normalizeLocale(override))
   })
 
-  // Resolved locale: user override → VS Code language → browser language → "en"
   const locale = createMemo<Locale>(() => {
     const override = userOverride()
-    if (override) {
-      return override
-    }
+    if (override) return override
     const vscodeLang = props.vscodeLanguage?.()
-    if (vscodeLang) {
-      return normalizeLocale(vscodeLang)
-    }
-    if (typeof navigator !== "undefined" && navigator.language) {
-      return normalizeLocale(navigator.language)
-    }
+    if (vscodeLang) return normalizeLocale(vscodeLang)
+    if (typeof navigator !== "undefined" && navigator.language) return normalizeLocale(navigator.language)
     return "en"
   })
 
@@ -166,18 +163,6 @@ export const LanguageProvider: ParentComponent<LanguageProviderProps> = (props) 
     </LanguageContext.Provider>
   )
 }
-
-// Expose locale + setLocale for the LanguageTab
-import { createContext, useContext } from "solid-js"
-
-interface LanguageContextValue {
-  locale: Accessor<Locale>
-  setLocale: (locale: Locale | "") => void
-  userOverride: Accessor<Locale | "">
-  t: (key: string, params?: UiI18nParams) => string
-}
-
-const LanguageContext = createContext<LanguageContextValue>()
 
 export function useLanguage() {
   const ctx = useContext(LanguageContext)
