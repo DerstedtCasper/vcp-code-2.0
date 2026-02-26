@@ -87,6 +87,13 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   })
 
   const hasProviders = () => visibleModels().length > 0
+  const gatewayConnected = () => connected().includes(NOVA_GATEWAY_ID)
+  const gatewayStatusClass = createMemo(() =>
+    gatewayConnected() ? "model-selector-gateway-dot--connected" : "model-selector-gateway-dot--disconnected",
+  )
+  const gatewayStatusTitle = createMemo(() =>
+    gatewayConnected() ? "Gateway connected" : "Gateway disconnected",
+  )
 
   // Flat filtered list for keyboard navigation
   const filtered = createMemo(() => {
@@ -251,6 +258,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
       }}
       trigger={
         <>
+          <span class={`model-selector-gateway-dot ${gatewayStatusClass()}`} title={gatewayStatusTitle()} />
           <span class="model-selector-trigger-label">{triggerLabel()}</span>
           <svg class="model-selector-trigger-chevron" width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 4l4 5H4l4-5z" />

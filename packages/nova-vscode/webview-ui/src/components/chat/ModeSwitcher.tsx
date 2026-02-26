@@ -1,42 +1,39 @@
 /**
  * ModeSwitcher component
  * Popover-based selector for choosing an agent/mode in the chat prompt area.
- * Uses nova-ui Popover component (Phase 4.5 of UI implementation plan).
- *
- * ModeSwitcherBase — reusable core that accepts agents/value/onSelect props.
- * ModeSwitcher     — thin wrapper wired to session context for chat usage.
  */
 
-import { Component, createSignal, For, Show, createEffect } from "solid-js"
+import { Component, createSignal, For, Show, createEffect, createMemo } from "solid-js"
 import { Popover } from "@novacode/nova-ui/popover"
 import { Button } from "@novacode/nova-ui/button"
 import { useSession } from "../../context/session"
 import type { AgentInfo } from "../../types/messages"
 
-// ---------------------------------------------------------------------------
-// Reusable base component
-// ---------------------------------------------------------------------------
-
 export interface ModeSwitcherBaseProps {
-  /** Available agents to pick from */
   agents: AgentInfo[]
-  /** Currently selected agent name */
   value: string
-  /** Called when the user picks an agent */
   onSelect: (name: string) => void
 }
 
-/** mode 标签映射 */
+interface CustomModeDraft {
+  name: string
+  description: string
+  prompt: string
+}
+
 function modeTag(mode: AgentInfo["mode"]): string {
   switch (mode) {
-    case "subagent": return "sub"
-    case "primary": return "primary"
-    case "all": return "all"
-    default: return mode
+    case "subagent":
+      return "sub"
+    case "primary":
+      return "primary"
+    case "all":
+      return "all"
+    default:
+      return mode
   }
 }
 
-/** 颜色点组件：通过 ref + createEffect 避免 inline style lint */
 const ColorDot: Component<{ color: string; class?: string }> = (props) => {
   let ref: HTMLSpanElement | undefined
   createEffect(() => {
@@ -45,10 +42,31 @@ const ColorDot: Component<{ color: string; class?: string }> = (props) => {
   return <span ref={ref} class={props.class ?? "mode-switcher-item-dot"} />
 }
 
+function formatApprovalLabel(autoApproval?: AgentInfo["autoApproval"]): string {
+  if (!autoApproval) return "read: allow · write: ask · execute: ask"
+  const read = autoApproval.read === true ? "allow" : "ask"
+  const write = autoApproval.write === true ? "allow" : "ask"
+  const execute = autoApproval.execute === true ? "allow" : "ask"
+  return `read: ${read} · write: ${write} · execute: ${execute}`
+}
+
 export const ModeSwitcherBase: Component<ModeSwitcherBaseProps> = (props) => {
   const [open, setOpen] = createSignal(false)
+  const [showEditor, setShowEditor] = createSignal(false)
+  const [customName, setCustomName] = createSignal("")
+  const [customDescription, setCustomDescription] = createSignal("")
+  const [customPrompt, setCustomPrompt] = createSignal("")
 
   const hasAgents = () => props.agents.length > 1
+  const selectedAgent = createMemo(() => props.agents.find((a) => a.name === props.value))
+
+  const selectedCapabilities = createMemo(() => {
+    const agent = selectedAgent()
+    const tools = agent?.tools && agent.tools.length > 0 ? agent.tools.join(", ") : "read_file, write_file, execute_command"
+    const prompt = agent?.promptSummary || agent?.description || "No prompt summary available."
+    const approval = formatApprovalLabel(agent?.autoApproval)
+    return { tools, prompt, approval }
+  })
 
   function pick(name: string) {
     props.onSelect(name)
@@ -57,13 +75,24 @@ export const ModeSwitcherBase: Component<ModeSwitcherBaseProps> = (props) => {
 
   const triggerLabel = () => {
     const agent = props.agents.find((a) => a.name === props.value)
-    if (agent) {
-      return agent.name.charAt(0).toUpperCase() + agent.name.slice(1)
-    }
+    if (agent) return agent.name.charAt(0).toUpperCase() + agent.name.slice(1)
     return props.value || "Code"
   }
 
-  const selectedAgent = () => props.agents.find((a) => a.name === props.value)
+  function createCustomMode() {
+    const draft: CustomModeDraft = {
+      name: customName().trim(),
+      description: customDescription().trim(),
+      prompt: customPrompt().trim(),
+    }
+    if (!draft.name) return
+    window.dispatchEvent(new CustomEvent("modeSwitcher.createCustom", { detail: draft }))
+    setShowEditor(false)
+    setCustomName("")
+    setCustomDescription("")
+    setCustomPrompt("")
+    setOpen(false)
+  }
 
   return (
     <Show when={hasAgents()}>
@@ -99,9 +128,7 @@ export const ModeSwitcherBase: Component<ModeSwitcherBaseProps> = (props) => {
                   <Show when={agent.color}>
                     <ColorDot color={agent.color!} />
                   </Show>
-                  <span class="mode-switcher-item-name">
-                    {agent.name.charAt(0).toUpperCase() + agent.name.slice(1)}
-                  </span>
+                  <span class="mode-switcher-item-name">{agent.name.charAt(0).toUpperCase() + agent.name.slice(1)}</span>
                   <Show when={!agent.native}>
                     <span class="mode-switcher-item-tag">{modeTag(agent.mode)}</span>
                   </Show>
@@ -115,18 +142,64 @@ export const ModeSwitcherBase: Component<ModeSwitcherBaseProps> = (props) => {
               </div>
             )}
           </For>
+
+          <div class="mode-switcher-create" onClick={() => setShowEditor((v) => !v)}>
+            + Create custom mode...
+          </div>
+
+          <Show when={showEditor()}>
+            <div class="mode-switcher-editor">
+              <input
+                class="mode-switcher-editor-input"
+                placeholder="Mode name"
+                value={customName()}
+                onInput={(e) => setCustomName(e.currentTarget.value)}
+              />
+              <input
+                class="mode-switcher-editor-input"
+                placeholder="Short description"
+                value={customDescription()}
+                onInput={(e) => setCustomDescription(e.currentTarget.value)}
+              />
+              <textarea
+                class="mode-switcher-editor-textarea"
+                placeholder="System prompt summary"
+                value={customPrompt()}
+                onInput={(e) => setCustomPrompt(e.currentTarget.value)}
+              />
+              <div class="mode-switcher-editor-actions">
+                <Button size="small" variant="secondary" onClick={createCustomMode} disabled={!customName().trim()}>
+                  Save Draft
+                </Button>
+                <Button size="small" variant="ghost" onClick={() => setShowEditor(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </Show>
+
+          <div class="mode-switcher-capabilities">
+            <div class="mode-switcher-capabilities-title">Agent capabilities</div>
+            <div class="mode-switcher-capabilities-row">
+              <span class="mode-switcher-capabilities-key">Tools</span>
+              <span class="mode-switcher-capabilities-value">{selectedCapabilities().tools}</span>
+            </div>
+            <div class="mode-switcher-capabilities-row">
+              <span class="mode-switcher-capabilities-key">Prompt</span>
+              <span class="mode-switcher-capabilities-value">{selectedCapabilities().prompt}</span>
+            </div>
+            <div class="mode-switcher-capabilities-row">
+              <span class="mode-switcher-capabilities-key">Auto approval</span>
+              <span class="mode-switcher-capabilities-value">{selectedCapabilities().approval}</span>
+            </div>
+          </div>
         </div>
       </Popover>
     </Show>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Chat-specific wrapper (backwards-compatible)
-// ---------------------------------------------------------------------------
-
 export const ModeSwitcher: Component = () => {
   const session = useSession()
-
   return <ModeSwitcherBase agents={session.agents()} value={session.selectedAgent()} onSelect={session.selectAgent} />
 }
