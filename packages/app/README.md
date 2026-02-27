@@ -29,6 +29,27 @@ It correctly bundles Solid in production mode and optimizes the build for the be
 The build is minified and the filenames include the hashes.<br>
 Your app is ready to be deployed!
 
+## Local Full-Stack Dev
+
+If you are working on the app against a local opencode backend, prefer the root command so frontend and backend start together:
+
+```bash
+# from repo root
+bun run dev:web
+```
+
+This command starts:
+
+- Backend: `packages/opencode` on `http://127.0.0.1:4096`
+- Frontend: `packages/app` on `http://127.0.0.1:4444`
+
+Optional overrides:
+
+- `KILO_DEV_SERVER_HOST` (default `127.0.0.1`)
+- `KILO_DEV_SERVER_PORT` (default `4096`)
+- `KILO_DEV_WEB_PORT` (default `4444`)
+- `KILO_DEV_HEALTH_TIMEOUT_MS` (default `60000`)
+
 ## E2E Testing
 
 Playwright starts the Vite dev server automatically via `webServer`, and UI tests need an opencode backend (defaults to `localhost:4096`).
