@@ -1005,6 +1005,44 @@
   word-break: break-all;
 }
 
+.yolo-decision-banner {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--vscode-inputValidation-warningBorder, var(--vscode-panel-border));
+  background: var(
+    --vscode-inputValidation-warningBackground,
+    var(--vscode-editorWarning-background, rgba(255, 193, 7, 0.12))
+  );
+}
+
+.yolo-decision-title,
+.yolo-decision-meta,
+.yolo-decision-reason,
+.yolo-decision-override {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.yolo-decision-title {
+  font-weight: 600;
+  color: var(--vscode-editorWarning-foreground, var(--vscode-foreground));
+  font-size: 12px;
+}
+
+.yolo-decision-meta,
+.yolo-decision-reason,
+.yolo-decision-override {
+  color: var(--vscode-descriptionForeground);
+}
+
+.yolo-decision-reason {
+  word-break: break-word;
+}
+
 /* ============================================
    Text Part Copy Button Fix
    In the sidebar, the text-part copy button overflows into the

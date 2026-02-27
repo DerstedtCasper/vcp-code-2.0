@@ -46,6 +46,24 @@
 
 [![Watch the video](https://img.youtube.com/vi/pqGfYXgrhig/maxresdefault.jpg)](https://youtu.be/pqGfYXgrhig)
 
+## VSIX Install-And-Use (Embedded Runtime)
+
+- Default runtime mode is `embedded`, so after installing the VSIX you can use chat/session/config features directly.
+- No manual backend CLI startup is required for normal usage.
+- Legacy mode is still available via setting `vcp-code.new.runtime.mode = legacy` for compatibility troubleshooting.
+
+## Troubleshooting
+
+- `Cannot fetch backend` or similar connection errors:
+  - Open settings and confirm `vcp-code.new.runtime.mode` is set to `embedded`.
+  - Reload the VS Code window and open a new session again.
+- Permission requests not progressing:
+  - Check if YOLO routing is enabled in `vcp-code.new.yolo.*` settings.
+  - If needed, temporarily disable YOLO and retry with manual approval.
+- Config appears lost after upgrade:
+  - Use extension commands `Import Config` / `Export Config` to recover from local backup.
+  - Embedded mode prefers extension-side persisted config and can recover when `opencode.json` is unavailable.
+
 ## Developer Setup
 
 If you want to contribute or modify the extension locally, see the [DEVELOPMENT.md](/DEVELOPMENT.md) file for build and setup instructions.

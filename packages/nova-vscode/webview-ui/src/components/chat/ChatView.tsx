@@ -28,6 +28,10 @@ export const ChatView: Component<ChatViewProps> = (props) => {
 
   const questionRequest = () => sessionQuestions()[0]
   const permissionRequest = () => sessionPermissions().find((p) => !p.tool)
+  const yoloDecision = () => {
+    const request = permissionRequest()
+    return request ? session.getYoloDecision(request.id) : undefined
+  }
   const blocked = () => sessionPermissions().length > 0 || sessionQuestions().length > 0
 
   const [responding, setResponding] = createSignal(false)
@@ -50,6 +54,15 @@ export const ChatView: Component<ChatViewProps> = (props) => {
     session.respondToPermission(perm.id, response)
     setResponding(false)
   }
+
+  const resolveConfidencePercent = (value: number) => {
+    if (!Number.isFinite(value)) return 0
+    const normalized = value <= 1 ? value * 100 : value
+    return Math.max(0, Math.min(100, Math.round(normalized)))
+  }
+
+  const yoloSourceLabel = (source: "small_model" | "heuristic") =>
+    source === "small_model" ? language.t("ui.yolo.source.small_model") : language.t("ui.yolo.source.heuristic")
 
   return (
     <div class="chat-view">
@@ -86,6 +99,34 @@ export const ChatView: Component<ChatViewProps> = (props) => {
                   </Show>
                 </BasicTool>
                 <div data-component="permission-prompt">
+                  <Show when={yoloDecision()} keyed>
+                    {(decision) => (
+                      <div class="yolo-decision-banner" data-route={decision.route}>
+                        <p class="yolo-decision-title">
+                          {decision.route === "approve"
+                            ? language.t("ui.yolo.route.approve")
+                            : language.t("ui.yolo.route.escalate")}
+                        </p>
+                        <p class="yolo-decision-meta">
+                          {language.t("ui.yolo.confidence", {
+                            value: resolveConfidencePercent(decision.confidence),
+                          })}
+                          {" • "}
+                          {language.t("ui.yolo.source", {
+                            source: yoloSourceLabel(decision.source),
+                          })}
+                        </p>
+                        <p class="yolo-decision-reason">
+                          {language.t("ui.yolo.reason", {
+                            reason: decision.reason || language.t("ui.yolo.reasonFallback"),
+                          })}
+                        </p>
+                        <Show when={decision.route === "escalate_to_human"}>
+                          <p class="yolo-decision-override">{language.t("ui.yolo.manualOverrideHint")}</p>
+                        </Show>
+                      </div>
+                    )}
+                  </Show>
                   <div data-slot="permission-actions">
                     <Button variant="ghost" size="small" onClick={() => decide("reject")} disabled={responding()}>
                       {language.t("ui.permission.deny")}

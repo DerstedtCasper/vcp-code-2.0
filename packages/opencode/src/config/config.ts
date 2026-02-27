@@ -754,6 +754,34 @@ export namespace Config {
     })
   export type Permission = z.infer<typeof Permission>
 
+  export const Yolo = z
+    .object({
+      enabled: z.boolean().optional().describe("Enable YOLO permission routing."),
+      use_small_model: z
+        .boolean()
+        .optional()
+        .describe("Use configured small model for YOLO routing. Falls back to heuristic on errors."),
+      confidence_threshold: z
+        .number()
+        .min(0)
+        .max(1)
+        .optional()
+        .describe("Minimum confidence threshold used by YOLO routing decisions."),
+      auto_approve_readonly: z
+        .boolean()
+        .optional()
+        .describe("Auto-approve read-only permission types when YOLO is enabled."),
+      force_human: z
+        .array(z.string())
+        .optional()
+        .describe("Permission patterns that must always be escalated to human approval."),
+    })
+    .strict()
+    .meta({
+      ref: "YoloConfig",
+    })
+  export type Yolo = z.infer<typeof Yolo>
+
   export const Command = z.object({
     template: z.string(),
     description: z.string().optional(),
@@ -1548,6 +1576,7 @@ export namespace Config {
       instructions: z.array(z.string()).optional().describe("Additional instruction files or patterns to include"),
       layout: Layout.optional().describe("@deprecated Always uses stretch layout."),
       permission: Permission.optional(),
+      yolo: Yolo.optional(),
       tools: z.record(z.string(), z.boolean()).optional(),
       enterprise: z
         .object({

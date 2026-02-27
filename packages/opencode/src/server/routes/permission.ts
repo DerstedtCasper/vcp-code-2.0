@@ -4,6 +4,7 @@ import z from "zod"
 import { PermissionNext } from "@/permission/next"
 import { errors } from "../error"
 import { lazy } from "../../util/lazy"
+import { PermissionRuntimeService } from "@/runtime-core/permission-service"
 
 export const PermissionRoutes = lazy(() =>
   new Hono()
@@ -35,7 +36,7 @@ export const PermissionRoutes = lazy(() =>
       async (c) => {
         const params = c.req.valid("param")
         const json = c.req.valid("json")
-        await PermissionNext.reply({
+        await PermissionRuntimeService.reply({
           requestID: params.requestID,
           reply: json.reply,
           message: json.message,
@@ -61,7 +62,7 @@ export const PermissionRoutes = lazy(() =>
         },
       }),
       async (c) => {
-        const permissions = await PermissionNext.list()
+        const permissions = await PermissionRuntimeService.list()
         return c.json(permissions)
       },
     ),

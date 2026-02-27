@@ -5,17 +5,16 @@ import z from "zod"
 import { Session } from "../../session"
 import { MessageV2 } from "../../session/message-v2"
 import { SessionPrompt } from "../../session/prompt"
-import { SessionCompaction } from "../../session/compaction"
 import { SessionRevert } from "../../session/revert"
 import { SessionStatus } from "@/session/status"
 import { SessionSummary } from "@/session/summary"
 import { Todo } from "../../session/todo"
-import { Agent } from "../../agent/agent"
 import { Snapshot } from "@/snapshot"
 import { Log } from "../../util/log"
 import { PermissionNext } from "@/permission/next"
 import { errors } from "../error"
 import { lazy } from "../../util/lazy"
+import { SessionRuntimeService } from "@/runtime-core/session-service"
 
 const log = Log.create({ service: "server" })
 
@@ -53,16 +52,13 @@ export const SessionRoutes = lazy(() =>
       ),
       async (c) => {
         const query = c.req.valid("query")
-        const sessions: Session.Info[] = []
-        for await (const session of Session.list({
+        const sessions = await SessionRuntimeService.list({
           directory: query.directory,
           roots: query.roots,
           start: query.start,
           search: query.search,
           limit: query.limit,
-        })) {
-          sessions.push(session)
-        }
+        })
         return c.json(sessions)
       },
     )
@@ -85,7 +81,7 @@ export const SessionRoutes = lazy(() =>
         },
       }),
       async (c) => {
-        const result = SessionStatus.list()
+        const result = SessionRuntimeService.getStatus()
         return c.json(result)
       },
     )
@@ -117,7 +113,7 @@ export const SessionRoutes = lazy(() =>
       async (c) => {
         const sessionID = c.req.valid("param").sessionID
         log.info("SEARCH", { url: c.req.url })
-        const session = await Session.get(sessionID)
+        const session = await SessionRuntimeService.get(sessionID)
         return c.json(session)
       },
     )
@@ -148,7 +144,7 @@ export const SessionRoutes = lazy(() =>
       ),
       async (c) => {
         const sessionID = c.req.valid("param").sessionID
-        const session = await Session.children(sessionID)
+        const session = await SessionRuntimeService.children(sessionID)
         return c.json(session)
       },
     )
@@ -178,7 +174,7 @@ export const SessionRoutes = lazy(() =>
       ),
       async (c) => {
         const sessionID = c.req.valid("param").sessionID
-        const todos = await Todo.get(sessionID)
+        const todos = await SessionRuntimeService.getTodos(sessionID)
         return c.json(todos)
       },
     )
@@ -203,7 +199,7 @@ export const SessionRoutes = lazy(() =>
       validator("json", Session.create.schema.optional()),
       async (c) => {
         const body = c.req.valid("json") ?? {}
-        const session = await Session.create(body)
+        const session = await SessionRuntimeService.create(body)
         return c.json(session)
       },
     )
@@ -233,7 +229,7 @@ export const SessionRoutes = lazy(() =>
       ),
       async (c) => {
         const sessionID = c.req.valid("param").sessionID
-        await Session.remove(sessionID)
+        await SessionRuntimeService.remove(sessionID)
         return c.json(true)
       },
     )
@@ -275,15 +271,7 @@ export const SessionRoutes = lazy(() =>
       async (c) => {
         const sessionID = c.req.valid("param").sessionID
         const updates = c.req.valid("json")
-
-        let session = await Session.get(sessionID)
-        if (updates.title !== undefined) {
-          session = await Session.setTitle({ sessionID, title: updates.title })
-        }
-        if (updates.time?.archived !== undefined) {
-          session = await Session.setArchived({ sessionID, time: updates.time.archived })
-        }
-
+        const session = await SessionRuntimeService.update(sessionID, updates)
         return c.json(session)
       },
     )
@@ -316,8 +304,7 @@ export const SessionRoutes = lazy(() =>
       async (c) => {
         const sessionID = c.req.valid("param").sessionID
         const body = c.req.valid("json")
-        await Session.initialize({ ...body, sessionID })
-        return c.json(true)
+        return c.json(await SessionRuntimeService.initialize({ ...body, sessionID }))
       },
     )
     .post(
@@ -347,7 +334,7 @@ export const SessionRoutes = lazy(() =>
       async (c) => {
         const sessionID = c.req.valid("param").sessionID
         const body = c.req.valid("json")
-        const result = await Session.fork({ ...body, sessionID })
+        const result = await SessionRuntimeService.fork({ ...body, sessionID })
         return c.json(result)
       },
     )
@@ -376,8 +363,7 @@ export const SessionRoutes = lazy(() =>
         }),
       ),
       async (c) => {
-        SessionPrompt.cancel(c.req.valid("param").sessionID)
-        return c.json(true)
+        return c.json(SessionRuntimeService.abort(c.req.valid("param").sessionID))
       },
     )
     .post(
@@ -406,8 +392,7 @@ export const SessionRoutes = lazy(() =>
       ),
       async (c) => {
         const sessionID = c.req.valid("param").sessionID
-        await Session.share(sessionID)
-        const session = await Session.get(sessionID)
+        const session = await SessionRuntimeService.share(sessionID)
         return c.json(session)
       },
     )
@@ -443,7 +428,7 @@ export const SessionRoutes = lazy(() =>
       async (c) => {
         const query = c.req.valid("query")
         const params = c.req.valid("param")
-        const result = await SessionSummary.diff({
+        const result = await SessionRuntimeService.diff({
           sessionID: params.sessionID,
           messageID: query.messageID,
         })
@@ -476,8 +461,7 @@ export const SessionRoutes = lazy(() =>
       ),
       async (c) => {
         const sessionID = c.req.valid("param").sessionID
-        await Session.unshare(sessionID)
-        const session = await Session.get(sessionID)
+        const session = await SessionRuntimeService.unshare(sessionID)
         return c.json(session)
       },
     )
@@ -516,28 +500,14 @@ export const SessionRoutes = lazy(() =>
       async (c) => {
         const sessionID = c.req.valid("param").sessionID
         const body = c.req.valid("json")
-        const session = await Session.get(sessionID)
-        await SessionRevert.cleanup(session)
-        const msgs = await Session.messages({ sessionID })
-        let currentAgent = await Agent.defaultAgent()
-        for (let i = msgs.length - 1; i >= 0; i--) {
-          const info = msgs[i].info
-          if (info.role === "user") {
-            currentAgent = info.agent || (await Agent.defaultAgent())
-            break
-          }
-        }
-        await SessionCompaction.create({
-          sessionID,
-          agent: currentAgent,
-          model: {
+        return c.json(
+          await SessionRuntimeService.summarize({
+            sessionID,
             providerID: body.providerID,
             modelID: body.modelID,
-          },
-          auto: body.auto,
-        })
-        await SessionPrompt.loop({ sessionID })
-        return c.json(true)
+            auto: body.auto,
+          }),
+        )
       },
     )
     .get(
@@ -572,7 +542,7 @@ export const SessionRoutes = lazy(() =>
       ),
       async (c) => {
         const query = c.req.valid("query")
-        const messages = await Session.messages({
+        const messages = await SessionRuntimeService.messages({
           sessionID: c.req.valid("param").sessionID,
           limit: query.limit,
         })
@@ -611,7 +581,7 @@ export const SessionRoutes = lazy(() =>
       ),
       async (c) => {
         const params = c.req.valid("param")
-        const message = await MessageV2.get({
+        const message = await SessionRuntimeService.getMessage({
           sessionID: params.sessionID,
           messageID: params.messageID,
         })
@@ -645,7 +615,7 @@ export const SessionRoutes = lazy(() =>
       ),
       async (c) => {
         const params = c.req.valid("param")
-        await Session.removePart({
+        await SessionRuntimeService.removePart({
           sessionID: params.sessionID,
           messageID: params.messageID,
           partID: params.partID,
@@ -687,7 +657,7 @@ export const SessionRoutes = lazy(() =>
             `Part mismatch: body.id='${body.id}' vs partID='${params.partID}', body.messageID='${body.messageID}' vs messageID='${params.messageID}', body.sessionID='${body.sessionID}' vs sessionID='${params.sessionID}'`,
           )
         }
-        const part = await Session.updatePart(body)
+        const part = await SessionRuntimeService.updatePart(body)
         return c.json(part)
       },
     )
@@ -727,7 +697,7 @@ export const SessionRoutes = lazy(() =>
         return stream(c, async (stream) => {
           const sessionID = c.req.valid("param").sessionID
           const body = c.req.valid("json")
-          const msg = await SessionPrompt.prompt({ ...body, sessionID })
+          const msg = await SessionRuntimeService.prompt({ ...body, sessionID })
           stream.write(JSON.stringify(msg))
         })
       },
@@ -759,7 +729,7 @@ export const SessionRoutes = lazy(() =>
         return stream(c, async () => {
           const sessionID = c.req.valid("param").sessionID
           const body = c.req.valid("json")
-          SessionPrompt.prompt({ ...body, sessionID })
+          SessionRuntimeService.promptAsync({ ...body, sessionID })
         })
       },
     )
@@ -796,7 +766,7 @@ export const SessionRoutes = lazy(() =>
       async (c) => {
         const sessionID = c.req.valid("param").sessionID
         const body = c.req.valid("json")
-        const msg = await SessionPrompt.command({ ...body, sessionID })
+        const msg = await SessionRuntimeService.command({ ...body, sessionID })
         return c.json(msg)
       },
     )
@@ -828,7 +798,7 @@ export const SessionRoutes = lazy(() =>
       async (c) => {
         const sessionID = c.req.valid("param").sessionID
         const body = c.req.valid("json")
-        const msg = await SessionPrompt.shell({ ...body, sessionID })
+        const msg = await SessionRuntimeService.shell({ ...body, sessionID })
         return c.json(msg)
       },
     )
@@ -860,7 +830,7 @@ export const SessionRoutes = lazy(() =>
       async (c) => {
         const sessionID = c.req.valid("param").sessionID
         log.info("revert", c.req.valid("json"))
-        const session = await SessionRevert.revert({
+        const session = await SessionRuntimeService.revert({
           sessionID,
           ...c.req.valid("json"),
         })
@@ -893,7 +863,7 @@ export const SessionRoutes = lazy(() =>
       ),
       async (c) => {
         const sessionID = c.req.valid("param").sessionID
-        const session = await SessionRevert.unrevert({ sessionID })
+        const session = await SessionRuntimeService.unrevert({ sessionID })
         return c.json(session)
       },
     )
@@ -926,7 +896,7 @@ export const SessionRoutes = lazy(() =>
       validator("json", z.object({ response: PermissionNext.Reply })),
       async (c) => {
         const params = c.req.valid("param")
-        PermissionNext.reply({
+        await SessionRuntimeService.respondToPermission({
           requestID: params.permissionID,
           reply: c.req.valid("json").response,
         })

@@ -4,6 +4,8 @@
 
 // Connection states
 export type ConnectionState = "connecting" | "connected" | "disconnected" | "error"
+export type RuntimeMode = "embedded" | "legacy"
+export type RuntimeState = "initializing" | "ready" | "error"
 
 // Session status (simplified from backend)
 export type SessionStatus = "idle" | "busy" | "retry"
@@ -494,6 +496,14 @@ export interface ConnectionStateMessage {
   error?: string
 }
 
+export interface RuntimeStateChangedMessage {
+  type: "runtimeStateChanged"
+  mode: RuntimeMode
+  state: RuntimeState
+  reason?: string
+  error?: string
+}
+
 export interface ErrorMessage {
   type: "error"
   message: string
@@ -522,6 +532,17 @@ export interface SessionStatusMessage {
 export interface PermissionRequestMessage {
   type: "permissionRequest"
   permission: PermissionRequest
+}
+
+export interface YoloDecisionMadeMessage {
+  type: "yoloDecisionMade"
+  requestID: string
+  sessionID: string
+  permission: string
+  route: "approve" | "escalate_to_human"
+  confidence: number
+  reason: string
+  source: "small_model" | "heuristic"
 }
 
 export interface TodoUpdatedMessage {
@@ -1014,10 +1035,12 @@ export type EnhancePromptResponse = EnhancePromptResultMessage | EnhancePromptEr
 export type ExtensionMessage =
   | ReadyMessage
   | ConnectionStateMessage
+  | RuntimeStateChangedMessage
   | ErrorMessage
   | PartUpdatedMessage
   | SessionStatusMessage
   | PermissionRequestMessage
+  | YoloDecisionMadeMessage
   | TodoUpdatedMessage
   | SessionCreatedMessage
   | SessionUpdatedMessage
@@ -1074,6 +1097,7 @@ export type ExtensionMessage =
   | EnhancePromptResultMessage
   | EnhancePromptErrorMessage
   | OpenAiModelsResultMessage
+  | ProviderConnectionTestResultMessage
   | MarketplaceProxyResultMessage
   | MarketplaceInstallResultMessage
   | MarketplaceDataMessage
@@ -1241,6 +1265,22 @@ export interface RequestOpenAiModelsMessage {
 export interface OpenAiModelsResultMessage {
   type: "openAiModels"
   openAiModels: string[]
+  latencyMs?: number
+  error?: string
+  requestId?: string
+}
+
+export interface TestProviderConnectionMessage {
+  type: "testProviderConnection"
+  baseUrl: string
+  apiKey: string
+  requestId?: string
+}
+
+export interface ProviderConnectionTestResultMessage {
+  type: "providerConnectionTestResult"
+  ok: boolean
+  modelCount: number
   latencyMs?: number
   error?: string
   requestId?: string
@@ -1657,6 +1697,7 @@ export type WebviewMessage =
   | CompactContextRequest
   | EnhancePromptRequest
   | RequestOpenAiModelsMessage
+  | TestProviderConnectionMessage
   | RequestMarketplaceYamlMessage
   | RequestMarketplaceListMessage
   | RequestMarketplaceInstalledMessage

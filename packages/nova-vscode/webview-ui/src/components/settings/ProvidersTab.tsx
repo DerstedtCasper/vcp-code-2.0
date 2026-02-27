@@ -352,6 +352,8 @@ const ProvidersTab: Component = () => {
 
   // ── Kilo-style: fetch models via extension host postMessage (no backend proxy) ──
   let modelRequestId = 0
+  let latestModelsRequestId = ""
+  let latestConnectionTestRequestId = ""
   const requestModels = (baseUrl: string, apiKey: string) => {
     if (!baseUrl) {
       setFetchedModels([])
@@ -362,6 +364,7 @@ const ProvidersTab: Component = () => {
     }
     modelRequestId++
     const reqId = `models-${modelRequestId}`
+    latestModelsRequestId = reqId
     setIsFetchingModels(true)
     setFetchError("")
     setConnectionStatus("testing")
@@ -377,6 +380,9 @@ const ProvidersTab: Component = () => {
   onMount(() => {
     const unsubscribe = vscode.onMessage((message: any) => {
       if (message.type === "openAiModels") {
+        if (message.requestId && message.requestId !== latestModelsRequestId) {
+          return
+        }
         const models: string[] = message.openAiModels ?? []
         const error: string | undefined = message.error
         const latencyMs: number | undefined = message.latencyMs
@@ -393,6 +399,34 @@ const ProvidersTab: Component = () => {
           setConnectionLatency(latencyMs ?? null)
         }
         setIsFetchingModels(false)
+        return
+      }
+
+      if (message.type === "providerConnectionTestResult") {
+        if (message.requestId && message.requestId !== latestConnectionTestRequestId) {
+          return
+        }
+        const ok = Boolean(message.ok)
+        const modelCount = Number.isFinite(message.modelCount) ? Number(message.modelCount) : 0
+        const latencyMs = typeof message.latencyMs === "number" ? message.latencyMs : undefined
+        const error = typeof message.error === "string" ? message.error : undefined
+
+        setConnectionStatus(ok ? "success" : "error")
+        setConnectionLatency(latencyMs ?? null)
+
+        if (ok) {
+          showToast({
+            variant: "success",
+            title: language.t("settings.providers.testConnection.success", { count: String(modelCount) }),
+          })
+          return
+        }
+
+        showToast({
+          variant: "error",
+          title: language.t("settings.providers.testConnection.failed"),
+          description: (error ?? "Unknown error").slice(0, 200),
+        })
       }
     })
     onCleanup(unsubscribe)
@@ -425,25 +459,16 @@ const ProvidersTab: Component = () => {
       showToast({ variant: "error", title: language.t("settings.providers.testConnection.noUrl") })
       return
     }
-    // requestModels already sets isFetchingModels / connectionStatus.
-    // The onMount listener handles the result; we add a one-shot toast handler.
-    const unsub = vscode.onMessage((msg: any) => {
-      if (msg.type !== "openAiModels") return
-      unsub()
-      if (msg.openAiModels?.length) {
-        showToast({
-          variant: "success",
-          title: language.t("settings.providers.testConnection.success", { count: String(msg.openAiModels.length) }),
-        })
-      } else {
-        showToast({
-          variant: "error",
-          title: language.t("settings.providers.testConnection.failed"),
-          description: (msg.error ?? "Unknown error").slice(0, 200),
-        })
-      }
+    modelRequestId++
+    const reqId = `provider-test-${modelRequestId}`
+    latestConnectionTestRequestId = reqId
+    setConnectionStatus("testing")
+    vscode.postMessage({
+      type: "testProviderConnection",
+      baseUrl: profile.base_url,
+      apiKey: profile.api_key ?? "",
+      requestId: reqId,
     })
-    requestModels(profile.base_url, profile.api_key ?? "")
   }
 
   // ── Provider selection handler ────────────────────────────────────

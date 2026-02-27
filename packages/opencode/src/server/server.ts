@@ -52,6 +52,15 @@ globalThis.AI_SDK_LOG_WARNINGS = false
 
 export namespace Server {
   const log = Log.create({ service: "server" })
+  const runtimeCoreCompatPaths = [
+    "/config",
+    "/config/providers",
+    "/session/{sessionID}/message",
+    "/session/{sessionID}/permissions/{permissionID}",
+    "/permission/{requestID}/reply",
+    "/question/{requestID}/reply",
+    "/question/{requestID}/reject",
+  ] as const
 
   let _url: URL | undefined
   let _corsWhitelist: string[] = []
@@ -1184,6 +1193,10 @@ export namespace Server {
     if (!server) throw new Error(`Failed to start server on port ${opts.port}`)
 
     _url = server.url
+    log.info("runtime-core compatibility", {
+      paths: runtimeCoreCompatPaths,
+      legacySessionPermissionRoute: true,
+    })
 
     const shouldPublishMDNS =
       opts.mdns &&

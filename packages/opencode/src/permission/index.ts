@@ -6,6 +6,8 @@ import { Identifier } from "../id/id"
 import { Plugin } from "../plugin"
 import { Instance } from "../project/instance"
 import { Wildcard } from "../util/wildcard"
+import { Config } from "../config/config"
+import { YoloRouter } from "./yolo-router"
 
 export namespace Permission {
   const log = Log.create({ service: "permission" })
@@ -128,6 +130,38 @@ export namespace Permission {
       time: {
         created: Date.now(),
       },
+    }
+
+    const yoloDecision = await Config.get()
+      .then((cfg) =>
+        YoloRouter.route(
+          {
+            permission: info.type,
+            pattern: info.pattern,
+            message: info.message,
+            metadata: info.metadata,
+          },
+          cfg.yolo,
+        ),
+      )
+      .catch(() => undefined)
+
+    if (yoloDecision?.route === "deny") {
+      log.info("yolo denied permission", {
+        sessionID: info.sessionID,
+        permissionID: info.id,
+        reason: yoloDecision.reason,
+      })
+      throw new RejectedError(info.sessionID, info.id, info.callID, info.metadata, yoloDecision.reason)
+    }
+
+    if (yoloDecision?.route === "approve") {
+      log.info("yolo auto-approved permission", {
+        sessionID: info.sessionID,
+        permissionID: info.id,
+        reason: yoloDecision.reason,
+      })
+      return
     }
 
     switch (

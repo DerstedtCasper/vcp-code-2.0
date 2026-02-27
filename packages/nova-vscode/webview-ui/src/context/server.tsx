@@ -5,7 +5,15 @@
 
 import { createContext, useContext, createSignal, onMount, onCleanup, ParentComponent, Accessor } from "solid-js"
 import { useVSCode } from "./vscode"
-import type { ConnectionState, ServerInfo, ProfileData, DeviceAuthState, ExtensionMessage } from "../types/messages"
+import type {
+  ConnectionState,
+  RuntimeMode,
+  RuntimeState,
+  ServerInfo,
+  ProfileData,
+  DeviceAuthState,
+  ExtensionMessage,
+} from "../types/messages"
 
 interface ServerContextValue {
   connectionState: Accessor<ConnectionState>
@@ -13,6 +21,10 @@ interface ServerContextValue {
   extensionVersion: Accessor<string | undefined>
   error: Accessor<string | undefined>
   isConnected: Accessor<boolean>
+  runtimeMode: Accessor<RuntimeMode>
+  runtimeState: Accessor<RuntimeState>
+  runtimeReason: Accessor<string | undefined>
+  runtimeError: Accessor<string | undefined>
   profileData: Accessor<ProfileData | null>
   deviceAuth: Accessor<DeviceAuthState>
   startLogin: () => void
@@ -33,6 +45,10 @@ export const ServerProvider: ParentComponent = (props) => {
   const [extensionVersion, setExtensionVersion] = createSignal<string | undefined>()
   const [error, setError] = createSignal<string | undefined>()
   const [profileData, setProfileData] = createSignal<ProfileData | null>(null)
+  const [runtimeMode, setRuntimeMode] = createSignal<RuntimeMode>("embedded")
+  const [runtimeState, setRuntimeState] = createSignal<RuntimeState>("initializing")
+  const [runtimeReason, setRuntimeReason] = createSignal<string | undefined>()
+  const [runtimeError, setRuntimeError] = createSignal<string | undefined>()
   const [deviceAuth, setDeviceAuth] = createSignal<DeviceAuthState>(initialDeviceAuth)
   const [vscodeLanguage, setVscodeLanguage] = createSignal<string | undefined>()
   const [languageOverride, setLanguageOverride] = createSignal<string | undefined>()
@@ -75,6 +91,12 @@ export const ServerProvider: ParentComponent = (props) => {
           } else if (message.state === "connected") {
             setError(undefined)
           }
+          break
+        case "runtimeStateChanged":
+          setRuntimeMode(message.mode)
+          setRuntimeState(message.state)
+          setRuntimeReason(message.reason)
+          setRuntimeError(message.error)
           break
 
         case "error":
@@ -135,6 +157,10 @@ export const ServerProvider: ParentComponent = (props) => {
     extensionVersion,
     error,
     isConnected: () => connectionState() === "connected",
+    runtimeMode,
+    runtimeState,
+    runtimeReason,
+    runtimeError,
     profileData,
     deviceAuth,
     startLogin,

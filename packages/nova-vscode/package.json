@@ -480,6 +480,41 @@
           "default": "kilo/auto",
           "description": "Default model ID for new sessions"
         },
+        "vcp-code.new.runtime.mode": {
+          "type": "string",
+          "default": "embedded",
+          "enum": [
+            "embedded",
+            "legacy"
+          ],
+          "enumDescriptions": [
+            "Use extension-managed embedded runtime (recommended, no manual backend startup).",
+            "Use legacy CLI backend behavior for compatibility."
+          ],
+          "description": "Runtime mode for VCP Code 2.0."
+        },
+        "vcp-code.new.yolo.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable YOLO approval routing. Read-only permissions can be auto-approved; risky operations are escalated to manual approval."
+        },
+        "vcp-code.new.yolo.useSmallModel": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use the configured small model to assist YOLO approval routing. Falls back to heuristic routing if unavailable."
+        },
+        "vcp-code.new.yolo.autoApproveReadOnly": {
+          "type": "boolean",
+          "default": true,
+          "description": "Allow YOLO router to auto-approve read-only permissions."
+        },
+        "vcp-code.new.yolo.confidenceThreshold": {
+          "type": "number",
+          "default": 0.82,
+          "minimum": 0.5,
+          "maximum": 0.99,
+          "description": "Minimum confidence required for YOLO auto-approval when small-model routing is enabled."
+        },
         "vcp-code.new.autocomplete.enableAutoTrigger": {
           "type": "boolean",
           "default": true,
@@ -557,13 +592,14 @@
   },
   "scripts": {
     "prepare:cli-binary": "bun script/local-bin.ts",
+    "verify:embedded-runtime": "bun run script/verify-embedded-runtime.ts",
     "vscode:prepublish": "bun run package",
-    "compile": "bun run prepare:cli-binary && bun run check-types && bun run lint && node esbuild.js",
+    "compile": "bun run prepare:cli-binary && bun run check-types && bun run lint && node esbuild.js && bun run verify:embedded-runtime",
     "watch": "bun run --parallel watch:esbuild watch:tsc",
     "watch:esbuild": "bun run prepare:cli-binary && node esbuild.js --watch",
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
     "watch:cli": "bun script/watch-cli.ts",
-    "package": "bun run prepare:cli-binary && bun run check-types && bun run lint && node esbuild.js --production",
+    "package": "bun run prepare:cli-binary && bun run check-types && bun run lint && node esbuild.js --production && bun run verify:embedded-runtime",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "bun run compile-tests && bun run compile && bun run lint",
@@ -612,8 +648,7 @@
     "solid-js": "^1.9.11",
     "uri-js": "^4.4.1",
     "web-tree-sitter": "^0.24.7",
+    "yaml": "^2.8.2",
     "zod": "^3.24.2"
   }
 }
-
-

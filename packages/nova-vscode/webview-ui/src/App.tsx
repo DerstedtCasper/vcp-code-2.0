@@ -133,8 +133,12 @@ const VCPView: Component = () => {
         <h4 style={{ margin: "0 0 8px 0" }}>{language.t("vcp.view.diagnostics.title")}</h4>
         <div style={{ display: "grid", gap: "6px", "font-size": "12px" }}>
           <div>{language.t("vcp.view.diagnostics.connection")}: {server.connectionState()}</div>
+          <div>Runtime mode: {server.runtimeMode()}</div>
+          <div>Runtime state: {server.runtimeState()}</div>
           <div>{language.t("vcp.view.diagnostics.serverPort")}: {server.serverInfo()?.port ?? "-"}</div>
           <div>{language.t("vcp.view.diagnostics.extensionVersion")}: {server.extensionVersion() ?? "-"}</div>
+          <div>Runtime reason: {server.runtimeReason() ?? "-"}</div>
+          <div>Runtime error: {server.runtimeError() ?? "-"}</div>
           <div>{language.t("vcp.view.diagnostics.error")}: {server.error() ?? "-"}</div>
         </div>
       </div>

@@ -1,23 +1,47 @@
 import * as path from "path"
 import { promises as fs } from "fs"
+import * as os from "os"
+import { spawn } from "child_process"
 import * as vscode from "vscode"
 import { z } from "zod"
+import { parse as parseYAML } from "yaml"
 import {
-  type HttpClient,
   ConfigConflictError,
   type SessionInfo,
   type SSEEvent,
   type NovaConnectionService,
   type NovacodeNotification,
   type SkillInfo,
+  type PermissionRequest,
 } from "./services/cli-backend"
 import type { Config, EditorContext } from "./services/cli-backend/types"
 import { FileIgnoreController } from "./services/autocomplete/shims/FileIgnoreController"
 import { handleChatCompletionRequest } from "./services/autocomplete/chat-autocomplete/handleChatCompletionRequest"
 import { handleChatCompletionAccepted } from "./services/autocomplete/chat-autocomplete/handleChatCompletionAccepted"
+import { RuntimeClientFactory } from "./services/runtime"
+import type { RuntimeClient } from "./services/runtime"
+import { computeConfigHash, mergeConfigMigrationSources } from "./services/config-ssot-utils"
 import { buildWebviewHtml } from "./utils"
 import { TelemetryProxy, type TelemetryPropertiesProvider } from "./services/telemetry"
 import { sessionToWebview, normalizeProviders, filterVisibleAgents, buildSettingPath, mapSSEEventToWebviewMessage } from "./nova-provider-utils"
+
+type RuntimeMode = "embedded" | "legacy"
+type YoloRoute = "approve" | "escalate_to_human"
+type YoloSource = "small_model" | "heuristic"
+
+interface YoloSettings {
+  enabled: boolean
+  useSmallModel: boolean
+  autoApproveReadOnly: boolean
+  confidenceThreshold: number
+}
+
+interface YoloDecision {
+  route: YoloRoute
+  confidence: number
+  reason: string
+  source: YoloSource
+}
 
 export class NovaProvider implements vscode.WebviewViewProvider, TelemetryPropertiesProvider {
   public static readonly viewType = "vcp-code.new.sidebarView"
@@ -91,7 +115,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
   private ignoreController: FileIgnoreController | null = null
   private ignoreControllerDir: string | null = null
 
-  // ── VCP Bridge WebSocket (connects to VCPToolBox) ──────────────
+  // 鈹€鈹€ VCP Bridge WebSocket (connects to VCPToolBox) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   private vcpLogWs: WebSocket | null = null
   private vcpInfoWs: WebSocket | null = null
   private vcpBridgeReconnectTimer: ReturnType<typeof setTimeout> | null = null
@@ -105,6 +129,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     private readonly extensionUri: vscode.Uri,
     private readonly connectionService: NovaConnectionService,
     private readonly extensionContext?: vscode.ExtensionContext,
+    private readonly runtimeClientFactory: RuntimeClientFactory = new RuntimeClientFactory(connectionService),
   ) {
     TelemetryProxy.getInstance().setProvider(this)
   }
@@ -121,15 +146,232 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     }
   }
 
-  /**
-   * Convenience getter that returns the shared HttpClient or null if not yet connected.
-   * Preserves the existing null-check pattern used throughout handler methods.
-   */
-  private get httpClient(): HttpClient | null {
+  private getRuntimeMode(): RuntimeMode {
+    return this.runtimeClientFactory.getRuntimeMode()
+  }
+
+  private isEmbeddedRuntimeEnabled(): boolean {
+    return this.getRuntimeMode() === "embedded"
+  }
+
+  private async getRuntimeClientOrNull(reason: string, sessionID?: string): Promise<RuntimeClient | null> {
+    const mode = this.getRuntimeMode()
+    const workspaceDir = this.getWorkspaceDirectory(sessionID || this.currentSession?.id)
+
+    if (mode === "embedded") {
+      this.postMessage({ type: "runtimeStateChanged", mode, state: "initializing", reason })
+    }
+
     try {
-      return this.connectionService.getHttpClient()
+      const runtime = await this.runtimeClientFactory.getRuntimeClient({ reason, workspaceDir, mode })
+      if (runtime && mode === "embedded") {
+        this.postMessage({ type: "runtimeStateChanged", mode, state: "ready", reason })
+      }
+      return runtime
+    } catch (error) {
+      if (mode === "embedded") {
+        this.postMessage({
+          type: "runtimeStateChanged",
+          mode,
+          state: "error",
+          reason,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      }
+      return null
+    }
+  }
+
+  private async requireRuntimeClient(errorMessage: string, sessionID?: string): Promise<RuntimeClient | null> {
+    const runtime = await this.getRuntimeClientOrNull(errorMessage, sessionID)
+    if (!runtime) {
+      this.postMessage({
+        type: "error",
+        message: errorMessage,
+        ...(sessionID ? { sessionID } : {}),
+      })
+      return null
+    }
+    return runtime
+  }
+
+  private getYoloSettings(): YoloSettings {
+    const config = vscode.workspace.getConfiguration("vcp-code.new.yolo")
+    const rawThreshold = config.get<number>("confidenceThreshold", 0.82)
+    const boundedThreshold = Number.isFinite(rawThreshold) ? Math.min(0.99, Math.max(0.5, rawThreshold)) : 0.82
+    return {
+      enabled: config.get<boolean>("enabled", false),
+      useSmallModel: config.get<boolean>("useSmallModel", false),
+      autoApproveReadOnly: config.get<boolean>("autoApproveReadOnly", true),
+      confidenceThreshold: boundedThreshold,
+    }
+  }
+
+  private isHighRiskPermission(permission: string): boolean {
+    const highRisk = new Set([
+      "bash",
+      "edit",
+      "patch",
+      "write",
+      "task",
+      "external_directory",
+      "mcp",
+      "mcp_connect",
+      "mcp_disconnect",
+      "run_terminal_command",
+    ])
+    return highRisk.has(permission)
+  }
+
+  private hasDangerousPattern(input: string): boolean {
+    return /(rm\s+-rf|del\s+\/f|drop\s+table|truncate|sudo|chmod|chown|git\s+push|npm\s+publish|prod\b|production)/i.test(
+      input,
+    )
+  }
+
+  private parseYoloModelDecision(raw: string, threshold: number): YoloDecision | null {
+    const jsonMatch = raw.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      return null
+    }
+    try {
+      const parsed = JSON.parse(jsonMatch[0]) as {
+        route?: string
+        confidence?: number
+        reason?: string
+      }
+      const route = parsed.route === "approve" ? "approve" : "escalate_to_human"
+      const confidence = typeof parsed.confidence === "number" ? parsed.confidence : 0
+      const reason = typeof parsed.reason === "string" ? parsed.reason : "small model decision"
+      if (route === "approve" && confidence < threshold) {
+        return {
+          route: "escalate_to_human",
+          confidence,
+          reason: `low confidence (${confidence.toFixed(2)} < ${threshold.toFixed(2)})`,
+          source: "small_model",
+        }
+      }
+      return {
+        route,
+        confidence,
+        reason,
+        source: "small_model",
+      }
     } catch {
       return null
+    }
+  }
+
+  private async evaluateYoloDecision(request: PermissionRequest, settings: YoloSettings): Promise<YoloDecision> {
+    const permission = request.permission.toLowerCase()
+    const patternsText = (request.patterns ?? []).join(" ")
+    const metadataText = JSON.stringify(request.metadata ?? {})
+    const combined = `${patternsText} ${metadataText}`
+    const readOnlyPermissions = new Set(["read", "glob", "grep", "webfetch", "websearch", "codesearch", "todoread"])
+
+    const heuristicDecision = (): YoloDecision => {
+      if (this.isHighRiskPermission(permission) || this.hasDangerousPattern(combined)) {
+        return {
+          route: "escalate_to_human",
+          confidence: 0.95,
+          reason: "high-risk permission or pattern",
+          source: "heuristic",
+        }
+      }
+      if (settings.autoApproveReadOnly && readOnlyPermissions.has(permission)) {
+        return {
+          route: "approve",
+          confidence: 0.9,
+          reason: "read-only permission",
+          source: "heuristic",
+        }
+      }
+      return {
+        route: "escalate_to_human",
+        confidence: 0.7,
+        reason: "permission not in auto-approve scope",
+        source: "heuristic",
+      }
+    }
+
+    if (!settings.useSmallModel) {
+      return heuristicDecision()
+    }
+
+    const runtime = await this.getRuntimeClientOrNull("yolo.small-model", request.sessionID)
+    if (!runtime) {
+      return heuristicDecision()
+    }
+
+    try {
+      const system = [
+        "You are a strict permission router.",
+        "Return JSON only with keys: route, confidence, reason.",
+        "route must be either 'approve' or 'escalate_to_human'.",
+        "Never approve destructive or production-impact operations.",
+      ].join(" ")
+      const user = JSON.stringify({
+        permission: request.permission,
+        patterns: request.patterns ?? [],
+        metadata: request.metadata ?? {},
+        threshold: settings.confidenceThreshold,
+      })
+      const raw = await runtime.complete(
+        {
+          system,
+          messages: [{ role: "user", content: user }],
+        },
+        this.getWorkspaceDirectory(request.sessionID),
+      )
+      if (!raw) {
+        return heuristicDecision()
+      }
+      const parsed = this.parseYoloModelDecision(raw, settings.confidenceThreshold)
+      return parsed ?? heuristicDecision()
+    } catch (error) {
+      console.warn("[Nova New] NovaProvider: yolo small-model evaluation failed, fallback to heuristic:", error)
+      return heuristicDecision()
+    }
+  }
+
+  private async maybeHandleYoloAutoApproval(request: PermissionRequest): Promise<boolean> {
+    const settings = this.getYoloSettings()
+    if (!settings.enabled) {
+      return false
+    }
+
+    const decision = await this.evaluateYoloDecision(request, settings)
+    this.postMessage({
+      type: "yoloDecisionMade",
+      requestID: request.id,
+      sessionID: request.sessionID,
+      permission: request.permission,
+      route: decision.route,
+      confidence: decision.confidence,
+      reason: decision.reason,
+      source: decision.source,
+    })
+
+    if (decision.route !== "approve") {
+      return false
+    }
+
+    const runtime = await this.getRuntimeClientOrNull("yolo.auto-approve", request.sessionID)
+    if (!runtime) {
+      return false
+    }
+
+    try {
+      const workspaceDir = this.getWorkspaceDirectory(request.sessionID)
+      await runtime.respondToPermission(request.sessionID, request.id, "once", workspaceDir)
+      this.decrementPending(this.pendingPermission, request.sessionID)
+      if (this.sessionStatus.get(request.sessionID) === "idle") {
+        void this.flushPromptQueue(request.sessionID)
+      }
+      return true
+    } catch (error) {
+      console.error("[Nova New] NovaProvider: yolo auto-approve failed:", error)
+      return false
     }
   }
 
@@ -234,16 +476,15 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    */
   private async syncWebviewState(reason: string): Promise<void> {
     const serverInfo = this.connectionService.getServerInfo()
-    console.log("[Nova New] NovaProvider: 🔄 syncWebviewState()", {
+    console.log("[Nova New] NovaProvider: 馃攧 syncWebviewState()", {
       reason,
       isWebviewReady: this.isWebviewReady,
       connectionState: this.connectionState,
-      hasHttpClient: !!this.httpClient,
       hasServerInfo: !!serverInfo,
     })
 
     if (!this.isWebviewReady) {
-      console.log("[Nova New] NovaProvider: ⏭️ syncWebviewState skipped (webview not ready)")
+      console.log("[Nova New] NovaProvider: 鈴笍 syncWebviewState skipped (webview not ready)")
       return
     }
 
@@ -267,11 +508,12 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     }
 
     // Always attempt to fetch+push profile when connected.
-    if (this.connectionState === "connected" && this.httpClient) {
-      console.log("[Nova New] NovaProvider: 👤 syncWebviewState fetching profile...")
+    const runtime = await this.getRuntimeClientOrNull(`sync webview state: ${reason}`, this.currentSession?.id)
+    if (this.connectionState === "connected" && runtime) {
+      console.log("[Nova New] NovaProvider: 馃懁 syncWebviewState fetching profile...")
       try {
-        const profileData = await this.httpClient.getProfile()
-        console.log("[Nova New] NovaProvider: 👤 syncWebviewState profile:", profileData ? "received" : "null")
+        const profileData = await runtime.getProfile()
+        console.log("[Nova New] NovaProvider: 馃懁 syncWebviewState profile:", profileData ? "received" : "null")
         this.postMessage({
           type: "profileData",
           data: profileData,
@@ -596,10 +838,10 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
           )
           break
         case "requestFileSearch": {
-          const client = this.httpClient
-          if (client) {
+          const runtime = await this.getRuntimeClientOrNull("file search", this.currentSession?.id)
+          if (runtime) {
             const dir = this.getWorkspaceDirectory(this.currentSession?.id)
-            void client
+            void runtime
               .findFiles(message.query, dir)
               .then((paths) => {
                 this.postMessage({ type: "fileSearchResult", paths, dir, requestId: message.requestId })
@@ -661,34 +903,38 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
           )
           break
         }
-        // ── Kilo-style: extension host fetches models directly (no backend proxy needed) ──
+        // 鈹€鈹€ Kilo-style: extension host fetches models directly (no backend proxy needed) 鈹€鈹€
         case "requestOpenAiModels": {
           void this.handleRequestOpenAiModels(message.baseUrl, message.apiKey, message.requestId)
           break
         }
-        // ── Kilo-style: extension host fetches marketplace YAML directly ──
+        case "testProviderConnection": {
+          void this.handleTestProviderConnection(message.baseUrl, message.apiKey, message.requestId)
+          break
+        }
+        // 鈹€鈹€ Kilo-style: extension host fetches marketplace YAML directly 鈹€鈹€
         case "requestMarketplace": {
           void this.handleRequestMarketplace(message.category, message.requestId)
           break
         }
-        // ── Marketplace proxy: list items, install, installed, refresh ──
+        // 鈹€鈹€ Marketplace proxy: list items, install, installed, refresh 鈹€鈹€
         case "requestMarketplaceList": {
-          void this.handleMarketplaceProxy("GET", `/marketplace/${message.tab ?? "skills"}${message.query ? `?q=${encodeURIComponent(message.query)}` : ""}`, message.requestId, message.tab)
+          void this.handleMarketplaceListDirect(message.tab ?? "skills", message.query, message.requestId)
           break
         }
         case "requestMarketplaceInstalled": {
-          void this.handleMarketplaceProxy("GET", "/marketplace/installed", message.requestId)
+          void this.handleMarketplaceInstalledDirect(message.requestId)
           break
         }
         case "requestMarketplaceRefresh": {
-          void this.handleMarketplaceProxy("POST", "/marketplace/refresh", message.requestId)
+          void this.handleMarketplaceRefreshDirect(message.requestId)
           break
         }
         case "requestMarketplaceInstall": {
           void this.handleMarketplaceInstall(message.body, message.requestId)
           break
         }
-        // ── VCP Bridge WebSocket ──────────────────────────────────
+        // 鈹€鈹€ VCP Bridge WebSocket 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
         case "requestVcpBridgeConnect": {
           void this.connectVcpBridge()
           break
@@ -706,7 +952,13 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Subscribes to the shared NovaConnectionService.
    */
   private async initializeConnection(): Promise<void> {
-    console.log("[Nova New] NovaProvider: 🔧 Starting initializeConnection...")
+    console.log("[Nova New] NovaProvider: 馃敡 Starting initializeConnection...")
+    this.postMessage({
+      type: "runtimeStateChanged",
+      mode: this.getRuntimeMode(),
+      state: "initializing",
+      reason: "initializeConnection",
+    })
 
     // Clean up any existing subscriptions (e.g., sidebar re-shown)
     this.unsubscribeEvent?.()
@@ -732,7 +984,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
           return this.trackedSessionIds.has(sessionId)
         },
         (event) => {
-          this.handleSSEEvent(event)
+          void this.handleSSEEvent(event)
         },
       )
 
@@ -744,9 +996,9 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
 
         if (state === "connected") {
           try {
-            const client = this.httpClient
-            if (client) {
-              const profileData = await client.getProfile()
+            const runtime = await this.getRuntimeClientOrNull("connection state: profile sync", this.currentSession?.id)
+            if (runtime) {
+              const profileData = await runtime.getProfile()
               this.postMessage({ type: "profileData", data: profileData })
             }
             await this.syncWebviewState("sse-connected")
@@ -785,6 +1037,13 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       this.sendVcpStatusUpdate()
       await this.syncWebviewState("initializeConnection")
 
+      {
+        const runtime = await this.getRuntimeClientOrNull("legacy config migration", this.currentSession?.id)
+        if (runtime) {
+          await this.runLegacyConfigMigration(runtime)
+        }
+      }
+
       // Fetch providers and agents, then send to webview
       await this.fetchAndSendProviders()
       await this.fetchAndSendAgents()
@@ -794,6 +1053,12 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       this.sendNotificationSettings()
 
       console.log("[Nova New] NovaProvider:  - initializeConnection completed successfully")
+      this.postMessage({
+        type: "runtimeStateChanged",
+        mode: this.getRuntimeMode(),
+        state: "ready",
+        reason: "initializeConnection",
+      })
     } catch (error) {
       console.error("[Nova New] NovaProvider:  - Failed to initialize connection:", error)
       this.connectionState = "error"
@@ -803,6 +1068,13 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
         error: error instanceof Error ? error.message : "Failed to connect to CLI backend",
       })
       this.sendVcpStatusUpdate()
+      this.postMessage({
+        type: "runtimeStateChanged",
+        mode: this.getRuntimeMode(),
+        state: "error",
+        reason: "initializeConnection",
+        error: error instanceof Error ? error.message : "Failed to connect runtime",
+      })
     }
   }
 
@@ -814,17 +1086,14 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Handle creating a new session.
    */
   private async handleCreateSession(): Promise<void> {
-    if (!this.httpClient) {
-      this.postMessage({
-        type: "error",
-        message: "Not connected to CLI backend",
-      })
+    const runtime = await this.requireRuntimeClient("Unable to connect embedded runtime for creating session")
+    if (!runtime) {
       return
     }
 
     try {
       const workspaceDir = this.getWorkspaceDirectory()
-      const session = await this.httpClient.createSession(workspaceDir)
+      const session = await runtime.createSession(workspaceDir)
       this.currentSession = session
       this.trackedSessionIds.add(session.id)
 
@@ -850,12 +1119,8 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     // Track the session so we receive its SSE events
     this.trackedSessionIds.add(sessionID)
 
-    if (!this.httpClient) {
-      this.postMessage({
-        type: "error",
-        message: "Not connected to CLI backend",
-        sessionID,
-      })
+    const runtime = await this.requireRuntimeClient("Unable to connect embedded runtime for loading messages", sessionID)
+    if (!runtime) {
       return
     }
 
@@ -867,7 +1132,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
 
     try {
       const workspaceDir = this.getWorkspaceDirectory(sessionID)
-      const messagesData = await this.httpClient.getMessages(sessionID, workspaceDir, abort.signal)
+      const messagesData = await runtime.getMessages(sessionID, workspaceDir, abort.signal)
 
       // If this request was aborted while awaiting, skip posting stale results
       if (abort.signal.aborted) return
@@ -876,7 +1141,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       // references the correct session after switching to a historical session.
       // Non-blocking: don't let a failure here prevent messages from loading.
       // 404s are expected for cross-worktree sessions  - use silent to suppress HTTP error logs.
-      this.httpClient
+      runtime
         .getSession(sessionID, workspaceDir, true)
         .then((session) => {
           if (!this.currentSession || this.currentSession.id === sessionID) {
@@ -887,7 +1152,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
 
       // Fetch current session status so the webview has the correct busy/idle
       // state after switching tabs (SSE events may have been missed).
-      this.httpClient
+      runtime
         .getSessionStatuses(workspaceDir)
         .then((statuses) => {
           for (const [sid, info] of Object.entries(statuses)) {
@@ -944,14 +1209,15 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Tracks the session for SSE events and fetches its messages.
    */
   private async handleSyncSession(sessionID: string): Promise<void> {
-    if (!this.httpClient) return
+    const runtime = await this.getRuntimeClientOrNull("sync session", sessionID)
+    if (!runtime) return
     if (this.trackedSessionIds.has(sessionID)) return
 
     this.trackedSessionIds.add(sessionID)
 
     try {
       const workspaceDir = this.getWorkspaceDirectory(sessionID)
-      const messagesData = await this.httpClient.getMessages(sessionID, workspaceDir)
+      const messagesData = await runtime.getMessages(sessionID, workspaceDir)
 
       const messages = messagesData.map((m) => ({
         id: m.info.id,
@@ -981,23 +1247,20 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Handle loading all sessions.
    */
   private async handleLoadSessions(): Promise<void> {
-    if (!this.httpClient) {
-      this.postMessage({
-        type: "error",
-        message: "Not connected to CLI backend",
-      })
+    const runtime = await this.requireRuntimeClient("Unable to connect embedded runtime for loading sessions")
+    if (!runtime) {
       return
     }
 
     try {
       const workspaceDir = this.getWorkspaceDirectory()
-      const sessions = await this.httpClient.listSessions(workspaceDir)
+      const sessions = await runtime.listSessions(workspaceDir)
 
       // Also fetch sessions from worktree directories so they appear in the list
       const worktreeDirs = new Set(this.sessionDirectories.values())
       const extra = await Promise.all(
         [...worktreeDirs].map((dir) =>
-          this.httpClient!.listSessions(dir).catch((err) => {
+            runtime.listSessions(dir).catch((err) => {
             console.error(`[Nova New] NovaProvider: Failed to list sessions for ${dir}:`, err)
             return [] as SessionInfo[]
           }),
@@ -1028,7 +1291,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
 
   /**
    * Kilo-style: Extension host directly fetches models from provider API.
-   * No backend proxy needed — avoids "Failed to fetch" when backend isn't running.
+   * No backend proxy needed 鈥?avoids "Failed to fetch" when backend isn't running.
    * The extension host has full Node.js network access without CORS restrictions.
    */
   private async handleRequestOpenAiModels(baseUrl?: string, apiKey?: string, requestId?: string): Promise<void> {
@@ -1037,17 +1300,54 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       return
     }
 
+    const result = await this.fetchOpenAiModels(baseUrl, apiKey)
+    this.postMessage({
+      type: "openAiModels",
+      openAiModels: result.modelIds,
+      latencyMs: result.latencyMs,
+      error: result.error,
+      requestId,
+    })
+  }
+
+  private async handleTestProviderConnection(baseUrl?: string, apiKey?: string, requestId?: string): Promise<void> {
+    if (!baseUrl) {
+      this.postMessage({
+        type: "providerConnectionTestResult",
+        ok: false,
+        modelCount: 0,
+        error: "No base URL provided",
+        requestId,
+      })
+      return
+    }
+
+    const result = await this.fetchOpenAiModels(baseUrl, apiKey)
+    this.postMessage({
+      type: "providerConnectionTestResult",
+      ok: !result.error,
+      modelCount: result.modelIds.length,
+      latencyMs: result.latencyMs,
+      error: result.error,
+      requestId,
+    })
+  }
+
+  private async fetchOpenAiModels(baseUrl: string, apiKey?: string): Promise<{
+    modelIds: string[]
+    latencyMs: number
+    error?: string
+  }> {
+    const normalized = baseUrl.trim().replace(/\/+$/, "")
+    if (!normalized) {
+      return { modelIds: [], latencyMs: 0, error: "No base URL provided" }
+    }
+
+    const modelsUrl = normalized.endsWith("/models") ? normalized : `${normalized}/models`
+    const startTime = Date.now()
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15000)
     try {
-      let modelsUrl = baseUrl.trim().replace(/\/+$/, "")
-      if (!modelsUrl.endsWith("/models")) {
-        modelsUrl += "/models"
-      }
-
-      const startTime = Date.now()
-
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 15000)
-
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       }
@@ -1060,42 +1360,35 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
         headers,
         signal: controller.signal,
       })
-      clearTimeout(timeout)
-
       const latencyMs = Date.now() - startTime
 
       if (!response.ok) {
         const body = await response.text().catch(() => "")
-        this.postMessage({
-          type: "openAiModels",
-          openAiModels: [],
-          error: `HTTP ${response.status}: ${body.slice(0, 200)}`,
+        return {
+          modelIds: [],
           latencyMs,
-          requestId,
-        })
-        return
+          error: `HTTP ${response.status}: ${body.slice(0, 200)}`,
+        }
       }
 
-      const data = await response.json() as Record<string, unknown>
-      const modelList = (Array.isArray(data.data) ? data.data : Array.isArray(data.models) ? data.models : []) as Array<{ id?: string }>
+      const data = (await response.json()) as Record<string, unknown>
+      const modelList = (Array.isArray(data.data) ? data.data : Array.isArray(data.models) ? data.models : []) as Array<{
+        id?: string
+      }>
       const modelIds = modelList
-        .map((m) => (typeof m === "string" ? m : m?.id))
-        .filter((id): id is string => typeof id === "string" && id.length > 0)
+        .map((item) => (typeof item === "string" ? item : item?.id))
+        .filter((item): item is string => typeof item === "string" && item.length > 0)
 
-      this.postMessage({
-        type: "openAiModels",
-        openAiModels: modelIds,
-        latencyMs,
-        requestId,
-      })
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err)
-      this.postMessage({
-        type: "openAiModels",
-        openAiModels: [],
-        error: errorMessage.includes("aborted") ? "Request timeout (15s)" : errorMessage,
-        requestId,
-      })
+      return { modelIds, latencyMs }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      return {
+        modelIds: [],
+        latencyMs: Date.now() - startTime,
+        error: msg.includes("aborted") ? "Request timeout (15s)" : msg,
+      }
+    } finally {
+      clearTimeout(timeout)
     }
   }
 
@@ -1104,113 +1397,1099 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Avoids requiring the backend proxy to be running.
    */
   private async handleRequestMarketplace(category?: string, requestId?: string): Promise<void> {
-    const cat = category || "skills"
-    const url = `https://raw.githubusercontent.com/Kilo-Org/kilo-marketplace/main/${cat}/marketplace.yaml`
+    const tab = this.normalizeMarketplaceTab(category)
+    const result = await this.fetchMarketplaceItems(tab)
+    this.postMessage({
+      type: "marketplaceData",
+      category: tab,
+      raw: result.raw,
+      items: result.items,
+      error: result.error,
+      requestId,
+    })
+  }
+
+  private normalizeMarketplaceTab(tab?: string): "skills" | "modes" | "mcps" {
+    if (tab === "modes" || tab === "mcps") return tab
+    return "skills"
+  }
+
+  private async handleMarketplaceListDirect(tab?: string, query?: string, requestId?: string): Promise<void> {
+    const normalizedTab = this.normalizeMarketplaceTab(tab)
+    const result = await this.fetchMarketplaceItems(normalizedTab)
+    if (result.error) {
+      this.postMessage({ type: "marketplaceProxyResult", error: result.error, requestId, tab: normalizedTab })
+      return
+    }
+    const filtered = this.filterMarketplaceItems(normalizedTab, result.items, query)
+    this.postMessage({ type: "marketplaceProxyResult", data: filtered, requestId, tab: normalizedTab })
+  }
+
+  private async handleMarketplaceInstalledDirect(requestId?: string): Promise<void> {
+    const configMsg = this.cachedConfigMessage as { config?: Record<string, unknown> } | null
+    const config = configMsg?.config ?? {}
+    const mcpRecord =
+      config && typeof config.mcp === "object" && config.mcp !== null
+        ? (config.mcp as Record<string, unknown>)
+        : {}
+    const modeRecord =
+      config &&
+      typeof config.mode === "object" &&
+      config.mode !== null &&
+      typeof (config.mode as Record<string, unknown>).custom === "object" &&
+      (config.mode as Record<string, unknown>).custom !== null
+        ? ((config.mode as Record<string, unknown>).custom as Record<string, unknown>)
+        : {}
+
+    let skills: string[] = []
+    const skillRoot = path.join(this.getWorkspaceDirectory(), ".opencode", "skill")
+    try {
+      const entries = await fs.readdir(skillRoot, { withFileTypes: true })
+      skills = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
+    } catch {
+      skills = []
+    }
+
+    this.postMessage({
+      type: "marketplaceProxyResult",
+      data: {
+        skills,
+        mcps: Object.keys(mcpRecord),
+        modes: Object.keys(modeRecord),
+      },
+      requestId,
+    })
+  }
+
+  private handleMarketplaceRefreshDirect(requestId?: string): void {
+    this.postMessage({
+      type: "marketplaceProxyResult",
+      data: { success: true },
+      requestId,
+    })
+  }
+
+  private async fetchMarketplaceItems(tab: "skills" | "modes" | "mcps"): Promise<{
+    items: Array<Record<string, unknown>>
+    raw?: string
+    error?: string
+  }> {
+    const url = `https://raw.githubusercontent.com/Kilo-Org/kilo-marketplace/main/${tab}/marketplace.yaml`
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15000)
+    try {
+      const response = await fetch(url, { signal: controller.signal })
+      if (!response.ok) {
+        return { items: [], error: `HTTP ${response.status}` }
+      }
+
+      const raw = await response.text()
+      const parsed = parseYAML(raw) as unknown
+      const items =
+        Array.isArray(parsed) && parsed.every((item) => typeof item === "object" && item !== null)
+          ? (parsed as Array<Record<string, unknown>>)
+          : Array.isArray((parsed as { items?: unknown[] })?.items)
+            ? ((parsed as { items: unknown[] }).items.filter(
+                (item): item is Record<string, unknown> => typeof item === "object" && item !== null,
+              ) as Array<Record<string, unknown>>)
+            : []
+
+      return { items, raw }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      return {
+        items: [],
+        error: msg.includes("aborted") ? "Request timeout (15s)" : msg,
+      }
+    } finally {
+      clearTimeout(timeout)
+    }
+  }
+
+  private filterMarketplaceItems(
+    tab: "skills" | "modes" | "mcps",
+    items: Array<Record<string, unknown>>,
+    query?: string,
+  ): Array<Record<string, unknown>> {
+    const keyword = query?.trim().toLowerCase()
+    if (!keyword) {
+      return items
+    }
+    return items.filter((item) => {
+      const id = typeof item.id === "string" ? item.id.toLowerCase() : ""
+      const description = typeof item.description === "string" ? item.description.toLowerCase() : ""
+      if (id.includes(keyword) || description.includes(keyword)) {
+        return true
+      }
+      if (tab === "skills") {
+        const category = typeof item.category === "string" ? item.category.toLowerCase() : ""
+        return category.includes(keyword)
+      }
+      if (tab === "modes") {
+        const name = typeof item.name === "string" ? item.name.toLowerCase() : ""
+        return name.includes(keyword)
+      }
+      const name = typeof item.name === "string" ? item.name.toLowerCase() : ""
+      const tags = Array.isArray(item.tags)
+        ? item.tags.filter((tag): tag is string => typeof tag === "string").map((tag) => tag.toLowerCase())
+        : []
+      return name.includes(keyword) || tags.some((tag) => tag.includes(keyword))
+    })
+  }
+
+  /**
+   * Marketplace install handled in extension host to reduce backend route dependency.
+   */
+  private async handleMarketplaceInstall(body: unknown, requestId?: string): Promise<void> {
+    const payload = (body ?? {}) as Record<string, unknown>
+    const type = typeof payload.type === "string" ? payload.type : ""
+    const id = typeof payload.id === "string" ? payload.id : ""
+    const selectedContentIndex =
+      typeof payload.selectedContentIndex === "number" ? payload.selectedContentIndex : undefined
+    const params =
+      payload.params && typeof payload.params === "object" && !Array.isArray(payload.params)
+        ? (payload.params as Record<string, string>)
+        : {}
+
+    if (!id || (type !== "skill" && type !== "mode" && type !== "mcp")) {
+      this.postMessage({
+        type: "marketplaceInstallResult",
+        data: { success: false, message: "Invalid install payload" },
+        requestId,
+      })
+      return
+    }
 
     try {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 15000)
+      if (type === "skill") {
+        const result = await this.installMarketplaceSkill(id)
+        this.postMessage({ type: "marketplaceInstallResult", data: result, requestId })
+        return
+      }
 
-      const response = await fetch(url, { signal: controller.signal })
-      clearTimeout(timeout)
+      if (type === "mode") {
+        const result = await this.installMarketplaceMode(id)
+        this.postMessage({ type: "marketplaceInstallResult", data: result, requestId })
+        return
+      }
 
-      if (!response.ok) {
-        this.postMessage({
-          type: "marketplaceData",
-          category: cat,
-          items: [],
-          error: `HTTP ${response.status}`,
-          requestId,
+      const result = await this.installMarketplaceMCP(id, selectedContentIndex, params)
+      this.postMessage({ type: "marketplaceInstallResult", data: result, requestId })
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      this.postMessage({
+        type: "marketplaceInstallResult",
+        data: { success: false, message: msg },
+        requestId,
+      })
+    }
+  }
+
+  private async installMarketplaceSkill(id: string): Promise<{ success: boolean; message: string; installedPath?: string }> {
+    const item = await this.findMarketplaceItemById("skills", id)
+    if (!item) {
+      return { success: false, message: `Skill not found: ${id}` }
+    }
+
+    const content = typeof item.content === "string" ? item.content : ""
+    const rawUrl = typeof item.rawUrl === "string" ? item.rawUrl : ""
+    if (!content && !rawUrl) {
+      return { success: false, message: `Skill "${id}" has no installable content` }
+    }
+
+    const skillDir = path.join(this.getWorkspaceDirectory(), ".opencode", "skill", id)
+    await fs.mkdir(skillDir, { recursive: true })
+
+    const source = rawUrl || content
+    if (/^https?:\/\//i.test(source) && (source.endsWith(".tar.gz") || source.endsWith(".tgz"))) {
+      const archiveData = await this.fetchBufferWithTimeout(source, 30000)
+      const archivePath = path.join(os.tmpdir(), `vcp-skill-${Date.now()}-${Math.random().toString(36).slice(2)}.tar.gz`)
+      try {
+        await fs.writeFile(archivePath, archiveData)
+        await this.extractTarArchive(archivePath, skillDir)
+      } finally {
+        await fs.unlink(archivePath).catch(() => undefined)
+      }
+    } else if (/^https?:\/\//i.test(source)) {
+      const text = await this.fetchTextWithTimeout(source, 20000)
+      await fs.writeFile(path.join(skillDir, "SKILL.md"), text, "utf8")
+    } else {
+      await fs.writeFile(path.join(skillDir, "SKILL.md"), source, "utf8")
+    }
+
+    await this.fetchAndSendSkills()
+    return { success: true, message: `Skill "${id}" installed`, installedPath: skillDir }
+  }
+
+  private async installMarketplaceMode(id: string): Promise<{ success: boolean; message: string }> {
+    const item = await this.findMarketplaceItemById("modes", id)
+    if (!item) {
+      return { success: false, message: `Mode not found: ${id}` }
+    }
+
+    const content = typeof item.content === "string" ? item.content : ""
+    if (!content) {
+      return { success: false, message: `Mode "${id}" content is invalid` }
+    }
+
+    const parsed = parseYAML(content) as Record<string, unknown>
+    const slug = typeof parsed.slug === "string" ? parsed.slug : ""
+    if (!slug) {
+      return { success: false, message: `Mode "${id}" missing slug` }
+    }
+
+    const modeName = typeof parsed.name === "string" ? parsed.name : typeof item.name === "string" ? item.name : id
+    const roleDefinition =
+      typeof parsed.roleDefinition === "string"
+        ? parsed.roleDefinition
+        : typeof item.description === "string"
+          ? item.description
+          : ""
+
+    const modeEntry: Record<string, unknown> = {
+      name: modeName,
+      roleDefinition,
+    }
+    if (Array.isArray(parsed.groups)) {
+      modeEntry.groups = parsed.groups
+    }
+    if (typeof parsed.customInstructions === "string") {
+      modeEntry.customInstructions = parsed.customInstructions
+    }
+
+    const patch = {
+      mode: {
+        custom: {
+          [slug]: modeEntry,
+        },
+      },
+    }
+    const applied = await this.applyMarketplaceConfigPatch(patch)
+    if (!applied.success) {
+      return applied
+    }
+
+    return { success: true, message: `Mode "${modeName}" installed` }
+  }
+
+  private async installMarketplaceMCP(
+    id: string,
+    selectedContentIndex?: number,
+    params?: Record<string, string>,
+  ): Promise<{ success: boolean; message: string }> {
+    const item = await this.findMarketplaceItemById("mcps", id)
+    if (!item) {
+      return { success: false, message: `MCP not found: ${id}` }
+    }
+
+    const resolved = this.resolveMcpContent(item, selectedContentIndex)
+    if (!resolved) {
+      return { success: false, message: `MCP "${id}" content is invalid` }
+    }
+
+    const commandText = this.replaceMcpPlaceholders(
+      resolved.content,
+      resolved.parameters,
+      Array.isArray(item.parameters) ? (item.parameters as unknown[]) : [],
+      params ?? {},
+    )
+
+    let parsed: Record<string, unknown>
+    try {
+      parsed = JSON.parse(commandText) as Record<string, unknown>
+    } catch {
+      return { success: false, message: `Failed to parse MCP command JSON for "${id}"` }
+    }
+
+    let serverName = id
+    let serverConfig: Record<string, unknown> = parsed
+    if (parsed.mcpServers && typeof parsed.mcpServers === "object" && !Array.isArray(parsed.mcpServers)) {
+      const entries = Object.entries(parsed.mcpServers as Record<string, unknown>)
+      if (entries.length === 0) {
+        return { success: false, message: `Empty mcpServers for "${id}"` }
+      }
+      const [name, config] = entries[0]!
+      if (!config || typeof config !== "object" || Array.isArray(config)) {
+        return { success: false, message: `Invalid mcpServers entry for "${id}"` }
+      }
+      serverName = name
+      serverConfig = config as Record<string, unknown>
+    }
+
+    const command: string[] = []
+    if (typeof serverConfig.command === "string" && serverConfig.command.length > 0) {
+      command.push(serverConfig.command)
+    }
+    if (Array.isArray(serverConfig.args)) {
+      command.push(
+        ...serverConfig.args.filter((arg): arg is string => typeof arg === "string" && arg.length > 0),
+      )
+    }
+    if (command.length === 0) {
+      return { success: false, message: `MCP "${id}" has no executable command` }
+    }
+
+    const mcpEntry: Record<string, unknown> = {
+      type: "local",
+      command,
+      enabled: true,
+    }
+    if (serverConfig.env && typeof serverConfig.env === "object" && !Array.isArray(serverConfig.env)) {
+      mcpEntry.environment = serverConfig.env
+    }
+
+    const patch = {
+      mcp: {
+        [serverName]: mcpEntry,
+      },
+    }
+    const applied = await this.applyMarketplaceConfigPatch(patch)
+    if (!applied.success) {
+      return applied
+    }
+
+    return { success: true, message: `MCP "${serverName}" installed` }
+  }
+
+  private async findMarketplaceItemById(
+    tab: "skills" | "modes" | "mcps",
+    id: string,
+  ): Promise<Record<string, unknown> | null> {
+    const catalog = await this.fetchMarketplaceItems(tab)
+    if (catalog.error) {
+      return null
+    }
+    return (
+      catalog.items.find((item) => typeof item.id === "string" && item.id === id) ??
+      null
+    )
+  }
+
+  private resolveMcpContent(
+    item: Record<string, unknown>,
+    selectedContentIndex?: number,
+  ): { content: string; parameters: unknown[] } | null {
+    const content = item.content
+    if (typeof content === "string") {
+      return { content, parameters: [] }
+    }
+
+    if (Array.isArray(content)) {
+      const index = typeof selectedContentIndex === "number" ? selectedContentIndex : 0
+      const selected = content[index]
+      if (!selected || typeof selected !== "object" || Array.isArray(selected)) {
+        return null
+      }
+      const record = selected as Record<string, unknown>
+      if (typeof record.content !== "string") {
+        return null
+      }
+      return {
+        content: record.content,
+        parameters: Array.isArray(record.parameters) ? record.parameters : [],
+      }
+    }
+
+    if (content && typeof content === "object" && !Array.isArray(content)) {
+      const record = content as Record<string, unknown>
+      if (typeof record.content !== "string") {
+        return null
+      }
+      return {
+        content: record.content,
+        parameters: Array.isArray(record.parameters) ? record.parameters : [],
+      }
+    }
+
+    return null
+  }
+
+  private replaceMcpPlaceholders(
+    text: string,
+    methodParameters: unknown[],
+    itemParameters: unknown[],
+    values: Record<string, string>,
+  ): string {
+    const merged = [...methodParameters, ...itemParameters]
+    return merged.reduce<string>((result, parameter) => {
+      if (!parameter || typeof parameter !== "object" || Array.isArray(parameter)) {
+        return result
+      }
+      const record = parameter as Record<string, unknown>
+      const key = typeof record.key === "string" ? record.key : ""
+      const placeholder = typeof record.placeholder === "string" ? record.placeholder : ""
+      if (!key || !placeholder) {
+        return result
+      }
+      const value = values[key]
+      if (typeof value !== "string" || value.length === 0) {
+        return result
+      }
+      const escaped = placeholder.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      return result.replace(new RegExp(`\\{\\{${escaped}\\}\\}`, "g"), value)
+    }, text)
+  }
+
+  private getCachedConfigRecord(): Record<string, unknown> | null {
+    if (!this.cachedConfigMessage || typeof this.cachedConfigMessage !== "object") {
+      return null
+    }
+    if (!("config" in this.cachedConfigMessage)) {
+      return null
+    }
+    const config = (this.cachedConfigMessage as { config?: unknown }).config
+    if (!config || typeof config !== "object" || Array.isArray(config)) {
+      return null
+    }
+    return config as Record<string, unknown>
+  }
+
+  private readConfigBackupRecord(): Record<string, unknown> | null {
+    const backupJson = this.extensionContext?.globalState.get<string>("nova.configBackup")
+    if (!backupJson) return null
+    try {
+      const parsed = JSON.parse(backupJson)
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return null
+      }
+      return parsed as Record<string, unknown>
+    } catch {
+      return null
+    }
+  }
+
+  private async readWorkspaceConfigRecord(): Promise<Record<string, unknown> | null> {
+    try {
+      const file = path.join(this.getWorkspaceDirectory(), "opencode.json")
+      const raw = await fs.readFile(file, "utf8")
+      const parsed = JSON.parse(raw)
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return null
+      }
+      return parsed as Record<string, unknown>
+    } catch {
+      return null
+    }
+  }
+
+  private async resolveConfigSeed(): Promise<Record<string, unknown>> {
+    const cached = this.getCachedConfigRecord()
+    if (cached) return cached
+    const backup = this.readConfigBackupRecord()
+    const workspace = await this.readWorkspaceConfigRecord()
+    if (this.isEmbeddedRuntimeEnabled()) {
+      if (backup) return backup
+      if (workspace) return workspace
+    } else {
+      if (workspace) return workspace
+      if (backup) return backup
+    }
+    return {}
+  }
+
+  private buildLegacySettingsConfigSeed(): Record<string, unknown> {
+    const seed: Record<string, unknown> = {}
+
+    const legacyModel = vscode.workspace.getConfiguration("vcp-code.model")
+    const providerID = legacyModel.get<string>("providerID", "").trim()
+    const modelID = legacyModel.get<string>("modelID", "").trim()
+    if (providerID && modelID) {
+      seed.model = `${providerID}/${modelID}`
+    }
+
+    const legacyRoot = vscode.workspace.getConfiguration("vcp-code")
+    const defaultAgent = legacyRoot.get<string>("defaultAgent", "").trim()
+    if (defaultAgent) {
+      seed.default_agent = defaultAgent
+    }
+
+    return seed
+  }
+
+  private async rollbackLegacyConfigMigration(runtime: RuntimeClient): Promise<boolean> {
+    const rollbackJson = this.extensionContext?.globalState.get<string>("nova.configMigration.v1.rollback")
+    if (!rollbackJson) {
+      return false
+    }
+
+    try {
+      const parsed = JSON.parse(rollbackJson)
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return false
+      }
+      await runtime.updateConfig(parsed as Record<string, unknown>)
+      const revision = await this.persistConfigBackup(parsed as Record<string, unknown>, {
+        source: "migration.v1.rollback",
+      })
+      await this.extensionContext?.globalState.update("nova.configMigration.v1.result", {
+        migrated: true,
+        rolledBack: true,
+        updatedAt: new Date().toISOString(),
+        revision,
+      })
+      await this.fetchAndSendConfig()
+      return true
+    } catch (error) {
+      console.error("[Nova New] NovaProvider: Failed to rollback legacy config migration:", error)
+      return false
+    }
+  }
+
+  private async runLegacyConfigMigration(runtime: RuntimeClient): Promise<void> {
+    if (!this.extensionContext) return
+    const doneKey = "nova.configMigration.v1.completed"
+    if (this.extensionContext.globalState.get<boolean>(doneKey, false)) {
+      return
+    }
+
+    try {
+      const workspaceDir = this.getWorkspaceDirectory()
+      const currentRaw = await runtime.getGlobalConfig().catch(() => runtime.getConfig(workspaceDir))
+      const current =
+        currentRaw && typeof currentRaw === "object" && !Array.isArray(currentRaw)
+          ? (currentRaw as Record<string, unknown>)
+          : {}
+
+      const workspace = await this.readWorkspaceConfigRecord()
+      const backup = this.readConfigBackupRecord()
+      const legacy = this.buildLegacySettingsConfigSeed()
+
+      const merged = mergeConfigMigrationSources({
+        legacy,
+        workspace,
+        backup,
+        current,
+      })
+
+      const currentHash = computeConfigHash(current)
+      const mergedHash = computeConfigHash(merged)
+      if (currentHash === mergedHash) {
+        await this.extensionContext.globalState.update(doneKey, true)
+        await this.extensionContext.globalState.update("nova.configMigration.v1.result", {
+          migrated: false,
+          updatedAt: new Date().toISOString(),
+          reason: "already up to date",
+          hash: currentHash,
         })
         return
       }
 
-      const text = await response.text()
-      // Forward raw YAML to webview for parsing
-      this.postMessage({
-        type: "marketplaceData",
-        category: cat,
-        raw: text,
-        requestId,
+      await this.extensionContext.globalState.update("nova.configMigration.v1.rollback", JSON.stringify(current))
+      const updated = await runtime.updateConfig(merged)
+      const persistedRevision = await this.persistConfigBackup(
+        updated.config && typeof updated.config === "object" && !Array.isArray(updated.config)
+          ? (updated.config as Record<string, unknown>)
+          : merged,
+        {
+          revision: updated.revision,
+          source: "migration.v1",
+        },
+      )
+
+      await this.extensionContext.globalState.update(doneKey, true)
+      await this.extensionContext.globalState.update("nova.configMigration.v1.result", {
+        migrated: true,
+        rolledBack: false,
+        updatedAt: new Date().toISOString(),
+        revision: persistedRevision,
+        hash: mergedHash,
+        sources: {
+          workspace: Boolean(workspace),
+          backup: Boolean(backup),
+          legacySettings: Object.keys(legacy).length > 0,
+        },
       })
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err)
-      this.postMessage({
-        type: "marketplaceData",
-        category: cat,
-        items: [],
-        error: errorMessage.includes("aborted") ? "Request timeout (15s)" : errorMessage,
-        requestId,
+
+      const choice = await vscode.window.showInformationMessage(
+        "Legacy config migration completed. Your configuration was merged into embedded SSOT.",
+        "Rollback",
+      )
+      if (choice === "Rollback") {
+        const rolledBack = await this.rollbackLegacyConfigMigration(runtime)
+        if (rolledBack) {
+          void vscode.window.showInformationMessage("Legacy config migration rolled back.")
+        } else {
+          void vscode.window.showWarningMessage("Rollback failed: no valid rollback snapshot found.")
+        }
+      }
+    } catch (error) {
+      console.error("[Nova New] NovaProvider: Legacy config migration failed:", error)
+      await this.extensionContext.globalState.update("nova.configMigration.v1.result", {
+        migrated: false,
+        updatedAt: new Date().toISOString(),
+        error: error instanceof Error ? error.message : String(error),
       })
     }
   }
 
-  /**
-   * Generic marketplace proxy: Extension host fetches from backend and forwards to webview.
-   * This avoids the webview needing to know the backend port.
-   */
-  private async handleMarketplaceProxy(method: string, path: string, requestId?: string, tab?: string): Promise<void> {
-    const config = this.connectionService.getServerConfig()
-    if (!config) {
-      this.postMessage({ type: "marketplaceProxyResult", error: "Backend not connected", requestId, tab })
-      return
+  private getPersistedConfigRevision(): number | undefined {
+    const revision = this.extensionContext?.globalState.get<number>("nova.configRevision")
+    if (typeof revision !== "number" || !Number.isFinite(revision) || revision <= 0) {
+      return undefined
     }
-    try {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 15000)
-      const url = `${config.baseUrl}${path}`
-      const response = await fetch(url, {
-        method,
-        signal: controller.signal,
-        headers: config.password ? { Authorization: `Bearer ${config.password}` } : {},
-      })
-      clearTimeout(timeout)
+    return Math.floor(revision)
+  }
 
-      if (!response.ok) {
-        this.postMessage({ type: "marketplaceProxyResult", error: `HTTP ${response.status}`, requestId, tab })
-        return
+  private async persistConfigBackup(
+    config: Record<string, unknown>,
+    options?: { revision?: number; source?: string },
+  ): Promise<number> {
+    const revision =
+      typeof options?.revision === "number" && Number.isFinite(options.revision) && options.revision > 0
+        ? Math.floor(options.revision)
+        : Date.now()
+    if (!this.extensionContext) return revision
+
+    const hash = computeConfigHash(config)
+    await this.extensionContext.globalState.update("nova.configBackup", JSON.stringify(config))
+    await this.extensionContext.globalState.update("nova.configBackupVersion", this.extensionVersion)
+    await this.extensionContext.globalState.update("nova.configRevision", revision)
+    await this.extensionContext.globalState.update("nova.configHash", hash)
+    await this.extensionContext.globalState.update("nova.configBackupMeta", {
+      updatedAt: new Date().toISOString(),
+      extensionVersion: this.extensionVersion,
+      runtimeMode: this.getRuntimeMode(),
+      schemaVersion: 2,
+      revision,
+      hash,
+      source: options?.source ?? "unknown",
+    })
+    return revision
+  }
+
+  private async loadAndSendLocalConfigSnapshot(): Promise<void> {
+    const config = await this.resolveConfigSeed()
+    const revision = this.getPersistedConfigRevision() ?? Date.now()
+    this.cachedConfigMessage = { type: "configLoaded", config, revision }
+    this.postMessage({ type: "configLoaded", config, revision })
+  }
+
+  private parseConfiguredModel(value: unknown): { providerID: string; modelID: string } | null {
+    if (typeof value !== "string") return null
+    const slash = value.indexOf("/")
+    if (slash <= 0 || slash >= value.length - 1) return null
+    return {
+      providerID: value.slice(0, slash),
+      modelID: value.slice(slash + 1),
+    }
+  }
+
+  private buildLocalProvidersFromConfig(
+    config: Record<string, unknown>,
+  ): Record<string, { id: string; name: string; models: Record<string, { id: string; name: string }> }> {
+    const output: Record<string, { id: string; name: string; models: Record<string, { id: string; name: string }> }> = {}
+    const rawProviders = config.provider
+    if (!rawProviders || typeof rawProviders !== "object" || Array.isArray(rawProviders)) {
+      return output
+    }
+
+    for (const [providerID, providerValue] of Object.entries(rawProviders as Record<string, unknown>)) {
+      if (!providerValue || typeof providerValue !== "object" || Array.isArray(providerValue)) {
+        continue
+      }
+      const providerRecord = providerValue as Record<string, unknown>
+      const models: Record<string, { id: string; name: string }> = {}
+      const rawModels = providerRecord.models
+      if (rawModels && typeof rawModels === "object" && !Array.isArray(rawModels)) {
+        for (const [modelID, modelValue] of Object.entries(rawModels as Record<string, unknown>)) {
+          if (modelValue && typeof modelValue === "object" && !Array.isArray(modelValue)) {
+            const modelRecord = modelValue as Record<string, unknown>
+            const modelName =
+              typeof modelRecord.name === "string" && modelRecord.name.trim().length > 0
+                ? modelRecord.name
+                : modelID
+            models[modelID] = { id: modelID, name: modelName }
+            continue
+          }
+          models[modelID] = { id: modelID, name: modelID }
+        }
       }
 
-      const data = await response.json()
-      this.postMessage({ type: "marketplaceProxyResult", data, requestId, tab })
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err)
-      this.postMessage({ type: "marketplaceProxyResult", error: msg.includes("aborted") ? "Timeout (15s)" : msg, requestId, tab })
+      const providerName =
+        typeof providerRecord.name === "string" && providerRecord.name.trim().length > 0
+          ? providerRecord.name
+          : providerID
+      output[providerID] = {
+        id: providerID,
+        name: providerName,
+        models,
+      }
     }
+
+    return output
   }
 
-  /**
-   * Marketplace install proxy: POST body to backend /marketplace/install.
-   */
-  private async handleMarketplaceInstall(body: unknown, requestId?: string): Promise<void> {
-    const config = this.connectionService.getServerConfig()
-    if (!config) {
-      this.postMessage({ type: "marketplaceInstallResult", error: "Backend not connected", requestId })
-      return
+  private async sendProvidersFromLocalConfig(): Promise<void> {
+    const configSeed = await this.resolveConfigSeed()
+    const providers = this.buildLocalProvidersFromConfig(configSeed)
+    const configuredModel = this.parseConfiguredModel(configSeed.model)
+    if (configuredModel) {
+      const existing = providers[configuredModel.providerID]
+      if (existing) {
+        if (!existing.models[configuredModel.modelID]) {
+          existing.models[configuredModel.modelID] = {
+            id: configuredModel.modelID,
+            name: configuredModel.modelID,
+          }
+        }
+      } else {
+        providers[configuredModel.providerID] = {
+          id: configuredModel.providerID,
+          name: configuredModel.providerID,
+          models: {
+            [configuredModel.modelID]: { id: configuredModel.modelID, name: configuredModel.modelID },
+          },
+        }
+      }
     }
-    try {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 30000)
-      const response = await fetch(`${config.baseUrl}/marketplace/install`, {
-        method: "POST",
-        signal: controller.signal,
-        headers: {
-          "Content-Type": "application/json",
-          ...(config.password ? { Authorization: `Bearer ${config.password}` } : {}),
-        },
-        body: JSON.stringify(body),
+
+    const defaults: Record<string, string> = {}
+    for (const [providerID, provider] of Object.entries(providers)) {
+      const firstModelID = Object.keys(provider.models)[0]
+      if (firstModelID) {
+        defaults[providerID] = firstModelID
+      }
+    }
+    if (configuredModel) {
+      defaults[configuredModel.providerID] = configuredModel.modelID
+    }
+
+    const config = vscode.workspace.getConfiguration("vcp-code.new.model")
+    const providerID = config.get<string>("providerID", "nova")
+    const modelID = config.get<string>("modelID", "kilo/auto")
+    this.defaultModelSelection = { providerID, modelID }
+
+    const message = {
+      type: "providersLoaded",
+      providers,
+      connected: Object.keys(providers),
+      defaults,
+      defaultSelection: { providerID, modelID },
+    }
+    this.cachedProvidersMessage = message
+    this.postMessage(message)
+  }
+
+  private buildLocalAgentsFromConfig(
+    config: Record<string, unknown>,
+  ): Array<{ name: string; description?: string; mode: "subagent" | "primary" | "all"; native?: boolean; color?: string }> {
+    const agents: Array<{ name: string; description?: string; mode: "subagent" | "primary" | "all"; native?: boolean; color?: string }> = [
+      {
+        name: "code",
+        description: "General coding assistant.",
+        mode: "primary",
+        native: true,
+        color: "#0ea5e9",
+      },
+    ]
+
+    const modeConfig =
+      config.mode && typeof config.mode === "object" && !Array.isArray(config.mode)
+        ? (config.mode as Record<string, unknown>)
+        : {}
+    const customModes =
+      modeConfig.custom && typeof modeConfig.custom === "object" && !Array.isArray(modeConfig.custom)
+        ? (modeConfig.custom as Record<string, unknown>)
+        : {}
+
+    for (const [name, raw] of Object.entries(customModes)) {
+      if (!raw || typeof raw !== "object" || Array.isArray(raw)) continue
+      const record = raw as Record<string, unknown>
+      if (record.hidden === true) continue
+      const modeValue = record.mode
+      const mode: "subagent" | "primary" | "all" =
+        modeValue === "subagent" || modeValue === "all" ? modeValue : "primary"
+      const description =
+        typeof record.description === "string"
+          ? record.description
+          : typeof record.prompt === "string"
+            ? record.prompt
+            : undefined
+      const color = typeof record.color === "string" ? record.color : undefined
+      agents.push({
+        name,
+        description,
+        mode,
+        native: typeof record.native === "boolean" ? record.native : false,
+        color,
       })
-      clearTimeout(timeout)
+    }
 
-      const data = await response.json()
-      this.postMessage({ type: "marketplaceInstallResult", data, requestId })
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err)
-      this.postMessage({ type: "marketplaceInstallResult", error: msg.includes("aborted") ? "Timeout (30s)" : msg, requestId })
+    const agentConfig =
+      config.agent && typeof config.agent === "object" && !Array.isArray(config.agent)
+        ? (config.agent as Record<string, unknown>)
+        : {}
+    for (const [name, raw] of Object.entries(agentConfig)) {
+      if (agents.some((agent) => agent.name === name)) continue
+      let description: string | undefined
+      if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+        const record = raw as Record<string, unknown>
+        if (typeof record.prompt === "string") {
+          description = record.prompt
+        }
+      }
+      agents.push({
+        name,
+        description,
+        mode: "primary",
+        native: false,
+      })
+    }
+
+    if (!agents.some((agent) => agent.name === "agent_team")) {
+      agents.push({
+        name: "agent_team",
+        description: "Coordinate multi-agent waves with explicit handoff.",
+        mode: "primary",
+        native: true,
+        color: "#0ea5e9",
+      })
+    }
+
+    return agents
+  }
+
+  private async sendAgentsFromLocalConfig(): Promise<void> {
+    const configSeed = await this.resolveConfigSeed()
+    const allAgents = this.buildLocalAgentsFromConfig(configSeed)
+    const visible = allAgents.filter((agent) => agent.mode !== "subagent")
+    const requestedDefault = typeof configSeed.default_agent === "string" ? configSeed.default_agent : ""
+    const defaultAgent = visible.some((agent) => agent.name === requestedDefault)
+      ? requestedDefault
+      : (visible[0]?.name ?? "code")
+
+    const message = {
+      type: "agentsLoaded",
+      agents: visible,
+      defaultAgent,
+    }
+    this.cachedAgentsMessage = message
+    this.postMessage(message)
+  }
+
+  private async listLocalSkillDirectories(): Promise<Array<{ name: string; location: string }>> {
+    const root = path.join(this.getWorkspaceDirectory(), ".opencode", "skill")
+    try {
+      const entries = await fs.readdir(root, { withFileTypes: true })
+      return entries
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => ({
+          name: entry.name,
+          location: path.join(root, entry.name),
+        }))
+    } catch {
+      return []
     }
   }
 
-  // ── VCP Bridge WebSocket Management ───────────────────────────────
+  private async sendSkillsFromLocalConfig(): Promise<void> {
+    const configSeed = await this.resolveConfigSeed()
+    const items: SkillInfo[] = []
+    const seen = new Set<string>()
+
+    const localSkillDirs = await this.listLocalSkillDirectories()
+    for (const skill of localSkillDirs) {
+      const key = `${skill.name}::${skill.location}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      items.push({
+        name: skill.name,
+        description: "Local installed skill",
+        location: skill.location,
+      })
+    }
+
+    const skillsConfig =
+      configSeed.skills && typeof configSeed.skills === "object" && !Array.isArray(configSeed.skills)
+        ? (configSeed.skills as Record<string, unknown>)
+        : {}
+    const configuredPaths = Array.isArray(skillsConfig.paths)
+      ? skillsConfig.paths.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+      : []
+    const configuredUrls = Array.isArray(skillsConfig.urls)
+      ? skillsConfig.urls.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+      : []
+
+    for (const configuredPath of configuredPaths) {
+      const resolved = path.isAbsolute(configuredPath)
+        ? configuredPath
+        : path.join(this.getWorkspaceDirectory(), configuredPath)
+      const name = path.basename(resolved) || configuredPath
+      const key = `${name}::${resolved}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      items.push({
+        name,
+        description: "Configured local skill path",
+        location: resolved,
+      })
+    }
+
+    for (const url of configuredUrls) {
+      const trimmed = url.trim()
+      const name = trimmed.replace(/\/+$/, "").split("/").pop() || "remote-skill"
+      const key = `${name}::${trimmed}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      items.push({
+        name,
+        description: "Configured remote skill URL",
+        location: trimmed,
+      })
+    }
+
+    const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name))
+    const message: { type: "skillsLoaded"; skills: SkillInfo[] } = {
+      type: "skillsLoaded",
+      skills: sorted,
+    }
+    this.cachedSkillsMessage = message
+    this.postMessage(message)
+  }
+
+  private isBackendUnavailableError(error: unknown): boolean {
+    const message = (error instanceof Error ? error.message : String(error)).toLowerCase()
+    return (
+      message.includes("fetch failed") ||
+      message.includes("failed to fetch") ||
+      message.includes("econnrefused") ||
+      message.includes("network error") ||
+      message.includes("networkerror") ||
+      message.includes("socket hang up") ||
+      message.includes("not connected")
+    )
+  }
+
+  private async applyLocalConfigPatch(
+    patch: Record<string, unknown>,
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      const base = await this.resolveConfigSeed()
+      const merged = this.deepMergeRecords(base, patch)
+      if (!merged.$schema) {
+        merged.$schema = "https://kilo.ai/config.json"
+      }
+      if (!this.isEmbeddedRuntimeEnabled()) {
+        const dir = this.getWorkspaceDirectory()
+        const file = path.join(dir, "opencode.json")
+        await fs.writeFile(file, JSON.stringify(merged, null, 2), "utf8")
+      }
+      const revision = Date.now()
+      this.cachedConfigMessage = { type: "configLoaded", config: merged, revision }
+      this.postMessage({ type: "configUpdated", config: merged, revision })
+      await this.persistConfigBackup(merged, { revision, source: "local.patch" })
+      await this.sendProvidersFromLocalConfig()
+      await this.sendAgentsFromLocalConfig()
+      await this.sendSkillsFromLocalConfig()
+      return { success: true, message: "Config updated" }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error)
+      return { success: false, message: `Local config write failed: ${msg}` }
+    }
+  }
+
+  private async applyMarketplaceConfigPatch(
+    patch: Record<string, unknown>,
+  ): Promise<{ success: boolean; message: string }> {
+    const runtime = await this.getRuntimeClientOrNull("marketplace config patch")
+    if (runtime) {
+      try {
+        const updated = await runtime.updateConfig(patch)
+        this.cachedConfigMessage = { type: "configLoaded", config: updated.config, revision: updated.revision }
+        this.postMessage({ type: "configUpdated", config: updated.config, revision: updated.revision })
+        if (updated.config && typeof updated.config === "object" && !Array.isArray(updated.config)) {
+          await this.persistConfigBackup(updated.config as Record<string, unknown>, {
+            revision: updated.revision,
+            source: "marketplace.patch",
+          })
+        }
+        await this.fetchAndSendProviders()
+        await this.fetchAndSendAgents()
+        await this.fetchAndSendSkills()
+        return { success: true, message: "Config updated" }
+      } catch (error) {
+        if (!this.isBackendUnavailableError(error)) {
+          const msg = error instanceof Error ? error.message : String(error)
+          return { success: false, message: `Config update failed: ${msg}` }
+        }
+        console.warn("[Nova New] NovaProvider: Marketplace config patch falling back to local write:", error)
+      }
+    }
+
+    return this.applyLocalConfigPatch(patch)
+  }
+
+  private deepMergeRecords(
+    left: Record<string, unknown>,
+    right: Record<string, unknown>,
+  ): Record<string, unknown> {
+    const result: Record<string, unknown> = { ...left }
+    for (const [key, value] of Object.entries(right)) {
+      if (
+        value &&
+        typeof value === "object" &&
+        !Array.isArray(value) &&
+        result[key] &&
+        typeof result[key] === "object" &&
+        !Array.isArray(result[key])
+      ) {
+        result[key] = this.deepMergeRecords(result[key] as Record<string, unknown>, value as Record<string, unknown>)
+      } else {
+        result[key] = value
+      }
+    }
+    return result
+  }
+
+  private async fetchTextWithTimeout(url: string, timeoutMs: number): Promise<string> {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), timeoutMs)
+    try {
+      const response = await fetch(url, { signal: controller.signal })
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} when fetching ${url}`)
+      }
+      return await response.text()
+    } finally {
+      clearTimeout(timeout)
+    }
+  }
+
+  private async fetchBufferWithTimeout(url: string, timeoutMs: number): Promise<Uint8Array> {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), timeoutMs)
+    try {
+      const response = await fetch(url, { signal: controller.signal })
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} when fetching ${url}`)
+      }
+      return new Uint8Array(await response.arrayBuffer())
+    } finally {
+      clearTimeout(timeout)
+    }
+  }
+
+  private async extractTarArchive(archivePath: string, targetDir: string): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn("tar", ["-xzf", archivePath, "-C", targetDir], {
+        stdio: ["ignore", "ignore", "pipe"],
+      })
+      let stderr = ""
+      proc.stderr?.on("data", (chunk: Buffer) => {
+        stderr += chunk.toString()
+      })
+      proc.on("error", reject)
+      proc.on("close", (code) => {
+        if (code === 0) {
+          resolve()
+          return
+        }
+        reject(new Error(stderr || `tar exited with code ${code}`))
+      })
+    })
+  }
+
+  // 鈹€鈹€ VCP Bridge WebSocket Management 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   /**
    * Connect to VCPToolBox WebSocket endpoints (VCPlog + VCPinfo).
    * Reads vcp.toolbox config from the cached config.
@@ -1228,7 +2507,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     const key = toolbox.key as string | undefined
 
     if (!enabled || !url || !key) {
-      console.log("[Nova New] VCP Bridge: Skipping — not enabled or missing url/key", { enabled, url: !!url, key: !!key })
+      console.log("[Nova New] VCP Bridge: Skipping 鈥?not enabled or missing url/key", { enabled, url: !!url, key: !!key })
       this.postMessage({
         type: "vcpBridgeStatus",
         connected: false,
@@ -1352,7 +2631,8 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Handle enhance prompt request  - calls backend LLM to rewrite/polish the user's prompt.
    */
   private async handleEnhancePrompt(text: string, requestId: string): Promise<void> {
-    if (!this.httpClient) {
+    const runtime = await this.getRuntimeClientOrNull("enhance prompt")
+    if (!runtime) {
       this.postMessage({ type: "enhancePromptError", error: "Not connected to CLI backend", requestId })
       return
     }
@@ -1362,10 +2642,13 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
         "You are an expert prompt engineer. " +
         "Rewrite the following user prompt to be clearer, more specific, and more effective. " +
         "Return ONLY the improved prompt text without any explanation or meta-commentary."
-      const result = await (this.httpClient as unknown as { complete?: (opts: unknown) => Promise<string> }).complete?.({
-        system: systemPrompt,
-        messages: [{ role: "user", content: text }],
-      })
+      const result = await runtime.complete(
+        {
+          system: systemPrompt,
+          messages: [{ role: "user", content: text }],
+        },
+        this.getWorkspaceDirectory(this.currentSession?.id),
+      )
       if (result) {
         this.postMessage({ type: "enhancePromptResult", text: result, requestId })
       } else {
@@ -1382,14 +2665,14 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Handle deleting a session.
    */
   private async handleDeleteSession(sessionID: string): Promise<void> {
-    if (!this.httpClient) {
-      this.postMessage({ type: "error", message: "Not connected to CLI backend" })
+    const runtime = await this.requireRuntimeClient("Unable to connect embedded runtime for deleting session", sessionID)
+    if (!runtime) {
       return
     }
 
     try {
       const workspaceDir = this.getWorkspaceDirectory(sessionID)
-      await this.httpClient.deleteSession(sessionID, workspaceDir)
+      await runtime.deleteSession(sessionID, workspaceDir)
       this.trackedSessionIds.delete(sessionID)
       this.sessionDirectories.delete(sessionID)
       this.sessionStatus.delete(sessionID)
@@ -1414,14 +2697,14 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Handle renaming a session.
    */
   private async handleRenameSession(sessionID: string, title: string): Promise<void> {
-    if (!this.httpClient) {
-      this.postMessage({ type: "error", message: "Not connected to CLI backend" })
+    const runtime = await this.requireRuntimeClient("Unable to connect embedded runtime for renaming session", sessionID)
+    if (!runtime) {
       return
     }
 
     try {
       const workspaceDir = this.getWorkspaceDirectory(sessionID)
-      const updated = await this.httpClient.updateSession(sessionID, { title }, workspaceDir)
+      const updated = await runtime.updateSession(sessionID, { title }, workspaceDir)
       if (this.currentSession?.id === sessionID) {
         this.currentSession = updated
       }
@@ -1444,17 +2727,19 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * the map here so the rest of the code can use provider.id everywhere.
    */
   private async fetchAndSendProviders(): Promise<void> {
-    if (!this.httpClient) {
-      // httpClient not ready  - serve from cache if available
+    const runtime = await this.getRuntimeClientOrNull("fetch providers")
+    if (!runtime) {
       if (this.cachedProvidersMessage) {
         this.postMessage(this.cachedProvidersMessage)
+      } else {
+        await this.sendProvidersFromLocalConfig()
       }
       return
     }
 
     try {
       const workspaceDir = this.getWorkspaceDirectory()
-      const response = await this.httpClient.listProviders(workspaceDir)
+      const response = await runtime.listProviders(workspaceDir)
 
       const normalized = normalizeProviders(response.all)
 
@@ -1475,6 +2760,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       this.postMessage(message)
     } catch (error) {
       console.error("[Nova New] NovaProvider: Failed to fetch providers:", error)
+      await this.sendProvidersFromLocalConfig()
     }
   }
 
@@ -1482,16 +2768,19 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Fetch agents (modes) from the backend and send to webview.
    */
   private async fetchAndSendAgents(): Promise<void> {
-    if (!this.httpClient) {
+    const runtime = await this.getRuntimeClientOrNull("fetch agents")
+    if (!runtime) {
       if (this.cachedAgentsMessage) {
         this.postMessage(this.cachedAgentsMessage)
+      } else {
+        await this.sendAgentsFromLocalConfig()
       }
       return
     }
 
     try {
       const workspaceDir = this.getWorkspaceDirectory()
-      const agents = await this.httpClient.listAgents(workspaceDir)
+      const agents = await runtime.listAgents(workspaceDir)
 
       const { visible, defaultAgent } = filterVisibleAgents(agents)
       const finalAgents = [...visible]
@@ -1520,6 +2809,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       this.postMessage(message)
     } catch (error) {
       console.error("[Nova New] NovaProvider: Failed to fetch agents:", error)
+      await this.sendAgentsFromLocalConfig()
     }
   }
 
@@ -1527,23 +2817,24 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Fetch backend config and send to webview.
    */
   private async fetchAndSendConfig(): Promise<void> {
-    if (!this.httpClient) {
+    const runtime = await this.getRuntimeClientOrNull("fetch config")
+    if (!runtime) {
       if (this.cachedConfigMessage) {
         this.postMessage(this.cachedConfigMessage)
+      } else {
+        await this.loadAndSendLocalConfigSnapshot()
       }
       return
     }
 
     try {
       const workspaceDir = this.getWorkspaceDirectory()
-      const client = this.httpClient
-      if (!client) return
       // Keep settings read/write source consistent: prefer global config (same as updateConfig),
       // then fall back to merged instance config for older backends.
-      const config = await client.getGlobalConfig().catch(() => client.getConfig(workspaceDir))
-      const revision = await client.getGlobalConfigRevision().catch(() => undefined)
+      const config = await runtime.getGlobalConfig().catch(() => runtime.getConfig(workspaceDir))
+      const revision = await runtime.getGlobalConfigRevision().catch(() => undefined)
 
-      // ── Config backup guard ──────────────────────────────────────
+      // 鈹€鈹€ Config backup guard 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
       // Back up the FULL config (provider, mcp, skills, agent, vcp, etc.) to
       // globalState so it survives extension updates, reinstalls, and edge-case data loss.
       const hasContent = config && typeof config === "object" && (
@@ -1557,16 +2848,19 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
         config.model || config.small_model || config.default_agent
       )
       if (hasContent) {
-        await this.extensionContext?.globalState.update("nova.configBackup", JSON.stringify(config))
-        await this.extensionContext?.globalState.update("nova.configBackupVersion", this.extensionVersion)
+        const persistedRevision = await this.persistConfigBackup(config as Record<string, unknown>, {
+          revision,
+          source: "runtime.fetch",
+        })
         console.log("[Nova New] NovaProvider: Full config backed up to globalState", {
           providers: Object.keys(config.provider ?? {}).length,
           mcp: Object.keys(config.mcp ?? {}).length,
           agents: Object.keys(config.agent ?? {}).length,
           hasVcp: !!config.vcp,
+          revision: persistedRevision,
         })
       } else {
-        // Config came back empty — try to restore from backup
+        // Config came back empty 鈥?try to restore from backup
         const backupJson = this.extensionContext?.globalState.get<string>("nova.configBackup")
         if (backupJson) {
           try {
@@ -1574,15 +2868,22 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
             const backupVersion = this.extensionContext?.globalState.get<string>("nova.configBackupVersion") ?? "unknown"
             console.warn("[Nova New] NovaProvider: Config is empty, restoring FULL backup (version:", backupVersion, ")")
             // Push the backup back to the backend
-            await client.updateConfig(backup).catch((err: unknown) => {
+            await runtime.updateConfig(backup).catch((err: unknown) => {
               console.error("[Nova New] NovaProvider: Failed to restore config backup:", err)
             })
             // Re-fetch to get the restored config
-            const restored = await client.getGlobalConfig().catch(() => config)
+            const restored = await runtime.getGlobalConfig().catch(() => config)
+            const restoredRevision =
+              restored && typeof restored === "object" && !Array.isArray(restored)
+                ? await this.persistConfigBackup(restored as Record<string, unknown>, {
+                    revision,
+                    source: "runtime.restore-from-backup",
+                  })
+                : this.getPersistedConfigRevision() ?? Date.now()
             const message = {
               type: "configLoaded",
               config: restored,
-              revision,
+              revision: restoredRevision,
             }
             this.cachedConfigMessage = message
             this.postMessage(message)
@@ -1596,12 +2897,13 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       const message = {
         type: "configLoaded",
         config,
-        revision,
+        revision: typeof revision === "number" ? revision : this.getPersistedConfigRevision() ?? Date.now(),
       }
       this.cachedConfigMessage = message
       this.postMessage(message)
     } catch (error) {
       console.error("[Nova New] NovaProvider: Failed to fetch config:", error)
+      await this.loadAndSendLocalConfigSnapshot()
     }
   }
 
@@ -1609,16 +2911,19 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Fetch loaded skills from the backend and send to webview.
    */
   private async fetchAndSendSkills(): Promise<void> {
-    if (!this.httpClient) {
+    const runtime = await this.getRuntimeClientOrNull("fetch skills")
+    if (!runtime) {
       if (this.cachedSkillsMessage) {
         this.postMessage(this.cachedSkillsMessage)
+      } else {
+        await this.sendSkillsFromLocalConfig()
       }
       return
     }
 
     try {
       const workspaceDir = this.getWorkspaceDirectory()
-      const skills = await this.httpClient.listSkills(workspaceDir)
+      const skills = await runtime.listSkills(workspaceDir)
       const sorted = [...skills].sort((a, b) => a.name.localeCompare(b.name))
 
       const message: { type: "skillsLoaded"; skills: SkillInfo[] } = {
@@ -1629,6 +2934,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       this.postMessage(message)
     } catch (error) {
       console.error("[Nova New] NovaProvider: Failed to fetch skills:", error)
+      await this.sendSkillsFromLocalConfig()
     }
   }
 
@@ -1637,7 +2943,8 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Uses the cached message pattern so the webview gets data immediately on refresh.
    */
   private async fetchAndSendNotifications(): Promise<void> {
-    if (!this.httpClient) {
+    const runtime = await this.getRuntimeClientOrNull("fetch notifications")
+    if (!runtime) {
       if (this.cachedNotificationsMessage) {
         this.postMessage(this.cachedNotificationsMessage)
       }
@@ -1645,7 +2952,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     }
 
     try {
-      const notifications = await this.httpClient.getNotifications()
+      const notifications = await runtime.getNotifications()
       const existing = this.extensionContext?.globalState.get<string[]>("nova.dismissedNotificationIds", []) ?? []
       const active = new Set(notifications.map((n) => n.id))
       const dismissedIds = existing.filter((id) => active.has(id))
@@ -1701,7 +3008,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     if (normalized.length <= maxLength) {
       return normalized
     }
-    return `${normalized.slice(0, maxLength - 1)}…`
+    return `${normalized.slice(0, maxLength - 3)}...`
   }
 
   /**
@@ -1710,13 +3017,17 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * the full merged config back to the webview.
    */
   private async handleUpdateConfig(partial: Record<string, unknown>, expectedRevision?: number): Promise<void> {
-    if (!this.httpClient) {
-      this.postMessage({ type: "error", message: "Not connected to CLI backend" })
+    const runtime = await this.getRuntimeClientOrNull("update config")
+    if (!runtime) {
+      const local = await this.applyLocalConfigPatch(partial)
+      if (!local.success) {
+        this.postMessage({ type: "error", message: local.message })
+      }
       return
     }
 
     try {
-      const updated = await this.httpClient.updateConfig(partial, expectedRevision)
+      const updated = await runtime.updateConfig(partial, expectedRevision)
 
       const message = {
         type: "configUpdated",
@@ -1726,10 +3037,12 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       this.cachedConfigMessage = { type: "configLoaded", config: updated.config, revision: updated.revision }
       this.postMessage(message)
 
-      // ── Sync backup on every successful config write ──────────
-      if (updated.config && typeof updated.config === "object") {
-        await this.extensionContext?.globalState.update("nova.configBackup", JSON.stringify(updated.config))
-        await this.extensionContext?.globalState.update("nova.configBackupVersion", this.extensionVersion)
+      // 鈹€鈹€ Sync backup on every successful config write 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+      if (updated.config && typeof updated.config === "object" && !Array.isArray(updated.config)) {
+        await this.persistConfigBackup(updated.config as Record<string, unknown>, {
+          revision: updated.revision,
+          source: "runtime.update",
+        })
         console.log("[Nova New] NovaProvider: Config backup synced after update")
       }
 
@@ -1744,6 +3057,13 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
           revision: error.payload.revision,
           expectedRevision: error.payload.expectedRevision,
         })
+        return
+      }
+      if (this.isBackendUnavailableError(error)) {
+        const local = await this.applyLocalConfigPatch(partial)
+        if (!local.success) {
+          this.postMessage({ type: "error", message: local.message })
+        }
         return
       }
       console.error("[Nova New] NovaProvider: Failed to update config:", error)
@@ -1767,11 +3087,8 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     files?: Array<{ mime: string; url: string }>,
     busyMode?: "guide" | "queue" | "interrupt",
   ): Promise<void> {
-    if (!this.httpClient) {
-      this.postMessage({
-        type: "error",
-        message: "Not connected to CLI backend",
-      })
+    const runtime = await this.requireRuntimeClient("Unable to connect embedded runtime for sending message", sessionID)
+    if (!runtime) {
       return
     }
 
@@ -1780,7 +3097,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
 
       // Create session if needed
       if (!sessionID && !this.currentSession) {
-        this.currentSession = await this.httpClient.createSession(workspaceDir)
+        this.currentSession = await runtime.createSession(workspaceDir)
         this.trackedSessionIds.add(this.currentSession.id)
         // Notify webview of the new session
         this.postMessage({
@@ -1832,7 +3149,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
 
       const editorContext = await this.gatherEditorContext()
 
-      await this.httpClient.sendMessage(targetSessionID, parts, workspaceDir, {
+      await runtime.sendMessage(targetSessionID, parts, workspaceDir, {
         providerID,
         modelID,
         agent,
@@ -1852,18 +3169,18 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Handle abort request from the webview.
    */
   private async handleAbort(sessionID?: string): Promise<void> {
-    if (!this.httpClient) {
-      return
-    }
-
     const targetSessionID = sessionID || this.currentSession?.id
     if (!targetSessionID) {
+      return
+    }
+    const runtime = await this.getRuntimeClientOrNull("abort session", targetSessionID)
+    if (!runtime) {
       return
     }
 
     try {
       const workspaceDir = this.getWorkspaceDirectory(targetSessionID)
-      await this.httpClient.abortSession(targetSessionID, workspaceDir)
+      await runtime.abortSession(targetSessionID, workspaceDir)
     } catch (error) {
       console.error("[Nova New] NovaProvider: Failed to abort session:", error)
     }
@@ -1873,17 +3190,13 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Handle compact (context summarization) request from the webview.
    */
   private async handleCompact(sessionID?: string, providerID?: string, modelID?: string): Promise<void> {
-    if (!this.httpClient) {
-      this.postMessage({
-        type: "error",
-        message: "Not connected to CLI backend",
-      })
-      return
-    }
-
     const target = sessionID || this.currentSession?.id
     if (!target) {
       console.error("[Nova New] NovaProvider: No sessionID for compact")
+      return
+    }
+    const runtime = await this.requireRuntimeClient("Unable to connect embedded runtime for compaction", target)
+    if (!runtime) {
       return
     }
 
@@ -1898,7 +3211,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
 
     try {
       const workspaceDir = this.getWorkspaceDirectory(target)
-      await this.httpClient.summarize(target, providerID, modelID, workspaceDir)
+      await runtime.summarize(target, providerID, modelID, workspaceDir)
     } catch (error) {
       console.error("[Nova New] NovaProvider: Failed to compact session:", error)
       this.postMessage({
@@ -1916,19 +3229,19 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     sessionID: string,
     response: "once" | "always" | "reject",
   ): Promise<void> {
-    if (!this.httpClient) {
-      return
-    }
-
     const targetSessionID = sessionID || this.currentSession?.id
     if (!targetSessionID) {
       console.error("[Nova New] NovaProvider: No sessionID for permission response")
       return
     }
+    const runtime = await this.getRuntimeClientOrNull("permission response", targetSessionID)
+    if (!runtime) {
+      return
+    }
 
     try {
       const workspaceDir = this.getWorkspaceDirectory(targetSessionID)
-      await this.httpClient.respondToPermission(targetSessionID, permissionId, response, workspaceDir)
+      await runtime.respondToPermission(targetSessionID, permissionId, response, workspaceDir)
       this.decrementPending(this.pendingPermission, targetSessionID)
       if (this.sessionStatus.get(targetSessionID) === "idle") {
         void this.flushPromptQueue(targetSessionID)
@@ -1942,13 +3255,14 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Handle question reply from the webview.
    */
   private async handleQuestionReply(requestID: string, answers: string[][]): Promise<void> {
-    if (!this.httpClient) {
+    const runtime = await this.getRuntimeClientOrNull("question reply")
+    if (!runtime) {
       this.postMessage({ type: "questionError", requestID })
       return
     }
 
     try {
-      await this.httpClient.replyToQuestion(requestID, answers, this.getWorkspaceDirectory(this.currentSession?.id))
+      await runtime.replyToQuestion(requestID, answers, this.getWorkspaceDirectory(this.currentSession?.id))
     } catch (error) {
       console.error("[Nova New] NovaProvider: Failed to reply to question:", error)
       this.postMessage({ type: "questionError", requestID })
@@ -1959,13 +3273,14 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Handle question reject (dismiss) from the webview.
    */
   private async handleQuestionReject(requestID: string): Promise<void> {
-    if (!this.httpClient) {
+    const runtime = await this.getRuntimeClientOrNull("question reject")
+    if (!runtime) {
       this.postMessage({ type: "questionError", requestID })
       return
     }
 
     try {
-      await this.httpClient.rejectQuestion(requestID, this.getWorkspaceDirectory(this.currentSession?.id))
+      await runtime.rejectQuestion(requestID, this.getWorkspaceDirectory(this.currentSession?.id))
     } catch (error) {
       console.error("[Nova New] NovaProvider: Failed to reject question:", error)
       this.postMessage({ type: "questionError", requestID })
@@ -1978,20 +3293,21 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Sends device auth messages so the webview can display a QR code, verification code, and timer.
    */
   private async handleLogin(): Promise<void> {
-    if (!this.httpClient) {
+    const runtime = await this.getRuntimeClientOrNull("login")
+    if (!runtime) {
       return
     }
 
     const attempt = ++this.loginAttempt
 
-    console.log("[Nova New] NovaProvider: 🔐 Starting login flow...")
+    console.log("[Nova New] NovaProvider: 馃攼 Starting login flow...")
 
     try {
       const workspaceDir = this.getWorkspaceDirectory()
 
       // Step 1: Initiate OAuth authorization
-      const auth = await this.httpClient.oauthAuthorize("nova", 0, workspaceDir)
-      console.log("[Nova New] NovaProvider: 🔐 Got auth URL:", auth.url)
+      const auth = await runtime.oauthAuthorize("nova", 0, workspaceDir)
+      console.log("[Nova New] NovaProvider: 馃攼 Got auth URL:", auth.url)
 
       // Parse code from instructions (format: "Open URL and enter code: ABCD-1234")
       const codeMatch = auth.instructions?.match(/code:\s*(\S+)/i)
@@ -2009,17 +3325,17 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       })
 
       // Step 3: Wait for callback (blocks until polling completes)
-      await this.httpClient.oauthCallback("nova", 0, workspaceDir)
+      await runtime.oauthCallback("nova", 0, workspaceDir)
 
       // Check if this attempt was cancelled
       if (attempt !== this.loginAttempt) {
         return
       }
 
-      console.log("[Nova New] NovaProvider: 🔐 Login successful")
+      console.log("[Nova New] NovaProvider: 馃攼 Login successful")
 
       // Step 4: Fetch profile and push to webview
-      const profileData = await this.httpClient.getProfile()
+      const profileData = await runtime.getProfile()
       this.postMessage({ type: "profileData", data: profileData })
       this.postMessage({ type: "deviceAuthComplete" })
 
@@ -2043,25 +3359,25 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Persists the selection and refreshes profile + providers since both change with org context.
    */
   private async handleSetOrganization(organizationId: string | null): Promise<void> {
-    const client = this.httpClient
-    if (!client) {
+    const runtime = await this.getRuntimeClientOrNull("set organization")
+    if (!runtime) {
       return
     }
 
     console.log("[Nova New] NovaProvider: Switching organization:", organizationId ?? "personal")
     try {
-      await client.setOrganization(organizationId)
+      await runtime.setOrganization(organizationId)
     } catch (error) {
       console.error("[Nova New] NovaProvider: Failed to switch organization:", error)
       // Re-fetch current profile to reset webview state (clears switching indicator)
-      const profileData = await client.getProfile()
+      const profileData = await runtime.getProfile()
       this.postMessage({ type: "profileData", data: profileData })
       return
     }
 
     // Org switch succeeded  - refresh profile and providers independently (best-effort)
     try {
-      const profileData = await client.getProfile()
+      const profileData = await runtime.getProfile()
       this.postMessage({ type: "profileData", data: profileData })
     } catch (error) {
       console.error("[Nova New] NovaProvider: Failed to refresh profile after org switch:", error)
@@ -2099,13 +3415,14 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Handle logout request from the webview.
    */
   private async handleLogout(): Promise<void> {
-    if (!this.httpClient) {
+    const runtime = await this.getRuntimeClientOrNull("logout")
+    if (!runtime) {
       return
     }
 
-    console.log("[Nova New] NovaProvider: 🚪 Logging out...")
-    await this.httpClient.removeAuth("nova")
-    console.log("[Nova New] NovaProvider: 🚪 Logged out successfully")
+    console.log("[Nova New] NovaProvider: 馃毆 Logging out...")
+    await runtime.removeAuth("nova")
+    console.log("[Nova New] NovaProvider: 馃毆 Logged out successfully")
     this.postMessage({
       type: "profileData",
       data: null,
@@ -2116,12 +3433,13 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Handle profile refresh request from the webview.
    */
   private async handleRefreshProfile(): Promise<void> {
-    if (!this.httpClient) {
+    const runtime = await this.getRuntimeClientOrNull("refresh profile")
+    if (!runtime) {
       return
     }
 
-    console.log("[Nova New] NovaProvider: 🔄 Refreshing profile...")
-    const profileData = await this.httpClient.getProfile()
+    console.log("[Nova New] NovaProvider: 馃攧 Refreshing profile...")
+    const profileData = await runtime.getProfile()
     this.postMessage({
       type: "profileData",
       data: profileData,
@@ -2202,7 +3520,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Handle SSE events from the CLI backend.
    * Filters events by tracked session IDs so each webview only sees its own sessions.
    */
-  private handleSSEEvent(event: SSEEvent): void {
+  private async handleSSEEvent(event: SSEEvent): Promise<void> {
     // Extract sessionID from the event
     const sessionID = this.extractSessionID(event)
 
@@ -2225,8 +3543,10 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       }
       this.sendVcpStatusUpdate(event.properties.sessionID)
     }
+    let suppressPermissionRequest = false
     if (event.type === "permission.asked") {
       this.incrementPending(this.pendingPermission, event.properties.sessionID)
+      suppressPermissionRequest = await this.maybeHandleYoloAutoApproval(event.properties)
     }
     if (event.type === "permission.replied") {
       this.decrementPending(this.pendingPermission, event.properties.sessionID)
@@ -2288,14 +3608,18 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
 
     const msg = mapSSEEventToWebviewMessage(event, sessionID)
     if (msg) {
+      if (suppressPermissionRequest && msg.type === "permissionRequest") {
+        return
+      }
       this.postMessage(msg)
     }
   }
 
   private async handleRequestMemoryOverview(requestID: string, limit?: number, folderID?: string): Promise<void> {
-    if (!this.httpClient) return
+    const runtime = await this.getRuntimeClientOrNull("memory overview", this.currentSession?.id)
+    if (!runtime) return
     try {
-      const data = await this.httpClient.getMemoryOverview({ limit, folderID })
+      const data = await runtime.getMemoryOverview({ limit, folderID })
       this.postMessage({ type: "memoryOverview", requestID, data })
     } catch (error) {
       console.error("[Nova New] NovaProvider: Failed to load memory overview:", error)
@@ -2315,9 +3639,10 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       timeTo?: string | number
     },
   ): Promise<void> {
-    if (!this.httpClient) return
+    const runtime = await this.getRuntimeClientOrNull("memory search", this.currentSession?.id)
+    if (!runtime) return
     try {
-      const items = await this.httpClient.searchMemory(input)
+      const items = await runtime.searchMemory(input)
       this.postMessage({ type: "memorySearchResult", requestID, items })
     } catch (error) {
       console.error("[Nova New] NovaProvider: Failed to search memory:", error)
@@ -2335,9 +3660,10 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       folderID?: string
     },
   ): Promise<void> {
-    if (!this.httpClient) return
+    const runtime = await this.getRuntimeClientOrNull("memory update", this.currentSession?.id)
+    if (!runtime) return
     try {
-      const result = await this.httpClient.updateMemoryAtomic(id, patch)
+      const result = await runtime.updateMemoryAtomic(id, patch)
       this.postMessage({ type: "memoryAtomicUpdated", requestID, ...result })
     } catch (error) {
       console.error("[Nova New] NovaProvider: Failed to update memory:", error)
@@ -2346,9 +3672,10 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
   }
 
   private async handleDeleteMemoryAtomic(requestID: string, id: string): Promise<void> {
-    if (!this.httpClient) return
+    const runtime = await this.getRuntimeClientOrNull("memory delete", this.currentSession?.id)
+    if (!runtime) return
     try {
-      const result = await this.httpClient.deleteMemoryAtomic(id)
+      const result = await runtime.deleteMemoryAtomic(id)
       this.postMessage({ type: "memoryAtomicDeleted", requestID, ...result })
     } catch (error) {
       console.error("[Nova New] NovaProvider: Failed to delete memory:", error)
@@ -2366,10 +3693,11 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
     pinAtomicIDs?: string[],
     compress?: boolean,
   ): Promise<void> {
-    if (!this.httpClient) return
+    const runtime = await this.getRuntimeClientOrNull("memory preview", this.currentSession?.id)
+    if (!runtime) return
     try {
       const workspaceDir = directory || this.getWorkspaceDirectory()
-      const result = await this.httpClient.previewMemoryContext({
+      const result = await runtime.previewMemoryContext({
         query,
         directory: workspaceDir,
         topKAtomic,
@@ -2389,14 +3717,15 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
   }
 
   public async exportGlobalConfig(): Promise<void> {
-    if (!this.httpClient) {
+    const runtime = await this.getRuntimeClientOrNull("export config")
+    if (!runtime) {
       void vscode.window.showErrorMessage("Not connected to CLI backend.")
       return
     }
 
     try {
       const directory = this.getWorkspaceDirectory()
-      const config = await this.httpClient.getConfig(directory)
+      const config = await runtime.getConfig(directory)
       const target = await vscode.window.showSaveDialog({
         title: "Export VCP Code Config",
         filters: { JSON: ["json"] },
@@ -2413,7 +3742,8 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
   }
 
   public async importGlobalConfig(): Promise<void> {
-    if (!this.httpClient) {
+    const runtime = await this.getRuntimeClientOrNull("import config")
+    if (!runtime) {
       void vscode.window.showErrorMessage("Not connected to CLI backend.")
       return
     }
@@ -2433,7 +3763,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
         throw new Error("Invalid config JSON: expected an object.")
       }
 
-      await this.httpClient.updateConfig(parsed)
+      await runtime.updateConfig(parsed)
       await this.fetchAndSendConfig()
       void vscode.window.showInformationMessage(`Config imported from ${file.fsPath}`)
     } catch (error) {
@@ -2583,7 +3913,7 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
         typeof (message as { type?: unknown }).type === "string"
           ? (message as { type: string }).type
           : "<unknown>"
-      console.warn("[Nova New] NovaProvider: ⚠️ postMessage dropped (no webview)", { type })
+      console.warn("[Nova New] NovaProvider: 鈿狅笍 postMessage dropped (no webview)", { type })
       return
     }
 
@@ -2623,30 +3953,10 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
 
   /**
    * Trigger a codebase reindex.
-   * If the backend code-index endpoints are available, delegate to them via SSE.
-   * Otherwise, fall back to the lightweight UI simulation.
-   *
-   * novacode_change - T-1.11 backend-integrated rebuild
+   * Extension-host simulation only to avoid backend code-index coupling.
    */
   private async handleReindexCodebase(): Promise<void> {
-    // Try the real backend endpoint first
-    try {
-      const port = this.connectionService.getServerInfo()?.port
-      if (port) {
-        const rebuildRes = await fetch(`http://localhost:${port}/code-index/rebuild`, { method: "POST" })
-        const rebuildJson = (await rebuildRes.json()) as { success: boolean; message: string }
-        if (rebuildJson.success) {
-          // Subscribe to SSE for progress
-          this.subscribeToCodeIndexEvents(port)
-          return
-        }
-        // If disabled or failed, fall through to simulation
-      }
-    } catch {
-      // Backend unavailable — fall through to simulation
-    }
-
-    // Fallback: lightweight simulation
+    // Extension-host simulation only (no backend code-index dependency).
     try {
       const files = await vscode.workspace.findFiles(
         "**/*",
@@ -2774,96 +4084,6 @@ export class NovaProvider implements vscode.WebviewViewProvider, TelemetryProper
       lastUpdated: this.codebaseIndexState.lastUpdated,
     })
   }
-
-  // novacode_change start - T-1.11 SSE subscription for backend code index progress
-  private codeIndexAbort?: AbortController
-
-  private subscribeToCodeIndexEvents(port: number): void {
-    // Close any existing subscription
-    if (this.codeIndexAbort) {
-      this.codeIndexAbort.abort()
-      this.codeIndexAbort = undefined
-    }
-
-    const abort = new AbortController()
-    this.codeIndexAbort = abort
-    const url = `http://localhost:${port}/code-index/events`
-
-    // Use fetch-based SSE reader (EventSource not available in VS Code extension host)
-    void (async () => {
-      try {
-        const res = await fetch(url, { signal: abort.signal })
-        if (!res.ok || !res.body) return
-
-        const reader = res.body.getReader()
-        const decoder = new TextDecoder()
-        let buffer = ""
-
-        while (!abort.signal.aborted) {
-          const { done, value } = await reader.read()
-          if (done) break
-          buffer += decoder.decode(value, { stream: true })
-
-          const lines = buffer.split("\n")
-          buffer = lines.pop() ?? ""
-
-          for (const line of lines) {
-            if (!line.startsWith("data:")) continue
-            const jsonStr = line.slice(5).trim()
-            if (!jsonStr) continue
-
-            try {
-              const data = JSON.parse(jsonStr) as {
-                status?: "idle" | "indexing" | "error" | "disabled"
-                indexedFiles?: number
-                totalFiles?: number
-                currentFile?: string
-              }
-              if (!data.status) continue
-
-              const normalizedStatus: "idle" | "indexing" | "error" =
-                data.status === "disabled" ? "idle" : data.status
-
-              this.codebaseIndexState = {
-                status: normalizedStatus,
-                indexedFiles: data.indexedFiles ?? 0,
-                totalFiles: data.totalFiles ?? 0,
-                lastUpdated:
-                  data.status === "idle"
-                    ? new Date().toISOString()
-                    : this.codebaseIndexState.lastUpdated,
-              }
-
-              this.postMessage({
-                type: "codebaseIndexProgress",
-                status: normalizedStatus,
-                indexedFiles: data.indexedFiles ?? 0,
-                totalFiles: data.totalFiles ?? 0,
-                currentFile: data.currentFile,
-              })
-
-              if (data.status === "idle" || data.status === "error") {
-                this.postMessage({
-                  type: "codebaseIndexStatus",
-                  status: normalizedStatus,
-                  indexedFiles: data.indexedFiles ?? 0,
-                  totalFiles: data.totalFiles ?? 0,
-                  lastUpdated: this.codebaseIndexState.lastUpdated,
-                })
-                abort.abort()
-                this.codeIndexAbort = undefined
-              }
-            } catch {
-              // Ignore malformed JSON (e.g. heartbeat events)
-            }
-          }
-        }
-      } catch {
-        // fetch aborted or network error — OK
-      }
-    })()
-  }
-  // novacode_change end
 
   private flushPendingViewActions(): void {
     if (!this.webview || !this.isWebviewReady || this.pendingViewActions.length === 0) return

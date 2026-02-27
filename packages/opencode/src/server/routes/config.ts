@@ -3,14 +3,10 @@ import { describeRoute, validator, resolver } from "hono-openapi"
 import z from "zod"
 import { Config } from "../../config/config"
 import { Provider } from "../../provider/provider"
-import { mapValues } from "remeda"
 import { errors } from "../error"
 import { Log } from "../../util/log"
 import { lazy } from "../../util/lazy"
-// novacode_change start
-import { fetchDefaultModel } from "@novacode/nova-gateway"
-import { Auth } from "../../auth"
-// novacode_change end
+import { ConfigRuntimeService } from "@/runtime-core/config-service"
 
 const log = Log.create({ service: "server" })
 
@@ -34,7 +30,7 @@ export const ConfigRoutes = lazy(() =>
         },
       }),
       async (c) => {
-        return c.json(await Config.get())
+        return c.json(await ConfigRuntimeService.get())
       },
     )
     .patch(
@@ -58,8 +54,8 @@ export const ConfigRoutes = lazy(() =>
       validator("json", Config.Info),
       async (c) => {
         const config = c.req.valid("json")
-        await Config.update(config)
-        return c.json(config)
+        const updated = await ConfigRuntimeService.update(config)
+        return c.json(updated)
       },
     )
     .get(
@@ -86,26 +82,7 @@ export const ConfigRoutes = lazy(() =>
       }),
       async (c) => {
         using _ = log.time("providers")
-        const providers = await Provider.list()
-
-        // novacode_change start - Fetch default model from Kilo API
-        const kiloAuth = await Auth.get("kilo")
-        const token = kiloAuth?.type === "oauth" ? kiloAuth.access : kiloAuth?.key
-        const organizationId = kiloAuth?.type === "oauth" ? kiloAuth.accountId : undefined
-        const kiloApiDefault = await fetchDefaultModel(token, organizationId)
-        // novacode_change end
-
-        // novacode_change start - Use API default for Kilo provider if valid
-        const defaults = mapValues(providers, (item) => Provider.sort(Object.values(item.models))[0].id)
-        if (kiloApiDefault && providers["kilo"]?.models[kiloApiDefault]) {
-          defaults["kilo"] = kiloApiDefault
-        }
-        // novacode_change end
-
-        return c.json({
-          providers: Object.values(providers),
-          default: defaults,
-        })
+        return c.json(await ConfigRuntimeService.listProviders())
       },
     ),
 )

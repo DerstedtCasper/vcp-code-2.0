@@ -8,7 +8,11 @@
   "scripts": {
     "dev": "bun run --cwd packages/opencode --conditions=browser src/index.ts",
     "dev:desktop": "bun --cwd packages/desktop tauri dev",
-    "dev:web": "bun --cwd packages/app dev",
+    "dev:web": "bun run script/dev-web-stack.ts",
+    "dev:web:embedded": "bun run script/dev-web-stack.ts --embedded",
+    "dev:web:legacy": "bun run script/dev-web-stack.ts --legacy",
+    "dev:web:ui": "bun --cwd packages/app dev",
+    "dev:web:backend": "bun run --cwd packages/opencode --conditions=browser ./src/index.ts serve --port 4096",
     "typecheck": "bun turbo typecheck",
     "prepare": "husky",
     "random": "echo 'Random script'",

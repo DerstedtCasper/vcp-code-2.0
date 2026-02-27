@@ -5,6 +5,7 @@ import { Question } from "../../question"
 import z from "zod"
 import { errors } from "../error"
 import { lazy } from "../../util/lazy"
+import { QuestionRuntimeService } from "@/runtime-core/question-service"
 
 export const QuestionRoutes = lazy(() =>
   new Hono()
@@ -26,7 +27,7 @@ export const QuestionRoutes = lazy(() =>
         },
       }),
       async (c) => {
-        const questions = await Question.list()
+        const questions = await QuestionRuntimeService.list()
         return c.json(questions)
       },
     )
@@ -58,7 +59,7 @@ export const QuestionRoutes = lazy(() =>
       async (c) => {
         const params = c.req.valid("param")
         const json = c.req.valid("json")
-        await Question.reply({
+        await QuestionRuntimeService.reply({
           requestID: params.requestID,
           answers: json.answers,
         })
@@ -91,7 +92,7 @@ export const QuestionRoutes = lazy(() =>
       ),
       async (c) => {
         const params = c.req.valid("param")
-        await Question.reject(params.requestID)
+        await QuestionRuntimeService.reject(params.requestID)
         return c.json(true)
       },
     ),

@@ -8,6 +8,7 @@ import { BrowserAutomationService } from "./services/browser-automation"
 import { TelemetryProxy } from "./services/telemetry"
 import { registerCommitMessageService } from "./services/commit-message"
 import { registerCodeActions, registerTerminalActions, NovaCodeActionProvider } from "./services/code-actions"
+import { RuntimeClientFactory } from "./services/runtime"
 
 export function activate(context: vscode.ExtensionContext) {
   console.log("VCP Code 2.0 extension is now active")
@@ -16,6 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Create shared connection service (one server for all webviews)
   const connectionService = new NovaConnectionService(context)
+  const runtimeClientFactory = new RuntimeClientFactory(connectionService)
 
   // Create browser automation service (manages Playwright MCP registration)
   const browserAutomationService = new BrowserAutomationService(connectionService)
@@ -33,7 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
   })
 
   // Create the provider with shared service
-  const provider = new NovaProvider(context.extensionUri, connectionService, context)
+  const provider = new NovaProvider(context.extensionUri, connectionService, context, runtimeClientFactory)
 
   // Register the webview view provider for the sidebar.
   // retainContextWhenHidden keeps the webview alive when switching to other sidebar panels.
@@ -77,10 +79,10 @@ export function activate(context: vscode.ExtensionContext) {
       void vscode.env.openExternal(vscode.Uri.parse("https://opencode.ai/docs"))
     }),
     vscode.commands.registerCommand("vcp-code.new.popoutButtonClicked", () => {
-      return openNovaInNewTab(context, connectionService)
+      return openNovaInNewTab(context, connectionService, runtimeClientFactory)
     }),
     vscode.commands.registerCommand("vcp-code.new.openInNewTab", () => {
-      return openNovaInNewTab(context, connectionService)
+      return openNovaInNewTab(context, connectionService, runtimeClientFactory)
     }),
     vscode.commands.registerCommand("vcp-code.new.exportConfig", async () => {
       await provider.exportGlobalConfig()
@@ -89,7 +91,7 @@ export function activate(context: vscode.ExtensionContext) {
       await provider.importGlobalConfig()
     }),
     vscode.commands.registerCommand("vcp-code.new.openInTab", () => {
-      return openNovaInNewTab(context, connectionService)
+      return openNovaInNewTab(context, connectionService, runtimeClientFactory)
     }),
     vscode.commands.registerCommand("vcp-code.new.agentManager.previousSession", () => {
       agentManagerProvider.postMessage({ type: "action", action: "sessionPrevious" })
@@ -157,7 +159,11 @@ export function deactivate() {
   TelemetryProxy.getInstance().shutdown()
 }
 
-async function openNovaInNewTab(context: vscode.ExtensionContext, connectionService: NovaConnectionService) {
+async function openNovaInNewTab(
+  context: vscode.ExtensionContext,
+  connectionService: NovaConnectionService,
+  runtimeClientFactory: RuntimeClientFactory,
+) {
   const lastCol = Math.max(...vscode.window.visibleTextEditors.map((e) => e.viewColumn || 0), 0)
   const hasVisibleEditors = vscode.window.visibleTextEditors.length > 0
 
@@ -178,7 +184,7 @@ async function openNovaInNewTab(context: vscode.ExtensionContext, connectionServ
     dark: vscode.Uri.joinPath(context.extensionUri, "assets", "icons", "nova-dark.svg"),
   }
 
-  const tabProvider = new NovaProvider(context.extensionUri, connectionService, context)
+  const tabProvider = new NovaProvider(context.extensionUri, connectionService, context, runtimeClientFactory)
   tabProvider.resolveWebviewPanel(panel)
 
   // Wait for the new panel to become active before locking the editor group.

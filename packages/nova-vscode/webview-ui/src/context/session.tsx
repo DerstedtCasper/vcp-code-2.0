@@ -38,9 +38,12 @@ import type {
   FileAttachment,
   PromptQueueItem,
   BusyInsertMode,
+  YoloDecisionMadeMessage,
 } from "../types/messages"
 import { removeSessionPermissions, upsertPermission } from "./permission-queue"
 import { computeStatus, calcTotalCost, calcContextUsage } from "./session-utils"
+
+type YoloDecision = Omit<YoloDecisionMadeMessage, "type">
 
 // Store structure for messages and parts
 interface SessionStore {
@@ -86,6 +89,7 @@ interface SessionContextValue {
 
   // Pending permission requests
   permissions: Accessor<PermissionRequest[]>
+  getYoloDecision: (requestID: string) => YoloDecision | undefined
 
   // Pending question requests
   questions: Accessor<QuestionRequest[]>
@@ -171,6 +175,7 @@ export const SessionProvider: ParentComponent = (props) => {
 
   // Pending permissions
   const [permissions, setPermissions] = createSignal<PermissionRequest[]>([])
+  const [yoloDecisions, setYoloDecisions] = createStore<Record<string, YoloDecision>>({})
 
   // Pending questions
   const [questions, setQuestions] = createSignal<QuestionRequest[]>([])
@@ -356,6 +361,9 @@ export const SessionProvider: ParentComponent = (props) => {
 
         case "permissionRequest":
           handlePermissionRequest(message.permission)
+          break
+        case "yoloDecisionMade":
+          handleYoloDecisionMade(message)
           break
 
         case "todoUpdated":
@@ -566,6 +574,35 @@ export const SessionProvider: ParentComponent = (props) => {
     setPermissions((prev) => upsertPermission(prev, permission))
   }
 
+  function handleYoloDecisionMade(message: YoloDecisionMadeMessage) {
+    const exists = Boolean(yoloDecisions[message.requestID])
+    setYoloDecisions(message.requestID, {
+      requestID: message.requestID,
+      sessionID: message.sessionID,
+      permission: message.permission,
+      route: message.route,
+      confidence: message.confidence,
+      reason: message.reason,
+      source: message.source,
+    })
+
+    if (!exists) {
+      const confidencePercent = Number.isFinite(message.confidence)
+        ? Math.max(0, Math.min(100, Math.round(message.confidence <= 1 ? message.confidence * 100 : message.confidence)))
+        : 0
+      const reason = message.reason?.trim() || "no reason provided"
+      const text =
+        `[YOLO] route=${message.route} permission=${message.permission} ` +
+        `confidence=${confidencePercent}% source=${message.source}\n` +
+        `reason: ${reason}`
+      appendReasoningPartForSession(message.sessionID, text, `vcp-yolo-${message.requestID}`)
+    }
+
+    if (message.route === "approve") {
+      setPermissions((prev) => prev.filter((p) => p.id !== message.requestID))
+    }
+  }
+
   function handleQuestionRequest(question: QuestionRequest) {
     setQuestions((prev) => {
       const idx = prev.findIndex((q) => q.id === question.id)
@@ -593,12 +630,32 @@ export const SessionProvider: ParentComponent = (props) => {
     setStore("todos", sessionID, items)
   }
 
-  function appendReasoningPart(messageID: string, text: string) {
+  function ensureAssistantMessageForSession(sessionID: string): string {
+    const messages = store.messages[sessionID] ?? []
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "assistant") {
+        return messages[i].id
+      }
+    }
+
+    const messageID = `system-assistant-${crypto.randomUUID()}`
+    const synthetic: Message = {
+      id: messageID,
+      sessionID,
+      role: "assistant",
+      content: "",
+      createdAt: new Date().toISOString(),
+    }
+    setStore("messages", sessionID, (prev = []) => [...prev, synthetic])
+    return messageID
+  }
+
+  function appendReasoningPart(messageID: string, text: string, partID?: string) {
     const trimmed = text.trim()
     if (!trimmed) return
 
     const part: Part = {
-      id: `vcp-${crypto.randomUUID()}`,
+      id: partID ?? `vcp-${crypto.randomUUID()}`,
       type: "reasoning",
       text: trimmed,
       messageID,
@@ -610,9 +667,19 @@ export const SessionProvider: ParentComponent = (props) => {
         if (!parts[messageID]) {
           parts[messageID] = []
         }
+        const existingIndex = parts[messageID].findIndex((p) => p.id === part.id)
+        if (existingIndex >= 0) {
+          parts[messageID][existingIndex] = part
+          return
+        }
         parts[messageID].push(part)
       }),
     )
+  }
+
+  function appendReasoningPartForSession(sessionID: string, text: string, partID?: string) {
+    const messageID = ensureAssistantMessageForSession(sessionID)
+    appendReasoningPart(messageID, text, partID)
   }
 
   function handleVcpInfo(messageID: string, content: string) {
@@ -723,6 +790,13 @@ export const SessionProvider: ParentComponent = (props) => {
         })
       }
       setPermissions((prev) => removeSessionPermissions(prev, sessionID))
+      setYoloDecisions(
+        produce((items) => {
+          for (const [requestID, decision] of Object.entries(items)) {
+            if (decision.sessionID === sessionID) delete items[requestID]
+          }
+        }),
+      )
       setStatusMap(
         produce((map) => {
           delete map[sessionID]
@@ -868,6 +942,11 @@ export const SessionProvider: ParentComponent = (props) => {
 
     // Remove from pending permissions
     setPermissions((prev) => prev.filter((p) => p.id !== permissionId))
+    setYoloDecisions(
+      produce((items) => {
+        delete items[permissionId]
+      }),
+    )
   }
 
   function clearQuestionError(requestID: string) {
@@ -913,6 +992,7 @@ export const SessionProvider: ParentComponent = (props) => {
     setCurrentSessionID(undefined)
     setLoading(false)
     setPermissions([])
+    setYoloDecisions({})
     setQuestions([])
     setQuestionErrors(new Set<string>())
     setPendingModelSelection(provider.defaultSelection())
@@ -974,6 +1054,7 @@ export const SessionProvider: ParentComponent = (props) => {
   const allMessages = () => store.messages
 
   const allParts = () => store.parts
+  const getYoloDecision = (requestID: string) => yoloDecisions[requestID]
 
   function syncSession(sessionID: string) {
     vscode.postMessage({ type: "syncSession", sessionID })
@@ -1033,6 +1114,7 @@ export const SessionProvider: ParentComponent = (props) => {
     getParts,
     todos,
     permissions,
+    getYoloDecision,
     questions,
     questionErrors,
     selected,

@@ -23,6 +23,7 @@ export class NovaConnectionService {
   private config: ServerConfig | null = null
   private state: ConnectionState = "disconnected"
   private connectPromise: Promise<void> | null = null
+  private legacyFallbackWarned = false
 
   private readonly eventListeners: Set<SSEEventListener> = new Set()
   private readonly stateListeners: Set<StateListener> = new Set()
@@ -62,6 +63,21 @@ export class NovaConnectionService {
     } finally {
       this.connectPromise = null
     }
+  }
+
+  /**
+   * Legacy runtime fallback entry point with a one-time downgrade warning.
+   */
+  async connectWithLegacyFallback(workspaceDir: string, reason: string): Promise<void> {
+    if (!this.legacyFallbackWarned) {
+      this.legacyFallbackWarned = true
+      const message = "VCP Code is using legacy runtime fallback connection."
+      console.warn(`[Nova New] ${message} reason=${reason}`)
+      void vscode.window.showWarningMessage(`${message} Some features may behave differently.`)
+    } else {
+      console.warn(`[Nova New] Legacy runtime fallback retry. reason=${reason}`)
+    }
+    await this.connect(workspaceDir)
   }
 
   /**
@@ -185,6 +201,7 @@ export class NovaConnectionService {
     this.config = null
     this.info = null
     this.state = "disconnected"
+    this.legacyFallbackWarned = false
   }
 
   private setState(state: ConnectionState): void {

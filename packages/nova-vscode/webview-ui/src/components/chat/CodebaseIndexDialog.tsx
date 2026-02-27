@@ -92,10 +92,39 @@ const CodebaseIndexDialogInner: Component<CodebaseIndexDialogProps> = (props) =>
     return normalized
   }
 
-  const getBackendUrl = () => {
-    const port = (window as any).__OPENCODE_PORT__ || 13338
-    return `http://localhost:${port}`
-  }
+  const requestModelsFromExtension = (baseUrl: string, apiKey: string) =>
+    new Promise<{ models: string[]; error?: string }>((resolve) => {
+      const requestId = `embedding-models-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+      let settled = false
+
+      const finish = (result: { models: string[]; error?: string }) => {
+        if (settled) return
+        settled = true
+        clearTimeout(timeout)
+        unsubscribe()
+        resolve(result)
+      }
+
+      const unsubscribe = vscode.onMessage((message: ExtensionMessage) => {
+        if (message.type !== "openAiModels") return
+        if (message.requestId !== requestId) return
+        finish({
+          models: Array.isArray(message.openAiModels) ? message.openAiModels : [],
+          error: message.error,
+        })
+      })
+
+      const timeout = setTimeout(() => {
+        finish({ models: [], error: "Request timeout (15s)" })
+      }, 16000)
+
+      vscode.postMessage({
+        type: "requestOpenAiModels",
+        baseUrl,
+        apiKey,
+        requestId,
+      })
+    })
 
   /** Test the embedding endpoint by trying to list models */
   const testEmbeddingConnection = async () => {
@@ -108,24 +137,15 @@ const CodebaseIndexDialogInner: Component<CodebaseIndexDialogProps> = (props) =>
     setEmbeddingTestError("")
     try {
       const normalizedUrl = normalizeEmbeddingUrl(rawUrl)
-      // Build models URL for testing
-      let modelsUrl = normalizedUrl.replace(/\/+$/, "")
-      if (!modelsUrl.endsWith("/models")) {
-        modelsUrl += "/models"
-      }
       const apiKey = indexConfig().embeddingApiKey ?? ""
-      const res = await fetch(`${getBackendUrl()}/provider/fetch-models`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ base_url: modelsUrl, api_key: apiKey }),
-      })
-      const data = (await res.json()) as { ok: boolean; models?: Array<{ id: string }>; error?: string }
-      if (data.ok && data.models && data.models.length > 0) {
+      const result = await requestModelsFromExtension(normalizedUrl, apiKey)
+      const models = result.models
+      if (!result.error && models.length > 0) {
         setEmbeddingTestStatus("success")
         setEmbeddingTestError("")
         showToast({
           variant: "success",
-          title: language.t("settings.codebaseIndex.embedding.testSuccess", { count: String(data.models.length) }),
+          title: language.t("settings.codebaseIndex.embedding.testSuccess", { count: String(models.length) }),
         })
         // Auto-normalize the URL in config if the test succeeds
         if (normalizedUrl !== rawUrl) {
@@ -133,13 +153,13 @@ const CodebaseIndexDialogInner: Component<CodebaseIndexDialogProps> = (props) =>
         }
       } else {
         setEmbeddingTestStatus("error")
-        const err = data.error ?? "No models returned"
+        const err = result.error ?? "No models returned"
         setEmbeddingTestError(err)
         showToast({ variant: "error", title: language.t("settings.codebaseIndex.embedding.testFailed"), description: err.slice(0, 200) })
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setEmbeddingTestStatus("error")
-      const msg = String(err?.message ?? err)
+      const msg = err instanceof Error ? err.message : String(err)
       setEmbeddingTestError(msg)
       showToast({ variant: "error", title: language.t("settings.codebaseIndex.embedding.testFailed"), description: msg.slice(0, 200) })
     }
