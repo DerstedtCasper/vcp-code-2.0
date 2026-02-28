@@ -41,7 +41,7 @@
 		"@vitejs/plugin-react": "^4.3.4",
 		"chromatic": "^13.0.0",
 		"jsonc-parser": "^3.3.1",
-		"node-fetch": "2",
+		"node-fetch": "3",
 		"rimraf": "^6.1.0",
 		"storybook": "^9.1.17",
 		"tailwindcss-animate": "^1.0.7",
