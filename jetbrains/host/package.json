@@ -65,7 +65,7 @@
 		"vscode-regexpp": "^3.1.0",
 		"vscode-textmate": "9.2.0",
 		"yauzl": "^3.0.0",
-		"yazl": "^2.4.3"
+		"yazl": "^3.3.1"
 	},
 	"devDependencies": {
 		"@roo-code/config-eslint": "file:../../packages/config-eslint",
@@ -88,7 +88,7 @@
 		"@types/windows-foreground-love": "^0.3.0",
 		"@types/winreg": "^1.2.30",
 		"@types/yauzl": "^2.10.0",
-		"@types/yazl": "^2.4.2",
+		"@types/yazl": "^3.3.0",
 		"@vscode/gulp-electron": "^1.36.0",
 		"@vscode/l10n-dev": "0.0.35",
 		"@vscode/telemetry-extractor": "^1.10.2",
