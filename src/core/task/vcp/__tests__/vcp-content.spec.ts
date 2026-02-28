@@ -25,6 +25,21 @@ describe("vcp-content", () => {
 		expect(result.text).toContain("data-vcp-info")
 	})
 
+	test("renders vcp info details while escaping non-vcp html when html rendering is disabled", () => {
+		const config = {
+			...getDefaultVcpConfig(),
+			enabled: true,
+			html: { enabled: false },
+		}
+		const input =
+			'prefix <b>bold</b> <<<[VCPINFO]>>>{"title":"Info","body":"<i>safe</i>"}<<<[END_VCPINFO]>>> suffix'
+		const result = processVcpContent(input, config)
+		expect(result.text).toContain("&lt;b&gt;bold&lt;/b&gt;")
+		expect(result.text).toContain('<details data-vcp-info="true">')
+		expect(result.text).toContain("&lt;i&gt;safe&lt;/i&gt;")
+		expect(result.text).not.toContain("&lt;details")
+	})
+
 	test("parses tool requests and removes raw block when keepBlockInText=false", () => {
 		const config = {
 			...getDefaultVcpConfig(),

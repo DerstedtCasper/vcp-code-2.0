@@ -54,6 +54,7 @@ import {
 	MIN_CHECKPOINT_TIMEOUT_SECONDS,
 	TOOL_PROTOCOL,
 	ConsecutiveMistakeError,
+	getDefaultVcpConfig,
 } from "@roo-code/types"
 import { TelemetryService } from "@roo-code/telemetry"
 import { CloudService, BridgeOrchestrator } from "@roo-code/cloud"
@@ -161,6 +162,8 @@ import { AutoApprovalHandler, checkAutoApproval } from "../auto-approval"
 import { MessageManager } from "../message-manager"
 import { validateAndFixToolResultIds } from "./validateToolResultIds"
 import { deduplicateToolUseBlocks } from "./deduplicateToolUseBlocks"
+import { processVcpContent } from "./vcp/vcp-content"
+import { isToolAllowed, normalizeToolName } from "./vcp/vcp-tool-request"
 
 const MAX_EXPONENTIAL_BACKOFF_SECONDS = 600 // 10 minutes
 const DEFAULT_USAGE_COLLECTION_TIMEOUT_MS = 5000 // 5 seconds
@@ -3726,6 +3729,48 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 				// Reset parser after each complete conversation round (XML protocol only)
 				this.assistantMessageParser?.reset()
+
+				// Apply VCP parsing to finalized assistant text before persisting history.
+				const providerState = await this.providerRef.deref()?.getState()
+				const effectiveVcpConfig = providerState?.vcpConfig ?? getDefaultVcpConfig()
+				if (assistantMessage && effectiveVcpConfig.enabled) {
+					const processedVcp = processVcpContent(assistantMessage, effectiveVcpConfig)
+					assistantMessage = processedVcp.text
+
+					const hasNativeToolUse = this.assistantMessageContent.some(
+						(block) => block.type === "tool_use" || block.type === "mcp_tool_use",
+					)
+					if (
+						effectiveVcpConfig.toolRequest.enabled &&
+						effectiveVcpConfig.toolRequest.bridgeMode === "execute" &&
+						!hasNativeToolUse
+					) {
+						let addedToolRequests = 0
+						for (const request of processedVcp.toolRequests) {
+							if (!isToolAllowed(request.toolName, effectiveVcpConfig.toolRequest)) {
+								continue
+							}
+
+							const normalizedName = normalizeToolName(request.toolName)
+							if (!normalizedName) {
+								continue
+							}
+
+							this.assistantMessageContent.push({
+								type: "tool_use",
+								name: normalizedName as ToolName,
+								params: request.params as any,
+								partial: false,
+							})
+							addedToolRequests += 1
+						}
+
+						if (addedToolRequests > 0) {
+							this.userMessageContentReady = false
+							presentAssistantMessage(this)
+						}
+					}
+				}
 
 				// Now add to apiConversationHistory.
 				// Need to save assistant responses to file before proceeding to

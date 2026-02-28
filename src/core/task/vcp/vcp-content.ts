@@ -49,6 +49,15 @@ function esc(value: string): string {
 	return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 }
 
+function restorePlaceholders(text: string, replacements: string[]): string {
+	let output = text
+	for (const [index, value] of replacements.entries()) {
+		const token = `__VCP_PLACEHOLDER_${index}__`
+		output = output.split(token).join(value)
+	}
+	return output
+}
+
 function normalizeMarker(value: string | undefined, fallback: string): string {
 	const trimmed = value?.trim()
 	return trimmed && trimmed.length > 0 ? trimmed : fallback
@@ -246,19 +255,24 @@ function parseFoldBlocks(raw: string): FoldBlock[] {
 	return blocks
 }
 
-function renderFoldBlocks(blocks: FoldBlock[], style: "details" | "comment"): string {
+function renderFoldBlocks(blocks: FoldBlock[], style: "details" | "comment", escapeContent: boolean): string {
 	if (blocks.length === 0) return ""
 
 	if (style === "comment") {
 		return blocks
-			.map((block) => `<!-- vcp-fold: ${block.title} -->\n${block.content || "_(empty)_"}\n<!-- /vcp-fold -->`)
+			.map((block) => {
+				const content = block.content || "_(empty)_"
+				return `<!-- vcp-fold: ${block.title} -->\n${escapeContent ? esc(content) : content}\n<!-- /vcp-fold -->`
+			})
 			.join("\n\n")
 	}
 
 	return blocks
 		.map(
 			(block) =>
-				`<details data-vcp-fold="true"><summary>${esc(block.title)}</summary>\n\n${block.content || "_(empty)_"}\n</details>`,
+				`<details data-vcp-fold="true"><summary>${esc(block.title)}</summary>\n\n${
+					escapeContent ? esc(block.content || "_(empty)_") : block.content || "_(empty)_"
+				}\n</details>`,
 		)
 		.join("\n\n")
 }
@@ -305,6 +319,17 @@ export function processVcpContent(text: string, config: VcpConfig): VcpProcessRe
 
 	const notifications: VcpNotification[] = []
 	const toolRequests: VcpToolRequestBlock[] = []
+	const preservedBlocks: string[] = []
+	const shouldEscapeHtml = config.html.enabled === false
+
+	const preserveBlock = (value: string): string => {
+		if (!shouldEscapeHtml) {
+			return value
+		}
+		const token = `__VCP_PLACEHOLDER_${preservedBlocks.length}__`
+		preservedBlocks.push(value)
+		return token
+	}
 	let next = text
 
 	if (config.contextFold.enabled) {
@@ -314,7 +339,7 @@ export function processVcpContent(text: string, config: VcpConfig): VcpProcessRe
 			try {
 				const blocks = parseFoldBlocks(content)
 				if (blocks.length === 0) return content.trim()
-				return renderFoldBlocks(blocks, config.contextFold.style)
+				return preserveBlock(renderFoldBlocks(blocks, config.contextFold.style, shouldEscapeHtml))
 			} catch {
 				return content.trim()
 			}
@@ -327,9 +352,12 @@ export function processVcpContent(text: string, config: VcpConfig): VcpProcessRe
 		next = replaceDelimitedBlocks(next, infoStart, infoEnd, (content, index) => {
 			const notification = parseInfoBlock(content, index)
 			notifications.push(notification)
-			return `<details data-vcp-info="true"><summary>${esc(notification.title)}</summary>\n\n${
-				notification.body || "_(empty)_"
-			}\n</details>`
+			const body = notification.body || "_(empty)_"
+			return preserveBlock(
+				`<details data-vcp-info="true"><summary>${esc(notification.title)}</summary>\n\n${
+					shouldEscapeHtml ? esc(body) : body
+				}\n</details>`,
+			)
 		})
 	}
 
@@ -356,12 +384,19 @@ export function processVcpContent(text: string, config: VcpConfig): VcpProcessRe
 			}
 
 			const body = content.trim() || "_(empty)_"
-			return `<details data-vcp-tool-request="true"><summary>Tool Request ${index + 1}</summary>\n\n${body}\n</details>`
+			return preserveBlock(
+				`<details data-vcp-tool-request="true"><summary>Tool Request ${index + 1}</summary>\n\n${
+					shouldEscapeHtml ? esc(body) : body
+				}\n</details>`,
+			)
 		})
 	}
 
-	if (config.html.enabled === false) {
-		next = next.replace(/</g, "&lt;").replace(/>/g, "&gt;")
+	if (shouldEscapeHtml) {
+		next = esc(next)
+		if (preservedBlocks.length > 0) {
+			next = restorePlaceholders(next, preservedBlocks)
+		}
 	}
 
 	return {
