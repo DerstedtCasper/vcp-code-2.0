@@ -3,7 +3,7 @@
 	"license": "Apache-2.0",
 	"type": "module",
 	"devDependencies": {
-		"del-cli": "^5.1.0",
+		"del-cli": "^7.0.0",
 		"cpy-cli": "^5.0.0",
 		"mkdirp": "^3.0.1"
 	},
