@@ -264,7 +264,7 @@ importers:
         specifier: '>=11.1.0'
         version: 13.0.6
       mocha:
-        specifier: ^11.1.0
+        specifier: ^11.7.5
         version: 11.7.5
       rimraf:
         specifier: ^6.1.0
@@ -900,14 +900,14 @@ importers:
         specifier: ^3.0.4
         version: 3.1.5
       mocha:
-        specifier: ^10.8.2
-        version: 10.8.2
+        specifier: ^11.7.5
+        version: 11.7.5
       mocha-junit-reporter:
         specifier: ^2.2.1
-        version: 2.2.1(mocha@10.8.2)
+        version: 2.2.1(mocha@11.7.5)
       mocha-multi-reporters:
         specifier: ^1.5.1
-        version: 1.5.1(mocha@10.8.2)
+        version: 1.5.1(mocha@11.7.5)
       npm-run-all:
         specifier: ^4.1.5
         version: 4.1.5
@@ -3397,6 +3397,7 @@ packages:
   '@lancedb/lancedb@0.21.3':
     resolution: {integrity: sha512-hfzp498BfcCJ730fV1YGGoXVxRgE+W1n0D0KwanKlbt8bBPSQ6E6Tf8mPXc8rKdAXIRR3o5mTzMG3z3Fda+m3Q==}
     engines: {node: '>= 18'}
+    cpu: [x64, arm64]
     os: [darwin, linux, win32]
     peerDependencies:
       apache-arrow: '>=15.0.0 <=18.1.0'
@@ -28350,22 +28351,22 @@ snapshots:
       pkg-types: 1.3.1
       ufo: 1.6.3
 
-  mocha-junit-reporter@2.2.1(mocha@10.8.2):
+  mocha-junit-reporter@2.2.1(mocha@11.7.5):
     dependencies:
       debug: 4.4.3(supports-color@8.1.1)
       md5: 2.3.0
       mkdirp: 3.0.1
-      mocha: 10.8.2
+      mocha: 11.7.5
       strip-ansi: 6.0.1
       xml: 1.0.1
     transitivePeerDependencies:
       - supports-color
 
-  mocha-multi-reporters@1.5.1(mocha@10.8.2):
+  mocha-multi-reporters@1.5.1(mocha@11.7.5):
     dependencies:
       debug: 4.4.3(supports-color@8.1.1)
       lodash: 4.17.23
-      mocha: 10.8.2
+      mocha: 11.7.5
     transitivePeerDependencies:
       - supports-color
 
