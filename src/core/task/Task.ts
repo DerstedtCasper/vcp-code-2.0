@@ -5026,6 +5026,31 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			}
 
 			// Build header text; fall back to error message if none provided
+			const rawErrorDetails = (() => {
+				try {
+					const payload: Record<string, unknown> = {
+						status: error?.status,
+						code: error?.code,
+						message: error?.message,
+						type: error?.name,
+						error: error?.error,
+						errorDetails: error?.errorDetails,
+						responseData: error?.response?.data,
+					}
+					const sanitizedEntries = Object.entries(payload).filter(([, value]) => value !== undefined)
+					if (sanitizedEntries.length === 0) {
+						return undefined
+					}
+					const serialized = JSON.stringify(Object.fromEntries(sanitizedEntries), null, 2)
+					if (!serialized || serialized === "{}") {
+						return undefined
+					}
+					return serialized.length > 8000 ? `${serialized.slice(0, 8000)}\n...<truncated>` : serialized
+				} catch {
+					return undefined
+				}
+			})()
+
 			let headerText
 			if (error.status) {
 				// Include both status code (for ChatRow parsing) and detailed message (for error details)
@@ -5037,6 +5062,10 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				headerText = error.message
 			} else {
 				headerText = "Unknown error"
+			}
+
+			if (rawErrorDetails) {
+				headerText += `\nRaw error details:\n${rawErrorDetails}`
 			}
 
 			headerText = headerText ? `${headerText}\n` : ""

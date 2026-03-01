@@ -3,7 +3,7 @@
 	"displayName": "%extension.displayName%",
 	"description": "%extension.description%",
 	"publisher": "novacode",
-	"version": "1.0.5",
+	"version": "1.0.6",
 	"icon": "assets/icons/logo-outline-black.png",
 	"galleryBanner": {
 		"color": "#FFFFFF",
@@ -672,7 +672,7 @@
 		"bundle": "node esbuild.mjs",
 		"vscode:prepublish": "pnpm bundle --production",
 		"vsix:clean": "rimraf ../bin",
-		"vsix": "mkdirp ../bin && vsce package --no-dependencies --out ../bin/vcp-code-1.0.5.vsix",
+		"vsix": "mkdirp ../bin && vsce package --no-dependencies --out ../bin/vcp-code-1.0.6.vsix",
 		"vsix:unpacked": "mkdirp ../bin-unpacked && unzip -q -o ../bin/vcp-code-*.vsix -d ../bin-unpacked",
 		"publish:marketplace": "vsce publish --no-dependencies && ovsx publish --no-dependencies",
 		"watch:bundle": "pnpm bundle --watch",

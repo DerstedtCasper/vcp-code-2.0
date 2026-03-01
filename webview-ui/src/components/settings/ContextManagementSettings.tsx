@@ -3,6 +3,7 @@ import React from "react"
 import { useAppTranslation } from "@/i18n/TranslationContext"
 import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react"
 import { FoldVertical } from "lucide-react"
+import { getDefaultVcpConfig, type VcpConfig } from "@roo-code/types"
 
 import { cn } from "@/lib/utils"
 import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Slider, Button } from "@/components/ui"
@@ -33,6 +34,8 @@ type ContextManagementSettingsProps = HTMLAttributes<HTMLDivElement> & {
 	includeCurrentTime?: boolean
 	includeCurrentCost?: boolean
 	maxGitStatusFiles?: number
+	vcpConfig?: VcpConfig
+	onUpdateVcpConfig?: (patch: DeepPartial<VcpConfig>) => void
 	setCachedStateField: SetCachedStateField<
 		| "autoCondenseContext"
 		| "autoCondenseContextPercent"
@@ -53,6 +56,26 @@ type ContextManagementSettingsProps = HTMLAttributes<HTMLDivElement> & {
 		| "includeCurrentCost"
 		| "maxGitStatusFiles"
 	>
+}
+
+type DeepPartial<T> = {
+	[K in keyof T]?: T[K] extends Array<infer U> ? Array<U> : T[K] extends object ? DeepPartial<T[K]> : T[K]
+}
+
+const toInt = (value: string, min: number, fallback: number): number => {
+	const next = Number(value)
+	if (!Number.isFinite(next)) {
+		return fallback
+	}
+	return Math.max(min, Math.floor(next))
+}
+
+const toFloat = (value: string, min: number, max: number, fallback: number): number => {
+	const next = Number(value)
+	if (!Number.isFinite(next)) {
+		return fallback
+	}
+	return Math.min(max, Math.max(min, next))
 }
 
 export const ContextManagementSettings = ({
@@ -76,11 +99,44 @@ export const ContextManagementSettings = ({
 	includeCurrentTime,
 	includeCurrentCost,
 	maxGitStatusFiles,
+	vcpConfig,
+	onUpdateVcpConfig,
 	className,
 	...props
 }: ContextManagementSettingsProps) => {
 	const { t } = useAppTranslation()
 	const [selectedThresholdProfile, setSelectedThresholdProfile] = React.useState<string>("default")
+	const defaults = getDefaultVcpConfig()
+	const currentVcpConfig: VcpConfig = {
+		...defaults,
+		...(vcpConfig ?? {}),
+		contextFold: { ...defaults.contextFold, ...(vcpConfig?.contextFold ?? {}) },
+		vcpInfo: { ...defaults.vcpInfo, ...(vcpConfig?.vcpInfo ?? {}) },
+		html: { ...defaults.html, ...(vcpConfig?.html ?? {}) },
+		toolRequest: { ...defaults.toolRequest, ...(vcpConfig?.toolRequest ?? {}) },
+		agentTeam: { ...defaults.agentTeam, ...(vcpConfig?.agentTeam ?? {}) },
+		memory: {
+			...defaults.memory,
+			...(vcpConfig?.memory ?? {}),
+			passive: { ...defaults.memory.passive, ...(vcpConfig?.memory?.passive ?? {}) },
+			writer: { ...defaults.memory.writer, ...(vcpConfig?.memory?.writer ?? {}) },
+			retrieval: { ...defaults.memory.retrieval, ...(vcpConfig?.memory?.retrieval ?? {}) },
+			refresh: { ...defaults.memory.refresh, ...(vcpConfig?.memory?.refresh ?? {}) },
+		},
+		toolbox: { ...defaults.toolbox, ...(vcpConfig?.toolbox ?? {}) },
+		snowCompat: {
+			...defaults.snowCompat,
+			...(vcpConfig?.snowCompat ?? {}),
+			responsesReasoning: {
+				...defaults.snowCompat.responsesReasoning,
+				...(vcpConfig?.snowCompat?.responsesReasoning ?? {}),
+			},
+			proxy: {
+				...defaults.snowCompat.proxy,
+				...(vcpConfig?.snowCompat?.proxy ?? {}),
+			},
+		},
+	}
 
 	// Helper function to get the current threshold value based on selected profile
 	const getCurrentThresholdValue = () => {
@@ -472,6 +528,365 @@ export const ContextManagementSettings = ({
 						{t("settings:contextManagement.includeCurrentCost.description")}
 					</div>
 				</SearchableSetting>
+
+				<div className="mt-4 rounded border border-vscode-panel-border p-3">
+					<div className="font-medium mb-2">VCP Memory</div>
+					<div className="text-vscode-descriptionForeground text-sm mb-3">
+						Memory 配置已迁移至上下文管理，支持更细粒度参数。
+					</div>
+
+					<div className="grid grid-cols-1 gap-3">
+						<VSCodeCheckbox
+							checked={currentVcpConfig.memory.passive.enabled}
+							onChange={(e: any) =>
+								onUpdateVcpConfig?.({ memory: { passive: { enabled: e.target.checked === true } } })
+							}
+							data-testid="context-vcp-memory-passive-enabled-checkbox">
+							Enable passive memory
+						</VSCodeCheckbox>
+						<div className="flex items-center gap-2">
+							<Input
+								type="number"
+								className="w-32"
+								value={String(currentVcpConfig.memory.passive.maxItems)}
+								onChange={(e) =>
+									onUpdateVcpConfig?.({
+										memory: {
+											passive: {
+												maxItems: toInt(
+													String(e.target.value ?? ""),
+													1,
+													currentVcpConfig.memory.passive.maxItems,
+												),
+											},
+										},
+									})
+								}
+								data-testid="context-vcp-memory-passive-max-items-input"
+							/>
+							<span className="text-sm">Passive max items</span>
+						</div>
+						<div className="flex items-center gap-2">
+							<Input
+								type="number"
+								className="w-32"
+								value={String(currentVcpConfig.memory.passive.maxCharsPerItem)}
+								onChange={(e) =>
+									onUpdateVcpConfig?.({
+										memory: {
+											passive: {
+												maxCharsPerItem: toInt(
+													String(e.target.value ?? ""),
+													1,
+													currentVcpConfig.memory.passive.maxCharsPerItem,
+												),
+											},
+										},
+									})
+								}
+								data-testid="context-vcp-memory-passive-max-chars-input"
+							/>
+							<span className="text-sm">Passive max chars per item</span>
+						</div>
+						<div className="flex items-center gap-2">
+							<Input
+								type="number"
+								step="0.01"
+								className="w-32"
+								value={String(currentVcpConfig.memory.passive.minImportance)}
+								onChange={(e) =>
+									onUpdateVcpConfig?.({
+										memory: {
+											passive: {
+												minImportance: toFloat(
+													String(e.target.value ?? ""),
+													0,
+													1,
+													currentVcpConfig.memory.passive.minImportance,
+												),
+											},
+										},
+									})
+								}
+								data-testid="context-vcp-memory-passive-min-importance-input"
+							/>
+							<span className="text-sm">Passive min importance (0-1)</span>
+						</div>
+
+						<hr className="border-vscode-panel-border" />
+
+						<VSCodeCheckbox
+							checked={currentVcpConfig.memory.writer.enabled}
+							onChange={(e: any) =>
+								onUpdateVcpConfig?.({ memory: { writer: { enabled: e.target.checked === true } } })
+							}
+							data-testid="context-vcp-memory-writer-enabled-checkbox">
+							Enable memory writer
+						</VSCodeCheckbox>
+						<div className="flex items-center gap-2">
+							<Input
+								type="number"
+								className="w-32"
+								value={String(currentVcpConfig.memory.writer.triggerTokens)}
+								onChange={(e) =>
+									onUpdateVcpConfig?.({
+										memory: {
+											writer: {
+												triggerTokens: toInt(
+													String(e.target.value ?? ""),
+													1,
+													currentVcpConfig.memory.writer.triggerTokens,
+												),
+											},
+										},
+									})
+								}
+								data-testid="context-vcp-memory-writer-trigger-tokens-input"
+							/>
+							<span className="text-sm">Writer trigger tokens</span>
+						</div>
+						<div className="flex items-center gap-2">
+							<Input
+								type="number"
+								className="w-32"
+								value={String(currentVcpConfig.memory.writer.minChars)}
+								onChange={(e) =>
+									onUpdateVcpConfig?.({
+										memory: {
+											writer: {
+												minChars: toInt(
+													String(e.target.value ?? ""),
+													1,
+													currentVcpConfig.memory.writer.minChars,
+												),
+											},
+										},
+									})
+								}
+								data-testid="context-vcp-memory-writer-min-chars-input"
+							/>
+							<span className="text-sm">Writer min chars</span>
+						</div>
+						<div className="flex items-center gap-2">
+							<Input
+								type="number"
+								step="0.01"
+								className="w-32"
+								value={String(currentVcpConfig.memory.writer.importanceThreshold)}
+								onChange={(e) =>
+									onUpdateVcpConfig?.({
+										memory: {
+											writer: {
+												importanceThreshold: toFloat(
+													String(e.target.value ?? ""),
+													0,
+													1,
+													currentVcpConfig.memory.writer.importanceThreshold,
+												),
+											},
+										},
+									})
+								}
+								data-testid="context-vcp-memory-writer-importance-threshold-input"
+							/>
+							<span className="text-sm">Writer importance threshold (0-1)</span>
+						</div>
+						<VSCodeCheckbox
+							checked={currentVcpConfig.memory.writer.summarizeLongContent}
+							onChange={(e: any) =>
+								onUpdateVcpConfig?.({
+									memory: { writer: { summarizeLongContent: e.target.checked === true } },
+								})
+							}
+							data-testid="context-vcp-memory-writer-summarize-checkbox">
+							Summarize long content before writing
+						</VSCodeCheckbox>
+
+						<hr className="border-vscode-panel-border" />
+
+						<VSCodeCheckbox
+							checked={currentVcpConfig.memory.retrieval.enabled}
+							onChange={(e: any) =>
+								onUpdateVcpConfig?.({
+									memory: { retrieval: { enabled: e.target.checked === true } },
+								})
+							}
+							data-testid="context-vcp-memory-retrieval-enabled-checkbox">
+							Enable retrieval memory
+						</VSCodeCheckbox>
+						<div className="flex items-center gap-2">
+							<Input
+								type="number"
+								className="w-32"
+								value={String(currentVcpConfig.memory.retrieval.topK)}
+								onChange={(e) =>
+									onUpdateVcpConfig?.({
+										memory: {
+											retrieval: {
+												topK: toInt(
+													String(e.target.value ?? ""),
+													1,
+													currentVcpConfig.memory.retrieval.topK,
+												),
+											},
+										},
+									})
+								}
+								data-testid="context-vcp-memory-retrieval-topk-input"
+							/>
+							<span className="text-sm">Retrieval topK</span>
+						</div>
+						<div className="flex items-center gap-2">
+							<Input
+								type="number"
+								step="0.01"
+								className="w-32"
+								value={String(currentVcpConfig.memory.retrieval.decayFactor)}
+								onChange={(e) =>
+									onUpdateVcpConfig?.({
+										memory: {
+											retrieval: {
+												decayFactor: toFloat(
+													String(e.target.value ?? ""),
+													0,
+													1,
+													currentVcpConfig.memory.retrieval.decayFactor,
+												),
+											},
+										},
+									})
+								}
+								data-testid="context-vcp-memory-retrieval-decay-factor-input"
+							/>
+							<span className="text-sm">Retrieval decay factor (0-1)</span>
+						</div>
+						<div className="flex items-center gap-2">
+							<Input
+								type="number"
+								step="0.01"
+								className="w-32"
+								value={String(currentVcpConfig.memory.retrieval.minScore)}
+								onChange={(e) =>
+									onUpdateVcpConfig?.({
+										memory: {
+											retrieval: {
+												minScore: toFloat(
+													String(e.target.value ?? ""),
+													0,
+													1,
+													currentVcpConfig.memory.retrieval.minScore,
+												),
+											},
+										},
+									})
+								}
+								data-testid="context-vcp-memory-retrieval-min-score-input"
+							/>
+							<span className="text-sm">Retrieval min score (0-1)</span>
+						</div>
+						<div className="flex items-center gap-2">
+							<Input
+								type="number"
+								step="0.05"
+								className="w-32"
+								value={String(currentVcpConfig.memory.retrieval.recencyBias)}
+								onChange={(e) =>
+									onUpdateVcpConfig?.({
+										memory: {
+											retrieval: {
+												recencyBias: toFloat(
+													String(e.target.value ?? ""),
+													0,
+													2,
+													currentVcpConfig.memory.retrieval.recencyBias,
+												),
+											},
+										},
+									})
+								}
+								data-testid="context-vcp-memory-retrieval-recency-bias-input"
+							/>
+							<span className="text-sm">Retrieval recency bias (0-2)</span>
+						</div>
+
+						<hr className="border-vscode-panel-border" />
+
+						<VSCodeCheckbox
+							checked={currentVcpConfig.memory.refresh.enabled}
+							onChange={(e: any) =>
+								onUpdateVcpConfig?.({ memory: { refresh: { enabled: e.target.checked === true } } })
+							}
+							data-testid="context-vcp-memory-refresh-enabled-checkbox">
+							Enable refresh scheduler
+						</VSCodeCheckbox>
+						<div className="flex items-center gap-2">
+							<Input
+								type="number"
+								className="w-32"
+								value={String(currentVcpConfig.memory.refresh.intervalMs)}
+								onChange={(e) =>
+									onUpdateVcpConfig?.({
+										memory: {
+											refresh: {
+												intervalMs: toInt(
+													String(e.target.value ?? ""),
+													1000,
+													currentVcpConfig.memory.refresh.intervalMs,
+												),
+											},
+										},
+									})
+								}
+								data-testid="context-vcp-memory-refresh-interval-ms-input"
+							/>
+							<span className="text-sm">Refresh interval (ms)</span>
+						</div>
+						<div className="flex items-center gap-2">
+							<Input
+								type="number"
+								className="w-32"
+								value={String(currentVcpConfig.memory.refresh.maxItemsPerRun)}
+								onChange={(e) =>
+									onUpdateVcpConfig?.({
+										memory: {
+											refresh: {
+												maxItemsPerRun: toInt(
+													String(e.target.value ?? ""),
+													1,
+													currentVcpConfig.memory.refresh.maxItemsPerRun,
+												),
+											},
+										},
+									})
+								}
+								data-testid="context-vcp-memory-refresh-max-items-input"
+							/>
+							<span className="text-sm">Refresh max items per run</span>
+						</div>
+						<div className="flex items-center gap-2">
+							<Input
+								type="number"
+								className="w-32"
+								value={String(currentVcpConfig.memory.refresh.cleanupDays)}
+								onChange={(e) =>
+									onUpdateVcpConfig?.({
+										memory: {
+											refresh: {
+												cleanupDays: toInt(
+													String(e.target.value ?? ""),
+													1,
+													currentVcpConfig.memory.refresh.cleanupDays,
+												),
+											},
+										},
+									})
+								}
+								data-testid="context-vcp-memory-refresh-cleanup-days-input"
+							/>
+							<span className="text-sm">Cleanup age (days)</span>
+						</div>
+					</div>
+				</div>
 			</Section>
 			<Section className="pt-2">
 				<SearchableSetting

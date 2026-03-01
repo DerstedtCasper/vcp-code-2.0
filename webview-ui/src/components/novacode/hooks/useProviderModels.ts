@@ -75,6 +75,36 @@ const FALLBACK_MODELS = {
 	defaultModel: anthropicDefaultModelId,
 }
 
+const ROUTER_PROVIDERS = [
+	"openrouter",
+	"requesty",
+	"glama",
+	"apertis",
+	"unbound",
+	"litellm",
+	"chutes",
+	"ollama",
+	"lmstudio",
+	"novacode",
+	"poe",
+	"synthetic",
+	"ovhcloud",
+	"inception",
+	"sap-ai-core",
+	"io-intelligence",
+	"deepinfra",
+	"roo",
+	"nano-gpt",
+	"aihubmix",
+	"zenmux",
+	"gemini",
+	"vercel-ai-gateway",
+] as const
+
+type RouterProviderName = (typeof ROUTER_PROVIDERS)[number]
+
+const ROUTER_PROVIDER_SET = new Set<RouterProviderName>(ROUTER_PROVIDERS)
+
 export const getModelsByProvider = ({
 	provider,
 	routerModels,
@@ -393,30 +423,41 @@ export const getOptionsForProvider = (provider: ProviderName, apiConfiguration?:
 
 export const useProviderModels = (apiConfiguration?: ProviderSettings) => {
 	const provider = apiConfiguration?.apiProvider || "anthropic"
+	const routerProvider = ROUTER_PROVIDER_SET.has(provider as RouterProviderName)
+		? (provider as RouterProviderName)
+		: undefined
 
 	const { novacodeDefaultModel } = useExtensionState()
 
-	const routerModels = useRouterModels({
-		openRouterBaseUrl: apiConfiguration?.openRouterBaseUrl,
-		openRouterApiKey: apiConfiguration?.apiKey,
-		novacodeOrganizationId: apiConfiguration?.novacodeOrganizationId ?? "personal",
-		chutesApiKey: apiConfiguration?.chutesApiKey,
-		geminiApiKey: apiConfiguration?.geminiApiKey,
-		googleGeminiBaseUrl: apiConfiguration?.googleGeminiBaseUrl,
-		//novacode_change start
-		nanoGptApiKey: apiConfiguration?.nanoGptApiKey,
-		nanoGptModelList: apiConfiguration?.nanoGptModelList,
-		//novacode_change end
-		syntheticApiKey: apiConfiguration?.syntheticApiKey, // novacode_change
-	})
+	const routerModels = useRouterModels(
+		{
+			openRouterBaseUrl: apiConfiguration?.openRouterBaseUrl,
+			openRouterApiKey: apiConfiguration?.apiKey,
+			novacodeOrganizationId: apiConfiguration?.novacodeOrganizationId ?? "personal",
+			chutesApiKey: apiConfiguration?.chutesApiKey,
+			geminiApiKey: apiConfiguration?.geminiApiKey,
+			googleGeminiBaseUrl: apiConfiguration?.googleGeminiBaseUrl,
+			//novacode_change start
+			nanoGptApiKey: apiConfiguration?.nanoGptApiKey,
+			nanoGptModelList: apiConfiguration?.nanoGptModelList,
+			//novacode_change end
+			syntheticApiKey: apiConfiguration?.syntheticApiKey, // novacode_change
+		},
+		{
+			provider: routerProvider,
+			enabled: routerProvider !== undefined,
+		},
+	)
 
 	const options = getOptionsForProvider(provider, apiConfiguration)
+	const hasRouterData = typeof routerModels.data !== "undefined"
+	const canUseStaticCatalogOnly = routerProvider === undefined
 
 	const { models, defaultModel } =
-		apiConfiguration && typeof routerModels.data !== "undefined"
+		apiConfiguration && (canUseStaticCatalogOnly || hasRouterData)
 			? getModelsByProvider({
 					provider,
-					routerModels: routerModels.data,
+					routerModels: (routerModels.data ?? ({} as RouterModels)) as RouterModels,
 					novacodeDefaultModel,
 					options,
 				})
@@ -426,7 +467,7 @@ export const useProviderModels = (apiConfiguration?: ProviderSettings) => {
 		provider,
 		providerModels: models as ModelRecord,
 		providerDefaultModel: defaultModel,
-		isLoading: routerModels.isLoading,
-		isError: routerModels.isError,
+		isLoading: routerProvider ? routerModels.isLoading : false,
+		isError: routerProvider ? routerModels.isError : false,
 	}
 }

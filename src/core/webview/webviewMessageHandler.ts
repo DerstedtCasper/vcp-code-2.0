@@ -952,7 +952,14 @@ export const webviewMessageHandler = async (
 
 			// Optional single provider filter from webview
 			const requestedProvider = message?.values?.provider
-			const providerFilter = requestedProvider ? toRouterName(requestedProvider) : undefined
+			let providerFilter: RouterName | undefined
+			if (requestedProvider) {
+				try {
+					providerFilter = toRouterName(requestedProvider)
+				} catch {
+					providerFilter = undefined
+				}
+			}
 			const routerRequestMeta = createModelRequestMeta(requestedProvider || "all")
 			postModelFetchState(routerRequestMeta, "connecting")
 
@@ -1146,6 +1153,23 @@ export const webviewMessageHandler = async (
 			const modelFetchPromises = providerFilter
 				? candidates.filter(({ key }) => key === providerFilter)
 				: candidates
+
+			if (requestedProvider && !providerFilter) {
+				postModelFetchState(routerRequestMeta, "error", {
+					error: `Provider '${requestedProvider}' does not support router model fetching.`,
+				})
+				provider.postMessageToWebview({
+					type: "routerModels",
+					requestId: routerRequestMeta.requestId,
+					routerModels: { [requestedProvider]: {} } as any,
+					values: {
+						requestId: routerRequestMeta.requestId,
+						provider: requestedProvider,
+						state: "error",
+					},
+				})
+				break
+			}
 
 			// If refresh flag is set and we have a specific provider, flush its cache first
 			if (shouldRefresh && providerFilter && modelFetchPromises.length > 0) {
@@ -4247,7 +4271,38 @@ export const webviewMessageHandler = async (
 			break
 		}
 		case "updateVcpConfig": {
-			const current = getGlobalState("vcpConfig") ?? getDefaultVcpConfig()
+			const defaults = getDefaultVcpConfig()
+			const storedConfig = getGlobalState("vcpConfig")
+			const current: VcpConfig = {
+				...defaults,
+				...(storedConfig ?? {}),
+				contextFold: { ...defaults.contextFold, ...(storedConfig?.contextFold ?? {}) },
+				vcpInfo: { ...defaults.vcpInfo, ...(storedConfig?.vcpInfo ?? {}) },
+				html: { ...defaults.html, ...(storedConfig?.html ?? {}) },
+				toolRequest: { ...defaults.toolRequest, ...(storedConfig?.toolRequest ?? {}) },
+				agentTeam: { ...defaults.agentTeam, ...(storedConfig?.agentTeam ?? {}) },
+				memory: {
+					...defaults.memory,
+					...(storedConfig?.memory ?? {}),
+					passive: { ...defaults.memory.passive, ...(storedConfig?.memory?.passive ?? {}) },
+					writer: { ...defaults.memory.writer, ...(storedConfig?.memory?.writer ?? {}) },
+					retrieval: { ...defaults.memory.retrieval, ...(storedConfig?.memory?.retrieval ?? {}) },
+					refresh: { ...defaults.memory.refresh, ...(storedConfig?.memory?.refresh ?? {}) },
+				},
+				toolbox: { ...defaults.toolbox, ...(storedConfig?.toolbox ?? {}) },
+				snowCompat: {
+					...defaults.snowCompat,
+					...(storedConfig?.snowCompat ?? {}),
+					responsesReasoning: {
+						...defaults.snowCompat.responsesReasoning,
+						...(storedConfig?.snowCompat?.responsesReasoning ?? {}),
+					},
+					proxy: {
+						...defaults.snowCompat.proxy,
+						...(storedConfig?.snowCompat?.proxy ?? {}),
+					},
+				},
+			}
 			const incoming = (message.config ?? {}) as Partial<VcpConfig>
 			const merged: VcpConfig = {
 				...current,
@@ -4266,6 +4321,18 @@ export const webviewMessageHandler = async (
 					refresh: { ...current.memory.refresh, ...(incoming.memory?.refresh ?? {}) },
 				},
 				toolbox: { ...current.toolbox, ...(incoming.toolbox ?? {}) },
+				snowCompat: {
+					...current.snowCompat,
+					...(incoming.snowCompat ?? {}),
+					responsesReasoning: {
+						...current.snowCompat.responsesReasoning,
+						...(incoming.snowCompat?.responsesReasoning ?? {}),
+					},
+					proxy: {
+						...current.snowCompat.proxy,
+						...(incoming.snowCompat?.proxy ?? {}),
+					},
+				},
 			}
 
 			await updateGlobalState("vcpConfig", merged)

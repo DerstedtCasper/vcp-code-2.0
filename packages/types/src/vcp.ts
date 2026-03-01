@@ -40,6 +40,7 @@ export const vcpToolRequestConfigSchema = z.object({
 })
 
 export const vcpAgentTeamMemberSchema = z.object({
+	id: z.string().optional(),
 	name: z.string(),
 	providerID: z.string(),
 	modelID: z.string(),
@@ -59,19 +60,53 @@ export const vcpMemoryConfigSchema = z.object({
 	passive: z.object({
 		enabled: z.boolean(),
 		maxItems: z.number().int().min(1),
+		maxCharsPerItem: z.number().int().min(1),
+		minImportance: z.number().min(0).max(1),
 	}),
 	writer: z.object({
 		enabled: z.boolean(),
 		triggerTokens: z.number().int().min(1),
+		minChars: z.number().int().min(1),
+		importanceThreshold: z.number().min(0).max(1),
+		summarizeLongContent: z.boolean(),
 	}),
 	retrieval: z.object({
 		enabled: z.boolean(),
 		topK: z.number().int().min(1),
 		decayFactor: z.number().min(0).max(1),
+		minScore: z.number().min(0).max(1),
+		recencyBias: z.number().min(0).max(2),
 	}),
 	refresh: z.object({
 		enabled: z.boolean(),
 		intervalMs: z.number().int().min(1000),
+		maxItemsPerRun: z.number().int().min(1),
+		cleanupDays: z.number().int().min(1),
+	}),
+})
+
+export const vcpSnowCompatConfigSchema = z.object({
+	enabled: z.boolean(),
+	basicModel: z.string(),
+	advancedModel: z.string(),
+	baseUrl: z.string(),
+	requestMethod: z.string(),
+	maxContextTokens: z.number().int().min(0),
+	maxTokens: z.number().int().min(1),
+	toolResultTokenLimit: z.number().int().min(1),
+	showThinking: z.boolean(),
+	enableAutoCompress: z.boolean(),
+	editSimilarityThreshold: z.number().min(0).max(1),
+	anthropicBeta: z.string(),
+	anthropicCacheTTL: z.string(),
+	responsesReasoning: z.object({
+		enabled: z.boolean(),
+		effort: z.string(),
+	}),
+	proxy: z.object({
+		enabled: z.boolean(),
+		port: z.number().int().min(1),
+		browserDebugPort: z.number().int().min(1),
 	}),
 })
 
@@ -91,6 +126,7 @@ export const vcpConfigSchema = z.object({
 	agentTeam: vcpAgentTeamConfigSchema,
 	memory: vcpMemoryConfigSchema,
 	toolbox: vcpToolboxConfigSchema,
+	snowCompat: vcpSnowCompatConfigSchema,
 })
 
 export type VcpContextFoldConfig = z.infer<typeof vcpContextFoldConfigSchema>
@@ -101,6 +137,7 @@ export type VcpAgentTeamMember = z.infer<typeof vcpAgentTeamMemberSchema>
 export type VcpAgentTeamConfig = z.infer<typeof vcpAgentTeamConfigSchema>
 export type VcpMemoryConfig = z.infer<typeof vcpMemoryConfigSchema>
 export type VcpToolboxConfig = z.infer<typeof vcpToolboxConfigSchema>
+export type VcpSnowCompatConfig = z.infer<typeof vcpSnowCompatConfigSchema>
 export type VcpConfig = z.infer<typeof vcpConfigSchema>
 
 export interface VcpBridgeActivePlugin {
@@ -196,16 +233,46 @@ export function getDefaultVcpConfig(): VcpConfig {
 			members: [],
 		},
 		memory: {
-			passive: { enabled: false, maxItems: 100 },
-			writer: { enabled: false, triggerTokens: 1000 },
-			retrieval: { enabled: false, topK: 5, decayFactor: 0.95 },
-			refresh: { enabled: false, intervalMs: 3_600_000 },
+			passive: { enabled: false, maxItems: 100, maxCharsPerItem: 512, minImportance: 0.2 },
+			writer: {
+				enabled: false,
+				triggerTokens: 1000,
+				minChars: 20,
+				importanceThreshold: 0.5,
+				summarizeLongContent: true,
+			},
+			retrieval: { enabled: false, topK: 5, decayFactor: 0.95, minScore: 0.1, recencyBias: 1 },
+			refresh: { enabled: false, intervalMs: 3_600_000, maxItemsPerRun: 50, cleanupDays: 30 },
 		},
 		toolbox: {
 			enabled: false,
 			url: "ws://localhost:8765",
 			key: "",
 			reconnectInterval: 5000,
+		},
+		snowCompat: {
+			enabled: false,
+			basicModel: "",
+			advancedModel: "",
+			baseUrl: "",
+			requestMethod: "responses",
+			maxContextTokens: 0,
+			maxTokens: 32000,
+			toolResultTokenLimit: 4000,
+			showThinking: true,
+			enableAutoCompress: true,
+			editSimilarityThreshold: 0.95,
+			anthropicBeta: "",
+			anthropicCacheTTL: "",
+			responsesReasoning: {
+				enabled: true,
+				effort: "medium",
+			},
+			proxy: {
+				enabled: false,
+				port: 8765,
+				browserDebugPort: 9222,
+			},
 		},
 	}
 }

@@ -24,6 +24,10 @@ export const ModelSelector = ({
 }: ModelSelectorProps) => {
 	const { t } = useAppTranslation()
 	const { provider, providerModels, providerDefaultModel, isLoading, isError } = useProviderModels(apiConfiguration)
+	const safeProviderModels = useMemo(
+		() => (providerModels && typeof providerModels === "object" ? providerModels : {}),
+		[providerModels],
+	)
 	const selectedModelId = getSelectedModelId({
 		provider,
 		apiConfiguration,
@@ -31,15 +35,21 @@ export const ModelSelector = ({
 	})
 	const modelIdKey = getModelIdKey({ provider })
 	const isAutocomplete = apiConfiguration.profileType === "autocomplete"
+	const selectedModelValue = selectedModelId || providerDefaultModel || ""
 
-	const { preferredModelIds, restModelIds } = useGroupedModelIds(providerModels)
+	const { preferredModelIds, restModelIds } = useGroupedModelIds(safeProviderModels)
 	const options = useMemo(() => {
 		const result: DropdownOption[] = []
-		const getModelLabel = (modelId: string) => providerModels?.[modelId]?.displayName ?? prettyModelName(modelId)
+		const getModelLabel = (modelId?: string) => {
+			if (!modelId) {
+				return ""
+			}
+			return safeProviderModels?.[modelId]?.displayName ?? prettyModelName(modelId)
+		}
 
 		// Check if selected model is missing from the lists
 		const allModelIds = [...preferredModelIds, ...restModelIds]
-		const isMissingSelectedModel = selectedModelId && !allModelIds.includes(selectedModelId)
+		const isMissingSelectedModel = !!selectedModelValue && !allModelIds.includes(selectedModelValue)
 
 		// Add "Recommended models" section if there are preferred models
 		if (preferredModelIds.length > 0) {
@@ -67,10 +77,10 @@ export const ModelSelector = ({
 			})
 
 			// Add missing selected model at the top of "All models" if not in any list
-			if (isMissingSelectedModel) {
+			if (isMissingSelectedModel && selectedModelValue) {
 				result.push({
-					value: selectedModelId,
-					label: getModelLabel(selectedModelId),
+					value: selectedModelValue,
+					label: getModelLabel(selectedModelValue),
 					type: DropdownOptionType.ITEM,
 				})
 			}
@@ -82,22 +92,25 @@ export const ModelSelector = ({
 					type: DropdownOptionType.ITEM,
 				})
 			})
-		} else if (isMissingSelectedModel) {
+		} else if (isMissingSelectedModel && selectedModelValue) {
 			// If there are no rest models but we have a missing selected model, add it
 			result.push({
-				value: selectedModelId,
-				label: getModelLabel(selectedModelId),
+				value: selectedModelValue,
+				label: getModelLabel(selectedModelValue),
 				type: DropdownOptionType.ITEM,
 			})
 		}
 
 		return result
-	}, [preferredModelIds, restModelIds, providerModels, selectedModelId, t])
+	}, [preferredModelIds, restModelIds, safeProviderModels, selectedModelValue, t])
 
 	const disabled = isLoading || isError || isAutocomplete
 
 	const onChange = (value: string) => {
 		if (!currentApiConfigName) {
+			return
+		}
+		if (!value) {
 			return
 		}
 		if (apiConfiguration[modelIdKey] === value) {
@@ -138,7 +151,7 @@ export const ModelSelector = ({
 
 	return (
 		<SelectDropdown
-			value={selectedModelId}
+			value={selectedModelValue}
 			disabled={disabled}
 			title={t("chat:selectApiConfig")}
 			options={options}

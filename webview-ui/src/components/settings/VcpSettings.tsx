@@ -7,13 +7,7 @@ import {
 	VSCodeTextArea,
 	VSCodeTextField,
 } from "@vscode/webview-ui-toolkit/react"
-import {
-	getDefaultVcpConfig,
-	type VcpAgentTeamMember,
-	type VcpBridgeLogEntry,
-	type VcpBridgeTestResult,
-	type VcpConfig,
-} from "@roo-code/types"
+import { getDefaultVcpConfig, type VcpBridgeLogEntry, type VcpBridgeTestResult, type VcpConfig } from "@roo-code/types"
 
 import type { ExtensionStateContextType } from "@/context/ExtensionStateContext"
 import { Button } from "@/components/ui"
@@ -63,21 +57,6 @@ const toFloat = (value: string, min: number, max: number, fallback: number): num
 	return Math.min(max, Math.max(min, next))
 }
 
-const normalizeMember = (item: unknown): VcpAgentTeamMember | null => {
-	if (!item || typeof item !== "object") {
-		return null
-	}
-	const row = item as Record<string, unknown>
-	const name = String(row.name ?? "").trim()
-	const providerID = String(row.providerID ?? "").trim()
-	const modelID = String(row.modelID ?? "").trim()
-	const rolePrompt = String(row.rolePrompt ?? "").trim()
-	if (!name || !providerID || !modelID) {
-		return null
-	}
-	return { name, providerID, modelID, rolePrompt }
-}
-
 export const VcpSettings = ({
 	yoloMode,
 	showAutoApproveMenu,
@@ -90,15 +69,40 @@ export const VcpSettings = ({
 	setAutocompleteServiceSettingsField,
 }: VcpSettingsProps) => {
 	const openExternal = (url: string) => vscode.postMessage({ type: "openExternal", url })
-	const currentVcpConfig = vcpConfig ?? getDefaultVcpConfig()
-	const [membersJson, setMembersJson] = useState<string>(JSON.stringify(currentVcpConfig.agentTeam.members, null, 2))
+	const defaults = getDefaultVcpConfig()
+	const currentVcpConfig: VcpConfig = {
+		...defaults,
+		...(vcpConfig ?? {}),
+		contextFold: { ...defaults.contextFold, ...(vcpConfig?.contextFold ?? {}) },
+		vcpInfo: { ...defaults.vcpInfo, ...(vcpConfig?.vcpInfo ?? {}) },
+		html: { ...defaults.html, ...(vcpConfig?.html ?? {}) },
+		toolRequest: { ...defaults.toolRequest, ...(vcpConfig?.toolRequest ?? {}) },
+		agentTeam: { ...defaults.agentTeam, ...(vcpConfig?.agentTeam ?? {}) },
+		memory: {
+			...defaults.memory,
+			...(vcpConfig?.memory ?? {}),
+			passive: { ...defaults.memory.passive, ...(vcpConfig?.memory?.passive ?? {}) },
+			writer: { ...defaults.memory.writer, ...(vcpConfig?.memory?.writer ?? {}) },
+			retrieval: { ...defaults.memory.retrieval, ...(vcpConfig?.memory?.retrieval ?? {}) },
+			refresh: { ...defaults.memory.refresh, ...(vcpConfig?.memory?.refresh ?? {}) },
+		},
+		toolbox: { ...defaults.toolbox, ...(vcpConfig?.toolbox ?? {}) },
+		snowCompat: {
+			...defaults.snowCompat,
+			...(vcpConfig?.snowCompat ?? {}),
+			responsesReasoning: {
+				...defaults.snowCompat.responsesReasoning,
+				...(vcpConfig?.snowCompat?.responsesReasoning ?? {}),
+			},
+			proxy: {
+				...defaults.snowCompat.proxy,
+				...(vcpConfig?.snowCompat?.proxy ?? {}),
+			},
+		},
+	}
 	const [bridgeLogs, setBridgeLogs] = useState<VcpBridgeLogEntry[]>([])
 	const [bridgeTestResult, setBridgeTestResult] = useState<VcpBridgeTestResult | undefined>(undefined)
 	const [isTestingBridge, setIsTestingBridge] = useState(false)
-
-	useEffect(() => {
-		setMembersJson(JSON.stringify(currentVcpConfig.agentTeam.members, null, 2))
-	}, [currentVcpConfig.agentTeam.members])
 
 	useEffect(() => {
 		const handleMessage = (event: MessageEvent) => {
@@ -138,25 +142,21 @@ export const VcpSettings = ({
 				refresh: { ...currentVcpConfig.memory.refresh, ...(patch.memory?.refresh ?? {}) },
 			},
 			toolbox: { ...currentVcpConfig.toolbox, ...(patch.toolbox ?? {}) },
+			snowCompat: {
+				...currentVcpConfig.snowCompat,
+				...(patch.snowCompat ?? {}),
+				responsesReasoning: {
+					...currentVcpConfig.snowCompat.responsesReasoning,
+					...(patch.snowCompat?.responsesReasoning ?? {}),
+				},
+				proxy: {
+					...currentVcpConfig.snowCompat.proxy,
+					...(patch.snowCompat?.proxy ?? {}),
+				},
+			},
 		}
 
 		setCachedStateField("vcpConfig", next)
-	}
-
-	const handleMembersBlur = () => {
-		try {
-			const parsed = JSON.parse(membersJson)
-			if (!Array.isArray(parsed)) {
-				return
-			}
-			const members = parsed
-				.map((item) => normalizeMember(item))
-				.filter((item): item is VcpAgentTeamMember => item !== null)
-			updateVcpConfig({ agentTeam: { members } })
-			setMembersJson(JSON.stringify(members, null, 2))
-		} catch {
-			// Ignore invalid JSON input until the user fixes it.
-		}
 	}
 
 	return (
@@ -539,211 +539,224 @@ export const VcpSettings = ({
 
 			<Section>
 				<details>
-					<summary className="cursor-pointer font-medium mb-2">Agent Team</summary>
+					<summary className="cursor-pointer font-medium mb-2">Snow Compat</summary>
 					<div className="space-y-2">
 						<VSCodeCheckbox
-							checked={currentVcpConfig.agentTeam.enabled}
+							checked={currentVcpConfig.snowCompat.enabled}
 							onChange={(e: any) =>
-								updateVcpConfig({ agentTeam: { enabled: e.target.checked === true } })
+								updateVcpConfig({ snowCompat: { enabled: e.target.checked === true } })
 							}
-							data-testid="vcp-agent-team-enabled-checkbox">
-							Enable agent team orchestration
+							data-testid="vcp-snow-compat-enabled-checkbox">
+							Enable Snow compatibility profile
 						</VSCodeCheckbox>
 						<VSCodeTextField
-							value={String(currentVcpConfig.agentTeam.maxParallel)}
+							value={currentVcpConfig.snowCompat.basicModel}
+							onInput={(e: any) =>
+								updateVcpConfig({ snowCompat: { basicModel: String(e.target.value || "") } })
+							}
+							data-testid="vcp-snow-compat-basic-model-input">
+							Basic Model
+						</VSCodeTextField>
+						<VSCodeTextField
+							value={currentVcpConfig.snowCompat.advancedModel}
+							onInput={(e: any) =>
+								updateVcpConfig({ snowCompat: { advancedModel: String(e.target.value || "") } })
+							}
+							data-testid="vcp-snow-compat-advanced-model-input">
+							Advanced Model
+						</VSCodeTextField>
+						<VSCodeTextField
+							value={currentVcpConfig.snowCompat.baseUrl}
+							onInput={(e: any) =>
+								updateVcpConfig({ snowCompat: { baseUrl: String(e.target.value || "") } })
+							}
+							data-testid="vcp-snow-compat-base-url-input">
+							Base URL
+						</VSCodeTextField>
+						<VSCodeTextField
+							value={currentVcpConfig.snowCompat.requestMethod}
+							onInput={(e: any) =>
+								updateVcpConfig({ snowCompat: { requestMethod: String(e.target.value || "") } })
+							}
+							data-testid="vcp-snow-compat-request-method-input">
+							Request Method
+						</VSCodeTextField>
+						<VSCodeTextField
+							value={String(currentVcpConfig.snowCompat.maxContextTokens)}
 							onInput={(e: any) =>
 								updateVcpConfig({
-									agentTeam: {
-										maxParallel: toInt(
+									snowCompat: {
+										maxContextTokens: toInt(
 											String(e.target.value ?? ""),
-											1,
-											currentVcpConfig.agentTeam.maxParallel,
+											0,
+											currentVcpConfig.snowCompat.maxContextTokens,
 										),
 									},
 								})
 							}
-							data-testid="vcp-agent-team-max-parallel-input">
-							Max Parallel Agents
+							data-testid="vcp-snow-compat-max-context-tokens-input">
+							Max Context Tokens
 						</VSCodeTextField>
-						<VSCodeDropdown
-							value={currentVcpConfig.agentTeam.waveStrategy}
-							onChange={(e: any) =>
+						<VSCodeTextField
+							value={String(currentVcpConfig.snowCompat.maxTokens)}
+							onInput={(e: any) =>
 								updateVcpConfig({
-									agentTeam: {
-										waveStrategy: (e.target as HTMLSelectElement).value as
-											| "sequential"
-											| "parallel"
-											| "adaptive",
+									snowCompat: {
+										maxTokens: toInt(
+											String(e.target.value ?? ""),
+											1,
+											currentVcpConfig.snowCompat.maxTokens,
+										),
 									},
 								})
 							}
-							data-testid="vcp-agent-team-wave-strategy-dropdown">
-							<VSCodeOption value="sequential">sequential</VSCodeOption>
-							<VSCodeOption value="parallel">parallel</VSCodeOption>
-							<VSCodeOption value="adaptive">adaptive</VSCodeOption>
-						</VSCodeDropdown>
+							data-testid="vcp-snow-compat-max-tokens-input">
+							Max Output Tokens
+						</VSCodeTextField>
+						<VSCodeTextField
+							value={String(currentVcpConfig.snowCompat.toolResultTokenLimit)}
+							onInput={(e: any) =>
+								updateVcpConfig({
+									snowCompat: {
+										toolResultTokenLimit: toInt(
+											String(e.target.value ?? ""),
+											1,
+											currentVcpConfig.snowCompat.toolResultTokenLimit,
+										),
+									},
+								})
+							}
+							data-testid="vcp-snow-compat-tool-result-token-limit-input">
+							Tool Result Token Limit
+						</VSCodeTextField>
 						<VSCodeCheckbox
-							checked={currentVcpConfig.agentTeam.requireFileSeparation}
+							checked={currentVcpConfig.snowCompat.showThinking}
 							onChange={(e: any) =>
-								updateVcpConfig({
-									agentTeam: { requireFileSeparation: e.target.checked === true },
-								})
+								updateVcpConfig({ snowCompat: { showThinking: e.target.checked === true } })
 							}
-							data-testid="vcp-agent-team-file-separation-checkbox">
-							Require file separation per agent
+							data-testid="vcp-snow-compat-show-thinking-checkbox">
+							Show Thinking
 						</VSCodeCheckbox>
-						<VSCodeDropdown
-							value={currentVcpConfig.agentTeam.handoffFormat}
+						<VSCodeCheckbox
+							checked={currentVcpConfig.snowCompat.enableAutoCompress}
 							onChange={(e: any) =>
+								updateVcpConfig({ snowCompat: { enableAutoCompress: e.target.checked === true } })
+							}
+							data-testid="vcp-snow-compat-auto-compress-checkbox">
+							Enable Auto Compress
+						</VSCodeCheckbox>
+						<VSCodeTextField
+							value={String(currentVcpConfig.snowCompat.editSimilarityThreshold)}
+							onInput={(e: any) =>
 								updateVcpConfig({
-									agentTeam: {
-										handoffFormat: (e.target as HTMLSelectElement).value as "json" | "markdown",
+									snowCompat: {
+										editSimilarityThreshold: toFloat(
+											String(e.target.value ?? ""),
+											0,
+											1,
+											currentVcpConfig.snowCompat.editSimilarityThreshold,
+										),
 									},
 								})
 							}
-							data-testid="vcp-agent-team-handoff-format-dropdown">
-							<VSCodeOption value="markdown">markdown</VSCodeOption>
-							<VSCodeOption value="json">json</VSCodeOption>
-						</VSCodeDropdown>
-						<VSCodeTextArea
-							value={membersJson}
-							onInput={(e: any) => setMembersJson(String(e.target.value || "[]"))}
-							onBlur={handleMembersBlur}
-							rows={8}
-							data-testid="vcp-agent-team-members-json-input">
-							Members JSON (array with name/providerID/modelID/rolePrompt)
-						</VSCodeTextArea>
+							data-testid="vcp-snow-compat-edit-similarity-threshold-input">
+							Edit Similarity Threshold (0-1)
+						</VSCodeTextField>
+						<VSCodeTextField
+							value={currentVcpConfig.snowCompat.anthropicBeta}
+							onInput={(e: any) =>
+								updateVcpConfig({ snowCompat: { anthropicBeta: String(e.target.value || "") } })
+							}
+							data-testid="vcp-snow-compat-anthropic-beta-input">
+							Anthropic Beta
+						</VSCodeTextField>
+						<VSCodeTextField
+							value={currentVcpConfig.snowCompat.anthropicCacheTTL}
+							onInput={(e: any) =>
+								updateVcpConfig({ snowCompat: { anthropicCacheTTL: String(e.target.value || "") } })
+							}
+							data-testid="vcp-snow-compat-anthropic-cache-ttl-input">
+							Anthropic Cache TTL
+						</VSCodeTextField>
+						<VSCodeCheckbox
+							checked={currentVcpConfig.snowCompat.responsesReasoning.enabled}
+							onChange={(e: any) =>
+								updateVcpConfig({
+									snowCompat: {
+										responsesReasoning: { enabled: e.target.checked === true },
+									},
+								})
+							}
+							data-testid="vcp-snow-compat-reasoning-enabled-checkbox">
+							Responses Reasoning Enabled
+						</VSCodeCheckbox>
+						<VSCodeTextField
+							value={currentVcpConfig.snowCompat.responsesReasoning.effort}
+							onInput={(e: any) =>
+								updateVcpConfig({
+									snowCompat: {
+										responsesReasoning: { effort: String(e.target.value || "") },
+									},
+								})
+							}
+							data-testid="vcp-snow-compat-reasoning-effort-input">
+							Responses Reasoning Effort
+						</VSCodeTextField>
+						<VSCodeCheckbox
+							checked={currentVcpConfig.snowCompat.proxy.enabled}
+							onChange={(e: any) =>
+								updateVcpConfig({
+									snowCompat: { proxy: { enabled: e.target.checked === true } },
+								})
+							}
+							data-testid="vcp-snow-compat-proxy-enabled-checkbox">
+							Enable Snow Proxy
+						</VSCodeCheckbox>
+						<VSCodeTextField
+							value={String(currentVcpConfig.snowCompat.proxy.port)}
+							onInput={(e: any) =>
+								updateVcpConfig({
+									snowCompat: {
+										proxy: {
+											port: toInt(
+												String(e.target.value ?? ""),
+												1,
+												currentVcpConfig.snowCompat.proxy.port,
+											),
+										},
+									},
+								})
+							}
+							data-testid="vcp-snow-compat-proxy-port-input">
+							Proxy Port
+						</VSCodeTextField>
+						<VSCodeTextField
+							value={String(currentVcpConfig.snowCompat.proxy.browserDebugPort)}
+							onInput={(e: any) =>
+								updateVcpConfig({
+									snowCompat: {
+										proxy: {
+											browserDebugPort: toInt(
+												String(e.target.value ?? ""),
+												1,
+												currentVcpConfig.snowCompat.proxy.browserDebugPort,
+											),
+										},
+									},
+								})
+							}
+							data-testid="vcp-snow-compat-proxy-browser-debug-port-input">
+							Proxy Browser Debug Port
+						</VSCodeTextField>
 					</div>
 				</details>
 			</Section>
 
 			<Section>
 				<details>
-					<summary className="cursor-pointer font-medium mb-2">Memory</summary>
-					<div className="space-y-2">
-						<VSCodeCheckbox
-							checked={currentVcpConfig.memory.passive.enabled}
-							onChange={(e: any) =>
-								updateVcpConfig({ memory: { passive: { enabled: e.target.checked === true } } })
-							}
-							data-testid="vcp-memory-passive-enabled-checkbox">
-							Enable passive memory
-						</VSCodeCheckbox>
-						<VSCodeTextField
-							value={String(currentVcpConfig.memory.passive.maxItems)}
-							onInput={(e: any) =>
-								updateVcpConfig({
-									memory: {
-										passive: {
-											maxItems: toInt(
-												String(e.target.value ?? ""),
-												1,
-												currentVcpConfig.memory.passive.maxItems,
-											),
-										},
-									},
-								})
-							}
-							data-testid="vcp-memory-passive-max-items-input">
-							Passive Memory Max Items
-						</VSCodeTextField>
-						<VSCodeCheckbox
-							checked={currentVcpConfig.memory.writer.enabled}
-							onChange={(e: any) =>
-								updateVcpConfig({ memory: { writer: { enabled: e.target.checked === true } } })
-							}
-							data-testid="vcp-memory-writer-enabled-checkbox">
-							Enable memory writer
-						</VSCodeCheckbox>
-						<VSCodeTextField
-							value={String(currentVcpConfig.memory.writer.triggerTokens)}
-							onInput={(e: any) =>
-								updateVcpConfig({
-									memory: {
-										writer: {
-											triggerTokens: toInt(
-												String(e.target.value ?? ""),
-												1,
-												currentVcpConfig.memory.writer.triggerTokens,
-											),
-										},
-									},
-								})
-							}
-							data-testid="vcp-memory-writer-trigger-tokens-input">
-							Writer Trigger Tokens
-						</VSCodeTextField>
-						<VSCodeCheckbox
-							checked={currentVcpConfig.memory.retrieval.enabled}
-							onChange={(e: any) =>
-								updateVcpConfig({ memory: { retrieval: { enabled: e.target.checked === true } } })
-							}
-							data-testid="vcp-memory-retrieval-enabled-checkbox">
-							Enable retrieval memory
-						</VSCodeCheckbox>
-						<VSCodeTextField
-							value={String(currentVcpConfig.memory.retrieval.topK)}
-							onInput={(e: any) =>
-								updateVcpConfig({
-									memory: {
-										retrieval: {
-											topK: toInt(
-												String(e.target.value ?? ""),
-												1,
-												currentVcpConfig.memory.retrieval.topK,
-											),
-										},
-									},
-								})
-							}
-							data-testid="vcp-memory-retrieval-topk-input">
-							Retrieval TopK
-						</VSCodeTextField>
-						<VSCodeTextField
-							value={String(currentVcpConfig.memory.retrieval.decayFactor)}
-							onInput={(e: any) =>
-								updateVcpConfig({
-									memory: {
-										retrieval: {
-											decayFactor: toFloat(
-												String(e.target.value ?? ""),
-												0,
-												1,
-												currentVcpConfig.memory.retrieval.decayFactor,
-											),
-										},
-									},
-								})
-							}
-							data-testid="vcp-memory-retrieval-decay-factor-input">
-							Retrieval Decay Factor (0-1)
-						</VSCodeTextField>
-						<VSCodeCheckbox
-							checked={currentVcpConfig.memory.refresh.enabled}
-							onChange={(e: any) =>
-								updateVcpConfig({ memory: { refresh: { enabled: e.target.checked === true } } })
-							}
-							data-testid="vcp-memory-refresh-enabled-checkbox">
-							Enable refresh scheduler
-						</VSCodeCheckbox>
-						<VSCodeTextField
-							value={String(currentVcpConfig.memory.refresh.intervalMs)}
-							onInput={(e: any) =>
-								updateVcpConfig({
-									memory: {
-										refresh: {
-											intervalMs: toInt(
-												String(e.target.value ?? ""),
-												1000,
-												currentVcpConfig.memory.refresh.intervalMs,
-											),
-										},
-									},
-								})
-							}
-							data-testid="vcp-memory-refresh-interval-ms-input">
-							Refresh Interval (ms)
-						</VSCodeTextField>
+					<summary className="cursor-pointer font-medium mb-2">Agent Team 与 Memory</summary>
+					<div className="text-xs text-vscode-descriptionForeground">
+						Agent Team 设置已迁移到「代理行为」页面，Memory 设置已迁移到「上下文管理」页面，便于集中配置。
 					</div>
 				</details>
 			</Section>

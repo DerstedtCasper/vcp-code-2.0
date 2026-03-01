@@ -54,6 +54,7 @@ import { NovacodeNotifications } from "../nova/NovacodeNotifications" // novacod
 import { QueuedMessages } from "./QueuedMessages"
 import { ReviewScopeSelector, type ReviewScopeInfo } from "./ReviewScopeSelector" // novacode_change: Review mode
 import { VcpStatusBadge } from "./VcpStatusBadge" // vcp_change
+import { VcpInfoNotifications } from "./VcpInfoNotifications"
 import { buildDocLink } from "@/utils/docLinks"
 // import DismissibleUpsell from "../common/DismissibleUpsell" // novacode_change: unused
 // import { useCloudUpsell } from "@src/hooks/useCloudUpsell" // novacode_change: unused
@@ -1681,8 +1682,9 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 						isTaskActive={sendingDisabled}
 						todos={latestTodos}
 					/>
-					<div className="px-3">
-						<VcpStatusBadge />
+					<div className="px-3 flex items-center justify-between gap-2">
+						<VcpStatusBadge className="min-w-0" />
+						<VcpInfoNotifications />
 					</div>
 					{/* novacode_change start */}
 

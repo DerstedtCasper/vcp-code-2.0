@@ -40,6 +40,7 @@ import {
 	type ExperimentId,
 	type TelemetrySetting,
 	type ProfileType, // novacode_change - autocomplete profile type system
+	type VcpConfig,
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 	getDefaultVcpConfig, // vcp_change
 	ImageGenerationProvider,
@@ -134,6 +135,10 @@ type SettingsViewProps = {
 	onDone: () => void
 	targetSection?: string
 	editingProfile?: string // novacode_change - profile to edit
+}
+
+type DeepPartial<T> = {
+	[K in keyof T]?: T[K] extends Array<infer U> ? Array<U> : T[K] extends object ? DeepPartial<T[K]> : T[K]
 }
 
 // novacode_change start - editingProfile
@@ -391,6 +396,80 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 
 			setChangeDetected(true)
 			return { ...prevState, [field]: value }
+		})
+	}, [])
+
+	const onUpdateVcpConfig = useCallback((patch: DeepPartial<VcpConfig>) => {
+		setCachedState((prevState) => {
+			const defaults = getDefaultVcpConfig()
+			const stored = prevState.vcpConfig
+			const current: VcpConfig = {
+				...defaults,
+				...(stored ?? {}),
+				contextFold: { ...defaults.contextFold, ...(stored?.contextFold ?? {}) },
+				vcpInfo: { ...defaults.vcpInfo, ...(stored?.vcpInfo ?? {}) },
+				html: { ...defaults.html, ...(stored?.html ?? {}) },
+				toolRequest: { ...defaults.toolRequest, ...(stored?.toolRequest ?? {}) },
+				agentTeam: { ...defaults.agentTeam, ...(stored?.agentTeam ?? {}) },
+				memory: {
+					...defaults.memory,
+					...(stored?.memory ?? {}),
+					passive: { ...defaults.memory.passive, ...(stored?.memory?.passive ?? {}) },
+					writer: { ...defaults.memory.writer, ...(stored?.memory?.writer ?? {}) },
+					retrieval: { ...defaults.memory.retrieval, ...(stored?.memory?.retrieval ?? {}) },
+					refresh: { ...defaults.memory.refresh, ...(stored?.memory?.refresh ?? {}) },
+				},
+				toolbox: { ...defaults.toolbox, ...(stored?.toolbox ?? {}) },
+				snowCompat: {
+					...defaults.snowCompat,
+					...(stored?.snowCompat ?? {}),
+					responsesReasoning: {
+						...defaults.snowCompat.responsesReasoning,
+						...(stored?.snowCompat?.responsesReasoning ?? {}),
+					},
+					proxy: {
+						...defaults.snowCompat.proxy,
+						...(stored?.snowCompat?.proxy ?? {}),
+					},
+				},
+			}
+			const next: VcpConfig = {
+				...current,
+				...patch,
+				contextFold: { ...current.contextFold, ...(patch.contextFold ?? {}) },
+				vcpInfo: { ...current.vcpInfo, ...(patch.vcpInfo ?? {}) },
+				html: { ...current.html, ...(patch.html ?? {}) },
+				toolRequest: { ...current.toolRequest, ...(patch.toolRequest ?? {}) },
+				agentTeam: { ...current.agentTeam, ...(patch.agentTeam ?? {}) },
+				memory: {
+					...current.memory,
+					...(patch.memory ?? {}),
+					passive: { ...current.memory.passive, ...(patch.memory?.passive ?? {}) },
+					writer: { ...current.memory.writer, ...(patch.memory?.writer ?? {}) },
+					retrieval: { ...current.memory.retrieval, ...(patch.memory?.retrieval ?? {}) },
+					refresh: { ...current.memory.refresh, ...(patch.memory?.refresh ?? {}) },
+				},
+				toolbox: { ...current.toolbox, ...(patch.toolbox ?? {}) },
+				snowCompat: {
+					...current.snowCompat,
+					...(patch.snowCompat ?? {}),
+					responsesReasoning: {
+						...current.snowCompat.responsesReasoning,
+						...(patch.snowCompat?.responsesReasoning ?? {}),
+					},
+					proxy: {
+						...current.snowCompat.proxy,
+						...(patch.snowCompat?.proxy ?? {}),
+					},
+				},
+			}
+
+			if (deepEqual(prevState.vcpConfig, next)) {
+				return prevState
+			}
+
+			setChangeDetected(true)
+			return { ...prevState, vcpConfig: next }
 		})
 	}, [])
 
@@ -1267,6 +1346,8 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 								includeCurrentTime={includeCurrentTime}
 								includeCurrentCost={includeCurrentCost}
 								maxGitStatusFiles={maxGitStatusFiles}
+								vcpConfig={vcpConfig}
+								onUpdateVcpConfig={onUpdateVcpConfig}
 								setCachedStateField={setCachedStateField}
 							/>
 						)}
@@ -1291,7 +1372,9 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 						)}
 
 						{/* novacode_change: Agent Behaviour Section - novacode_change: merged modes and mcp */}
-						{activeTab === "agentBehaviour" && <AgentBehaviourView />}
+						{activeTab === "agentBehaviour" && (
+							<AgentBehaviourView vcpConfig={vcpConfig} onUpdateVcpConfig={onUpdateVcpConfig} />
+						)}
 
 						{/* novacode_change: removed: Modes Section */}
 

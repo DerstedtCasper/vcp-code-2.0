@@ -52,6 +52,21 @@ export function getSupportedSlashCommands(
 		{ name: "session", description: "Session management <fork|share|show>" },
 		{ name: "mcp", description: "Guide model to use MCP tools (supports /mcp.<server>.<tool>)" },
 		{ name: "skill", description: "Guide model to use skills (supports /skill.<name>)" },
+		{
+			name: "skill.find-skills",
+			description: "Use the find-skills helper to discover installable skills",
+			section: "skill",
+		},
+		{
+			name: "skill.skill-installer",
+			description: "Use the skill-installer helper to install a skill package",
+			section: "skill",
+		},
+		{
+			name: "skill.skill-creator",
+			description: "Use the skill-creator helper to scaffold or update a skill",
+			section: "skill",
+		},
 		// novacode_change end
 	]
 

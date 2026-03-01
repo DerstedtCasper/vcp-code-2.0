@@ -173,6 +173,32 @@ describe("webviewMessageHandler - requestRouterModels provider filter", () => {
 		expect(providersCalled).toEqual(["openrouter"])
 	})
 
+	it("returns an error payload when provider filter is not a router provider", async () => {
+		await webviewMessageHandler(
+			mockProvider as any,
+			{
+				type: "requestRouterModels",
+				values: { provider: "anthropic" },
+			} as any,
+		)
+
+		const call = (mockProvider.postMessageToWebview as any).mock.calls.find(
+			(c: any[]) => c[0]?.type === "routerModels",
+		)
+		expect(call).toBeTruthy()
+		expect(call[0]).toEqual(
+			expect.objectContaining({
+				type: "routerModels",
+				values: expect.objectContaining({
+					provider: "anthropic",
+					state: "error",
+				}),
+			}),
+		)
+		expect(call[0].routerModels).toEqual({ anthropic: {} })
+		expect(getModelsMock).not.toHaveBeenCalled()
+	})
+
 	it("flushes cache when LiteLLM credentials are provided in message values", async () => {
 		// Provide LiteLLM credentials via message.values (simulating Refresh Models button)
 		await webviewMessageHandler(

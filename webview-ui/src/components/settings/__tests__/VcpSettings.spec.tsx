@@ -66,10 +66,10 @@ describe("VcpSettings", () => {
 		mockPostMessage.mockReset()
 	})
 
-	const renderVcpSettings = () =>
+	const renderVcpSettings = (vcpConfig = getDefaultVcpConfig()) =>
 		render(
 			<VcpSettings
-				vcpConfig={getDefaultVcpConfig()}
+				vcpConfig={vcpConfig}
 				vcpBridgeStatus={null as any}
 				setCachedStateField={setCachedStateField as any}
 				setAutocompleteServiceSettingsField={setAutocompleteServiceSettingsField}
@@ -85,9 +85,12 @@ describe("VcpSettings", () => {
 		expect(screen.getByTestId("vcp-html-enabled-checkbox")).toBeInTheDocument()
 		expect(screen.getByTestId("vcp-tool-request-allow-tools-input")).toBeInTheDocument()
 		expect(screen.getByTestId("vcp-tool-request-deny-tools-input")).toBeInTheDocument()
-		expect(screen.getByTestId("vcp-agent-team-members-json-input")).toBeInTheDocument()
-		expect(screen.getByTestId("vcp-memory-refresh-interval-ms-input")).toBeInTheDocument()
 		expect(screen.getByTestId("vcp-toolbox-reconnect-interval-input")).toBeInTheDocument()
+		expect(screen.getByTestId("vcp-snow-compat-enabled-checkbox")).toBeInTheDocument()
+		expect(screen.getByTestId("vcp-snow-compat-basic-model-input")).toBeInTheDocument()
+		expect(
+			screen.getByText(/Agent Team 设置已迁移到「代理行为」页面，Memory 设置已迁移到「上下文管理」页面/i),
+		).toBeInTheDocument()
 	})
 
 	it("updates nested vcpInfo marker and keeps the full config shape", () => {
@@ -114,35 +117,6 @@ describe("VcpSettings", () => {
 		expect(latestCall?.[1].toolRequest.allowTools).toEqual(["read_file", "write_to_file", "execute_command"])
 	})
 
-	it("updates agent team members from JSON input on blur", () => {
-		renderVcpSettings()
-
-		const membersInput = screen.getByTestId("vcp-agent-team-members-json-input")
-		fireEvent.change(membersInput, {
-			target: {
-				value: JSON.stringify([
-					{
-						name: "planner",
-						providerID: "openrouter",
-						modelID: "gpt-4.1",
-						rolePrompt: "plan tasks",
-					},
-				]),
-			},
-		})
-		fireEvent.blur(membersInput)
-
-		const latestCall = setCachedStateField.mock.calls.at(-1)
-		expect(latestCall?.[1].agentTeam.members).toEqual([
-			{
-				name: "planner",
-				providerID: "openrouter",
-				modelID: "gpt-4.1",
-				rolePrompt: "plan tasks",
-			},
-		])
-	})
-
 	it("posts bridge connect messages with toolbox config", () => {
 		renderVcpSettings()
 
@@ -158,5 +132,28 @@ describe("VcpSettings", () => {
 			}),
 		)
 		expect(mockPostMessage).toHaveBeenNthCalledWith(2, { type: "requestVcpBridgeConnect" })
+	})
+
+	it("supports updating legacy vcp config objects that do not contain snowCompat", () => {
+		const legacyConfig: any = {
+			...getDefaultVcpConfig(),
+			memory: {
+				passive: { enabled: false, maxItems: 100 },
+				writer: { enabled: false, triggerTokens: 1000 },
+				retrieval: { enabled: false, topK: 5, decayFactor: 0.95 },
+				refresh: { enabled: false, intervalMs: 3_600_000 },
+			},
+		}
+		delete legacyConfig.snowCompat
+
+		renderVcpSettings(legacyConfig)
+
+		fireEvent.change(screen.getByTestId("vcp-toolbox-url-input"), {
+			target: { value: "ws://127.0.0.1:9000" },
+		})
+
+		const latestCall = setCachedStateField.mock.calls.at(-1)
+		expect(latestCall?.[1].toolbox.url).toBe("ws://127.0.0.1:9000")
+		expect(latestCall?.[1].snowCompat).toEqual(getDefaultVcpConfig().snowCompat)
 	})
 })
