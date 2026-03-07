@@ -130,7 +130,7 @@ export class VirtualQuotaFallbackHandler extends EventEmitter implements ApiHand
 				id: "",
 				info: {
 					maxTokens: 1,
-					contextWindow: 1000000,
+					contextWindow: 1_000_000,
 					supportsPromptCache: false,
 				},
 			}
@@ -148,7 +148,7 @@ export class VirtualQuotaFallbackHandler extends EventEmitter implements ApiHand
 
 	get contextWindow(): number {
 		if (!this.activeHandler) {
-			return 1000000 // Default fallback
+			return 1_000_000
 		}
 		const model = this.activeHandler.getModel()
 		return model.info.contextWindow

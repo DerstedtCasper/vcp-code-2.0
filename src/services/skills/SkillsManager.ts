@@ -391,7 +391,7 @@ export class SkillsManager {
 		this.disposables.push(watcher)
 	}
 
-	// novacode_change start: v1.0.8 canonical metadata for distributed skill registration
+	// novacode_change start: canonical metadata for distributed skill registration
 	/**
 	 * Get canonical metadata for all discovered skills, suitable for distributed registration.
 	 * Uses frontmatter `name` as the canonical skill id (not the directory name).

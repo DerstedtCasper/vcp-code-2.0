@@ -1,6 +1,6 @@
 // novacode_change - new file
 
-import { processVcpContent } from "../vcp-content"
+import { normalizeVcpHistoryText, processVcpContent } from "../vcp-content"
 import { getDefaultVcpConfig } from "../../../../shared/vcp/vcp-types"
 
 describe("vcp-content", () => {
@@ -23,6 +23,8 @@ describe("vcp-content", () => {
 			level: "warn",
 		})
 		expect(result.text).toContain("data-vcp-info")
+		expect(result.historyText).toContain("[VCPInfo: Heads up] check this")
+		expect(result.historyText).not.toContain("data-vcp-info")
 	})
 
 	test("renders vcp info details while escaping non-vcp html when html rendering is disabled", () => {
@@ -38,6 +40,8 @@ describe("vcp-content", () => {
 		expect(result.text).toContain('<details data-vcp-info="true">')
 		expect(result.text).toContain("&lt;i&gt;safe&lt;/i&gt;")
 		expect(result.text).not.toContain("&lt;details")
+		expect(result.historyText).toContain("[VCPInfo: Info] safe")
+		expect(result.historyText).not.toContain("<details")
 	})
 
 	test("parses tool requests and removes raw block when keepBlockInText=false", () => {
@@ -54,6 +58,7 @@ describe("vcp-content", () => {
 			'Before<<<[TOOL_REQUEST]>>>{"tool":"read_file","arguments":{"path":"a.ts"}}<<<[END_TOOL_REQUEST]>>>After'
 		const result = processVcpContent(input, config)
 		expect(result.text).toBe("BeforeAfter")
+		expect(result.historyText).toBe("BeforeAfter")
 		expect(result.toolRequests).toEqual([
 			{
 				toolName: "read_file",
@@ -80,6 +85,7 @@ describe("vcp-content", () => {
 		const result = processVcpContent(input, config)
 		expect(result.toolRequests).toHaveLength(1)
 		expect(result.toolRequests[0].params).toEqual({ path: "a.ts" })
+		expect(result.historyText).toBe("")
 	})
 
 	test("escapes html when html rendering is disabled", () => {
@@ -90,5 +96,13 @@ describe("vcp-content", () => {
 		}
 		const result = processVcpContent("<div>safe</div>", config)
 		expect(result.text).toBe("&lt;div&gt;safe&lt;/div&gt;")
+		expect(result.historyText).toBe("<div>safe</div>")
+	})
+
+	test("normalizes previously rendered VCP HTML wrappers for API history", () => {
+		const polluted =
+			'<details data-vcp-info="true"><summary>Notice</summary><div>payload</div></details>\n' +
+			'<details data-vcp-tool-request="true"><summary>Tool Request 1</summary><pre>ignored</pre></details>'
+		expect(normalizeVcpHistoryText(polluted)).toBe("[VCPInfo: Notice] payload")
 	})
 })

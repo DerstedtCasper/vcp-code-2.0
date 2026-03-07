@@ -24,7 +24,7 @@ export const Markdown = memo(({ markdown, partial }: { markdown?: string; partia
 			onMouseLeave={() => setIsHovering(false)}
 			style={{ position: "relative" }}>
 			<div style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}>
-				<MarkdownBlock markdown={markdown} htmlEnabled={vcpConfig?.html.enabled === true} />
+				<MarkdownBlock markdown={markdown} htmlEnabled={vcpConfig?.html.enabled !== false} />
 			</div>
 			{markdown && !partial && isHovering && (
 				<div

@@ -86,6 +86,8 @@ describe("checkContextWindowExceededError", () => {
 				"maximum context window",
 				"input tokens exceed limit",
 				"too many tokens",
+				"request body too large for this model",
+				"payload too large",
 			]
 
 			patterns.forEach((pattern) => {
@@ -123,6 +125,19 @@ describe("checkContextWindowExceededError", () => {
 					error: {
 						type: "invalid_request_error",
 						message: "prompt is too long: 150000 tokens > 100000 maximum",
+					},
+				},
+			}
+
+			expect(checkContextWindowExceededError(error)).toBe(true)
+		})
+
+		it("should detect Anthropic payload-too-large errors", () => {
+			const error = {
+				error: {
+					error: {
+						type: "invalid_request_error",
+						message: "Request body too large for model context window",
 					},
 				},
 			}

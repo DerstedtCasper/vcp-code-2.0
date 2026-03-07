@@ -68,6 +68,7 @@ export function getDevCsp(webview: Webview, localServerUrl: string, port: string
 		`font-src ${webview.cspSource} data:`,
 		`style-src ${webview.cspSource} 'unsafe-inline' https://* http://${localServerUrl} http://0.0.0.0:${port}`,
 		`img-src ${webview.cspSource} data:`,
+		`frame-src ${webview.cspSource} blob: data: https://* http://${localServerUrl} http://0.0.0.0:${port}`,
 		`script-src 'unsafe-eval' ${webview.cspSource} https://* http://${localServerUrl} http://0.0.0.0:${port} 'nonce-${nonce}'`,
 		`connect-src ${webview.cspSource} ws://${localServerUrl} ws://0.0.0.0:${port} http://${localServerUrl} http://0.0.0.0:${port}`,
 	]

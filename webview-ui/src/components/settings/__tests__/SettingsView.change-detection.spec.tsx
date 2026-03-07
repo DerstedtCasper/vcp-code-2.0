@@ -4,15 +4,25 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import React from "react"
 
 // Mock vscode API
-const mockPostMessage = vi.fn()
-const mockVscode = {
-	postMessage: mockPostMessage,
-}
+const { mockPostMessage, mockVscode } = vi.hoisted(() => {
+	const postMessage = vi.fn()
+	return {
+		mockPostMessage: postMessage,
+		mockVscode: {
+			postMessage,
+		},
+	}
+})
 ;(global as any).acquireVsCodeApi = () => mockVscode
+
+vi.mock("@src/utils/vscode", () => ({
+	vscode: mockVscode,
+}))
 
 // Import the actual component
 import SettingsView from "../SettingsView"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
+import { BrowserSettings } from "../BrowserSettings"
 
 // Mock the extension state context
 vi.mock("@src/context/ExtensionStateContext", () => ({
@@ -79,7 +89,7 @@ vi.mock("../ApiConfigManager", () => ({
 }))
 
 vi.mock("../ApiOptions", () => ({
-	default: () => null,
+	default: vi.fn(() => null),
 }))
 
 vi.mock("../AutoApproveSettings", () => ({
@@ -96,7 +106,7 @@ vi.mock("../Section", () => ({
 
 // Mock all settings components
 vi.mock("../BrowserSettings", () => ({
-	BrowserSettings: () => null,
+	BrowserSettings: vi.fn(() => null),
 }))
 vi.mock("../CheckpointSettings", () => ({
 	CheckpointSettings: () => null,
@@ -270,5 +280,34 @@ describe("SettingsView - Change Detection Fix", () => {
 		// - null -> value (initialization from null)
 
 		expect(true).toBe(true) // Placeholder - the real test is the running system
+	})
+
+	it("auto-syncs settings changes to the host after the debounce window", async () => {
+		;(useExtensionState as any).mockReturnValue(createExtensionState())
+
+		vi.mocked(BrowserSettings).mockImplementation(({ setCachedStateField }: any) => (
+			<button onClick={() => setCachedStateField("browserToolEnabled", true)}>Toggle browser</button>
+		))
+
+		render(
+			<QueryClientProvider client={queryClient}>
+				<SettingsView onDone={vi.fn()} targetSection="browser" />
+			</QueryClientProvider>,
+		)
+
+		fireEvent.click(screen.getByText("Toggle browser"))
+		await waitFor(
+			() => {
+				expect(mockPostMessage).toHaveBeenCalledWith(
+					expect.objectContaining({
+						type: "updateSettings",
+						updatedSettings: expect.objectContaining({
+							browserToolEnabled: true,
+						}),
+					}),
+				)
+			},
+			{ timeout: 1000 },
+		)
 	})
 })

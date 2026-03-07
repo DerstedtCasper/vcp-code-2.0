@@ -94,6 +94,7 @@ import AgentBehaviourView from "../nova/settings/AgentBehaviourView" // novacode
 // import McpView from "../mcp/McpView" // novacode_change: own view
 import { SettingsSearch } from "./SettingsSearch"
 import { useSearchIndexRegistry, SearchIndexProvider } from "./useSettingsSearch"
+import { useDebounceEffect } from "@src/utils/useDebounceEffect"
 
 export const settingsTabsContainer = "flex flex-1 overflow-hidden [&.narrow_.tab-label]:hidden"
 export const settingsTabList =
@@ -200,15 +201,12 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 		browserViewportSize,
 		enableCheckpoints,
 		checkpointTimeout,
-		diffEnabled,
 		experiments,
 		morphApiKey, // novacode_change
 		fastApplyModel, // novacode_change: Fast Apply model selection
 		fastApplyApiProvider, // novacode_change: Fast Apply model api base url
-		fuzzyMatchThreshold,
 		maxOpenTabsContext,
 		maxWorkspaceFiles,
-		mcpEnabled,
 		remoteBrowserHost,
 		screenshotQuality,
 		soundEnabled,
@@ -235,7 +233,6 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 		yoloMode, // novacode_change
 		showTaskTimeline, // novacode_change
 		sendMessageOnEnter, // novacode_change
-		showTimestamps, // novacode_change
 		hideCostBelowThreshold, // novacode_change
 		maxImageFileSize,
 		maxTotalImageSize,
@@ -243,8 +240,6 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 		maxConcurrentFileReads,
 		allowVeryLargeReads, // novacode_change
 		terminalCommandApiConfigId, // novacode_change
-		condensingApiConfigId,
-		customCondensingPrompt,
 		yoloGatekeeperApiConfigId, // novacode_change: AI gatekeeper for YOLO mode
 		customSupportPrompts,
 		profileThresholds,
@@ -613,145 +608,152 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 
 	const isSettingValid = !errorMessage
 
-	const handleSubmit = () => {
-		if (isSettingValid) {
-			vscode.postMessage({
-				type: "updateSettings",
-				updatedSettings: {
-					language,
-					alwaysAllowReadOnly: alwaysAllowReadOnly ?? undefined,
-					alwaysAllowReadOnlyOutsideWorkspace: alwaysAllowReadOnlyOutsideWorkspace ?? undefined,
-					alwaysAllowWrite: alwaysAllowWrite ?? undefined,
-					alwaysAllowWriteOutsideWorkspace: alwaysAllowWriteOutsideWorkspace ?? undefined,
-					alwaysAllowWriteProtected: alwaysAllowWriteProtected ?? undefined,
-					alwaysAllowDelete: alwaysAllowDelete ?? undefined, // novacode_change
-					alwaysAllowExecute: alwaysAllowExecute ?? undefined,
-					alwaysAllowBrowser: alwaysAllowBrowser ?? undefined,
-					alwaysAllowMcp,
-					alwaysAllowModeSwitch,
-					allowedCommands: allowedCommands ?? [],
-					deniedCommands: deniedCommands ?? [],
-					// Note that we use `null` instead of `undefined` since `JSON.stringify`
-					// will omit `undefined` when serializing the object and passing it to the
-					// extension host. We may need to do the same for other nullable fields.
-					allowedMaxRequests: allowedMaxRequests ?? null,
-					allowedMaxCost: allowedMaxCost ?? null,
-					autoCondenseContext,
-					autoCondenseContextPercent,
-					browserToolEnabled: browserToolEnabled ?? true,
-					soundEnabled: soundEnabled ?? true,
-					soundVolume: soundVolume ?? 0.5,
-					ttsEnabled,
-					ttsSpeed,
-					diffEnabled: diffEnabled ?? true,
-					enableCheckpoints: enableCheckpoints ?? false,
-					checkpointTimeout: checkpointTimeout ?? DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
-					browserViewportSize: browserViewportSize ?? "900x600",
-					remoteBrowserHost: remoteBrowserEnabled ? remoteBrowserHost : undefined,
-					remoteBrowserEnabled: remoteBrowserEnabled ?? false,
-					fuzzyMatchThreshold: fuzzyMatchThreshold ?? 1.0,
-					writeDelayMs,
-					screenshotQuality: screenshotQuality ?? 75,
-					terminalOutputLineLimit: terminalOutputLineLimit ?? 500,
-					terminalOutputCharacterLimit: terminalOutputCharacterLimit ?? 50_000,
-					terminalShellIntegrationTimeout: terminalShellIntegrationTimeout ?? 30_000,
-					terminalShellIntegrationDisabled,
-					terminalCommandDelay,
-					terminalPowershellCounter,
-					terminalZshClearEolMark,
-					terminalZshOhMy,
-					terminalZshP10k,
-					terminalZdotdir,
-					terminalCompressProgressBar,
-					mcpEnabled,
-					maxOpenTabsContext: Math.min(Math.max(0, maxOpenTabsContext ?? 20), 500),
-					maxWorkspaceFiles: Math.min(Math.max(0, maxWorkspaceFiles ?? 200), 500),
-					showRooIgnoredFiles: showRooIgnoredFiles ?? true,
-					enableSubfolderRules: enableSubfolderRules ?? false,
-					maxReadFileLine: maxReadFileLine ?? 500 /*novacode_change*/,
-					maxImageFileSize: maxImageFileSize ?? 5,
-					maxTotalImageSize: maxTotalImageSize ?? 20,
-					maxConcurrentFileReads: cachedState.maxConcurrentFileReads ?? 5,
-					includeDiagnosticMessages:
-						includeDiagnosticMessages !== undefined ? includeDiagnosticMessages : true,
-					maxDiagnosticMessages: maxDiagnosticMessages ?? 50,
-					alwaysAllowSubtasks,
-					alwaysAllowFollowupQuestions: alwaysAllowFollowupQuestions ?? false,
-					followupAutoApproveTimeoutMs,
-					condensingApiConfigId: condensingApiConfigId || "",
-					includeTaskHistoryInEnhance: includeTaskHistoryInEnhance ?? true,
-					reasoningBlockCollapsed: reasoningBlockCollapsed ?? true,
-					enterBehavior: enterBehavior ?? "send",
-					includeCurrentTime: includeCurrentTime ?? true,
-					includeCurrentCost: includeCurrentCost ?? true,
-					maxGitStatusFiles: maxGitStatusFiles ?? 0,
-					profileThresholds,
-					imageGenerationProvider,
-					openRouterImageApiKey,
-					openRouterImageGenerationSelectedModel,
-					experiments,
-					customSupportPrompts,
-				},
-			})
-			vscode.postMessage({ type: "updateVcpConfig", config: vcpConfig ?? getDefaultVcpConfig() }) // vcp_change
-			vscode.postMessage({ type: "ttsEnabled", bool: ttsEnabled })
-			vscode.postMessage({ type: "ttsSpeed", value: ttsSpeed })
-			vscode.postMessage({ type: "terminalCommandApiConfigId", text: terminalCommandApiConfigId || "" }) // novacode_change
-			vscode.postMessage({ type: "showAutoApproveMenu", bool: showAutoApproveMenu }) // novacode_change
-			vscode.postMessage({ type: "yoloMode", bool: yoloMode }) // novacode_change
-			vscode.postMessage({ type: "allowVeryLargeReads", bool: allowVeryLargeReads }) // novacode_change
-			vscode.postMessage({ type: "currentApiConfigName", text: currentApiConfigName })
-			vscode.postMessage({ type: "showTaskTimeline", bool: showTaskTimeline }) // novacode_change
-			vscode.postMessage({ type: "sendMessageOnEnter", bool: sendMessageOnEnter }) // novacode_change
-			vscode.postMessage({ type: "showTimestamps", bool: showTimestamps }) // novacode_change
-			vscode.postMessage({ type: "showDiffStats", bool: cachedState.showDiffStats }) // novacode_change
-			vscode.postMessage({ type: "hideCostBelowThreshold", value: hideCostBelowThreshold }) // novacode_change
-			vscode.postMessage({ type: "updateCondensingPrompt", text: customCondensingPrompt || "" })
-			vscode.postMessage({ type: "yoloGatekeeperApiConfigId", text: yoloGatekeeperApiConfigId || "" }) // novacode_change: AI gatekeeper for YOLO mode
-			vscode.postMessage({ type: "setReasoningBlockCollapsed", bool: reasoningBlockCollapsed ?? true })
-			vscode.postMessage({ type: "upsertApiConfiguration", text: editingApiConfigName, apiConfiguration }) // novacode_change: Save to editing profile instead of current active profile
-			vscode.postMessage({ type: "telemetrySetting", text: telemetrySetting })
-			vscode.postMessage({ type: "systemNotificationsEnabled", bool: systemNotificationsEnabled }) // novacode_change
-			vscode.postMessage({ type: "ghostServiceSettings", values: ghostServiceSettings }) // novacode_change
-			vscode.postMessage({ type: "morphApiKey", text: morphApiKey }) // novacode_change
-			vscode.postMessage({ type: "fastApplyModel", text: fastApplyModel }) // novacode_change: Fast Apply model selection
-			vscode.postMessage({ type: "fastApplyApiProvider", text: fastApplyApiProvider }) // novacode_change: Fast Apply model api base url
-			vscode.postMessage({ type: "novaCodeImageApiKey", text: novaCodeImageApiKey })
-			// novacode_change start - Auto-purge settings
-			vscode.postMessage({ type: "autoPurgeEnabled", bool: autoPurgeEnabled })
-			vscode.postMessage({ type: "autoPurgeDefaultRetentionDays", value: autoPurgeDefaultRetentionDays })
-			vscode.postMessage({
-				type: "autoPurgeFavoritedTaskRetentionDays",
-				value: autoPurgeFavoritedTaskRetentionDays ?? undefined,
-			})
-			vscode.postMessage({
-				type: "autoPurgeCompletedTaskRetentionDays",
-				value: autoPurgeCompletedTaskRetentionDays,
-			})
-			vscode.postMessage({
-				type: "autoPurgeIncompleteTaskRetentionDays",
-				value: autoPurgeIncompleteTaskRetentionDays,
-			})
-			// novacode_change end - Auto-purge settings
-			vscode.postMessage({ type: "debugSetting", bool: cachedState.debug })
-
-			// novacode_change: After saving, sync cachedState to extensionState without clobbering
-			// the editing profile's apiConfiguration when editing a non-active profile.
-			if (editingApiConfigName !== currentApiConfigName) {
-				// Only sync non-apiConfiguration fields from extensionState
-				const { apiConfiguration: _, ...restOfExtensionState } = extensionState
-				setCachedState((prevState) => ({
-					...prevState,
-					...restOfExtensionState,
-				}))
-			} else {
-				// When editing the active profile, sync everything including apiConfiguration
-				setCachedState((prevState) => ({ ...prevState, ...extensionState }))
-			}
-			// novacode_change end
-			setChangeDetected(false)
+	const syncSettingsToHost = useCallback(() => {
+		if (!isSettingValid) {
+			return false
 		}
-	}
+
+		const state = cachedState
+		const nextApiConfiguration = state.apiConfiguration ?? {}
+
+		vscode.postMessage({
+			type: "updateSettings",
+			updatedSettings: {
+				language: state.language,
+				alwaysAllowReadOnly: state.alwaysAllowReadOnly ?? undefined,
+				alwaysAllowReadOnlyOutsideWorkspace: state.alwaysAllowReadOnlyOutsideWorkspace ?? undefined,
+				alwaysAllowWrite: state.alwaysAllowWrite ?? undefined,
+				alwaysAllowWriteOutsideWorkspace: state.alwaysAllowWriteOutsideWorkspace ?? undefined,
+				alwaysAllowWriteProtected: state.alwaysAllowWriteProtected ?? undefined,
+				alwaysAllowDelete: state.alwaysAllowDelete ?? undefined,
+				alwaysAllowExecute: state.alwaysAllowExecute ?? undefined,
+				alwaysAllowBrowser: state.alwaysAllowBrowser ?? undefined,
+				alwaysAllowMcp: state.alwaysAllowMcp,
+				alwaysAllowModeSwitch: state.alwaysAllowModeSwitch,
+				allowedCommands: state.allowedCommands ?? [],
+				deniedCommands: state.deniedCommands ?? [],
+				allowedMaxRequests: state.allowedMaxRequests ?? null,
+				allowedMaxCost: state.allowedMaxCost ?? null,
+				autoCondenseContext: state.autoCondenseContext,
+				autoCondenseContextPercent: state.autoCondenseContextPercent,
+				browserToolEnabled: state.browserToolEnabled ?? true,
+				soundEnabled: state.soundEnabled ?? true,
+				soundVolume: state.soundVolume ?? 0.5,
+				ttsEnabled: state.ttsEnabled,
+				ttsSpeed: state.ttsSpeed,
+				diffEnabled: state.diffEnabled ?? true,
+				enableCheckpoints: state.enableCheckpoints ?? false,
+				checkpointTimeout: state.checkpointTimeout ?? DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
+				browserViewportSize: state.browserViewportSize ?? "900x600",
+				remoteBrowserHost: state.remoteBrowserEnabled ? state.remoteBrowserHost : undefined,
+				remoteBrowserEnabled: state.remoteBrowserEnabled ?? false,
+				fuzzyMatchThreshold: state.fuzzyMatchThreshold ?? 1.0,
+				writeDelayMs: state.writeDelayMs,
+				screenshotQuality: state.screenshotQuality ?? 75,
+				terminalOutputLineLimit: state.terminalOutputLineLimit ?? 500,
+				terminalOutputCharacterLimit: state.terminalOutputCharacterLimit ?? 50_000,
+				terminalShellIntegrationTimeout: state.terminalShellIntegrationTimeout ?? 30_000,
+				terminalShellIntegrationDisabled: state.terminalShellIntegrationDisabled,
+				terminalCommandDelay: state.terminalCommandDelay,
+				terminalPowershellCounter: state.terminalPowershellCounter,
+				terminalZshClearEolMark: state.terminalZshClearEolMark,
+				terminalZshOhMy: state.terminalZshOhMy,
+				terminalZshP10k: state.terminalZshP10k,
+				terminalZdotdir: state.terminalZdotdir,
+				terminalCompressProgressBar: state.terminalCompressProgressBar,
+				mcpEnabled: state.mcpEnabled,
+				maxOpenTabsContext: Math.min(Math.max(0, state.maxOpenTabsContext ?? 20), 500),
+				maxWorkspaceFiles: Math.min(Math.max(0, state.maxWorkspaceFiles ?? 200), 500),
+				showRooIgnoredFiles: state.showRooIgnoredFiles ?? true,
+				enableSubfolderRules: state.enableSubfolderRules ?? false,
+				maxReadFileLine: state.maxReadFileLine ?? 500,
+				maxImageFileSize: state.maxImageFileSize ?? 5,
+				maxTotalImageSize: state.maxTotalImageSize ?? 20,
+				maxConcurrentFileReads: state.maxConcurrentFileReads ?? 5,
+				includeDiagnosticMessages:
+					state.includeDiagnosticMessages !== undefined ? state.includeDiagnosticMessages : true,
+				maxDiagnosticMessages: state.maxDiagnosticMessages ?? 50,
+				alwaysAllowSubtasks: state.alwaysAllowSubtasks,
+				alwaysAllowFollowupQuestions: state.alwaysAllowFollowupQuestions ?? false,
+				followupAutoApproveTimeoutMs: state.followupAutoApproveTimeoutMs,
+				condensingApiConfigId: state.condensingApiConfigId || "",
+				includeTaskHistoryInEnhance: state.includeTaskHistoryInEnhance ?? true,
+				reasoningBlockCollapsed: state.reasoningBlockCollapsed ?? true,
+				enterBehavior: state.enterBehavior ?? "send",
+				includeCurrentTime: state.includeCurrentTime ?? true,
+				includeCurrentCost: state.includeCurrentCost ?? true,
+				maxGitStatusFiles: state.maxGitStatusFiles ?? 0,
+				profileThresholds: state.profileThresholds,
+				imageGenerationProvider: state.imageGenerationProvider,
+				openRouterImageApiKey: state.openRouterImageApiKey,
+				openRouterImageGenerationSelectedModel: state.openRouterImageGenerationSelectedModel,
+				experiments: state.experiments,
+				customSupportPrompts: state.customSupportPrompts,
+			},
+		})
+		vscode.postMessage({ type: "updateVcpConfig", config: state.vcpConfig ?? getDefaultVcpConfig() })
+		vscode.postMessage({ type: "ttsEnabled", bool: state.ttsEnabled })
+		vscode.postMessage({ type: "ttsSpeed", value: state.ttsSpeed })
+		vscode.postMessage({ type: "terminalCommandApiConfigId", text: state.terminalCommandApiConfigId || "" })
+		vscode.postMessage({ type: "showAutoApproveMenu", bool: state.showAutoApproveMenu })
+		vscode.postMessage({ type: "yoloMode", bool: state.yoloMode })
+		vscode.postMessage({ type: "allowVeryLargeReads", bool: state.allowVeryLargeReads })
+		vscode.postMessage({ type: "currentApiConfigName", text: currentApiConfigName })
+		vscode.postMessage({ type: "showTaskTimeline", bool: state.showTaskTimeline })
+		vscode.postMessage({ type: "sendMessageOnEnter", bool: state.sendMessageOnEnter })
+		vscode.postMessage({ type: "showTimestamps", bool: state.showTimestamps })
+		vscode.postMessage({ type: "showDiffStats", bool: state.showDiffStats })
+		vscode.postMessage({ type: "hideCostBelowThreshold", value: state.hideCostBelowThreshold })
+		vscode.postMessage({ type: "updateCondensingPrompt", text: state.customCondensingPrompt || "" })
+		vscode.postMessage({ type: "yoloGatekeeperApiConfigId", text: state.yoloGatekeeperApiConfigId || "" })
+		vscode.postMessage({ type: "setReasoningBlockCollapsed", bool: state.reasoningBlockCollapsed ?? true })
+		vscode.postMessage({
+			type: "upsertApiConfiguration",
+			text: editingApiConfigName,
+			apiConfiguration: nextApiConfiguration,
+		})
+		vscode.postMessage({ type: "telemetrySetting", text: state.telemetrySetting })
+		vscode.postMessage({ type: "systemNotificationsEnabled", bool: state.systemNotificationsEnabled })
+		vscode.postMessage({ type: "ghostServiceSettings", values: state.ghostServiceSettings })
+		vscode.postMessage({ type: "morphApiKey", text: state.morphApiKey })
+		vscode.postMessage({ type: "fastApplyModel", text: state.fastApplyModel })
+		vscode.postMessage({ type: "fastApplyApiProvider", text: state.fastApplyApiProvider })
+		vscode.postMessage({ type: "novaCodeImageApiKey", text: state.novaCodeImageApiKey })
+		vscode.postMessage({ type: "autoPurgeEnabled", bool: state.autoPurgeEnabled })
+		vscode.postMessage({ type: "autoPurgeDefaultRetentionDays", value: state.autoPurgeDefaultRetentionDays })
+		vscode.postMessage({
+			type: "autoPurgeFavoritedTaskRetentionDays",
+			value: state.autoPurgeFavoritedTaskRetentionDays ?? undefined,
+		})
+		vscode.postMessage({
+			type: "autoPurgeCompletedTaskRetentionDays",
+			value: state.autoPurgeCompletedTaskRetentionDays,
+		})
+		vscode.postMessage({
+			type: "autoPurgeIncompleteTaskRetentionDays",
+			value: state.autoPurgeIncompleteTaskRetentionDays,
+		})
+		vscode.postMessage({ type: "debugSetting", bool: state.debug })
+
+		setChangeDetected(false)
+		return true
+	}, [cachedState, currentApiConfigName, editingApiConfigName, isSettingValid])
+
+	const handleSubmit = useCallback(() => {
+		syncSettingsToHost()
+	}, [syncSettingsToHost])
+
+	useDebounceEffect(
+		() => {
+			if (!isChangeDetected || !isSettingValid || isLoadingProfileForEditing.current) {
+				return
+			}
+
+			syncSettingsToHost()
+		},
+		250,
+		[isChangeDetected, isSettingValid, syncSettingsToHost],
+	)
 
 	const checkUnsaveChanges = useCallback(
 		(then: () => void) => {

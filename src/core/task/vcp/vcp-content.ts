@@ -41,6 +41,7 @@ export interface VcpToolRequestBlock {
 
 export interface VcpProcessResult {
 	text: string
+	historyText: string
 	notifications: VcpNotification[]
 	toolRequests: VcpToolRequestBlock[]
 }
@@ -302,6 +303,97 @@ function parseInfoBlock(content: string, index: number): VcpNotification {
 	}
 }
 
+function decodeHtmlEntities(text: string): string {
+	return text
+		.replace(/&lt;/g, "<")
+		.replace(/&gt;/g, ">")
+		.replace(/&amp;/g, "&")
+		.replace(/&quot;/g, '"')
+		.replace(/&#39;/g, "'")
+}
+
+function stripHtml(text: string): string {
+	return decodeHtmlEntities(text).replace(/<[^>]+>/g, " ")
+}
+
+function normalizeHistoryWhitespace(text: string): string {
+	return text
+		.replace(/__VCP_PLACEHOLDER_\d+__/g, " ")
+		.replace(/\r\n/g, "\n")
+		.replace(/[ \t]+\n/g, "\n")
+		.replace(/\n{3,}/g, "\n\n")
+		.replace(/[ \t]{2,}/g, " ")
+		.trim()
+}
+
+function clampHistoryText(text: string, maxLength = 240): string {
+	const normalized = normalizeHistoryWhitespace(stripHtml(text))
+	if (normalized.length <= maxLength) {
+		return normalized
+	}
+
+	return `${normalized.slice(0, Math.max(0, maxLength - 3)).trimEnd()}...`
+}
+
+function renderHistoryFoldSummary(blocks: FoldBlock[]): string {
+	if (blocks.length === 0) {
+		return ""
+	}
+
+	const visibleTitles = blocks
+		.map((block) => clampHistoryText(block.title, 48))
+		.filter(Boolean)
+		.slice(0, 6)
+	const extraCount = Math.max(0, blocks.length - visibleTitles.length)
+	const suffix = extraCount > 0 ? ` (+${extraCount})` : ""
+
+	return visibleTitles.length > 0 ? `[VCP Fold: ${visibleTitles.join("; ")}${suffix}]` : `[VCP Fold${suffix}]`
+}
+
+function renderHistoryInfoSummary(notification: VcpNotification): string {
+	const title = clampHistoryText(notification.title, 48) || "VCPInfo"
+	const body = clampHistoryText(notification.body, 240)
+	return body ? `[VCPInfo: ${title}] ${body}` : `[VCPInfo: ${title}]`
+}
+
+export function normalizeVcpHistoryText(text: string): string {
+	let next = text
+
+	for (let pass = 0; pass < 4; pass += 1) {
+		const previous = next
+
+		next = next
+			.replace(
+				/<details\s+data-vcp-fold="true">\s*<summary>([\s\S]*?)<\/summary>[\s\S]*?<\/details>/gi,
+				(_match, title) => `[VCP Fold: ${clampHistoryText(title, 48) || "Context"}]`,
+			)
+			.replace(
+				/<details\s+data-vcp-info="true">\s*<summary>([\s\S]*?)<\/summary>([\s\S]*?)<\/details>/gi,
+				(_match, title, body) => {
+					const rendered = renderHistoryInfoSummary({
+						title: clampHistoryText(title, 48) || "VCPInfo",
+						body: stripHtml(body),
+						level: "info",
+					})
+					return rendered
+				},
+			)
+			.replace(/<details\s+data-vcp-tool-request="true">[\s\S]*?<\/details>/gi, " ")
+			.replace(
+				/<!--\s*vcp-fold:\s*([\s\S]*?)\s*-->[\s\S]*?<!--\s*\/vcp-fold\s*-->/gi,
+				(_match, title) => `[VCP Fold: ${clampHistoryText(title, 48) || "Context"}]`,
+			)
+			.replace(/<\/?details[^>]*>/gi, " ")
+			.replace(/<\/?summary[^>]*>/gi, " ")
+
+		if (next === previous) {
+			break
+		}
+	}
+
+	return normalizeHistoryWhitespace(next)
+}
+
 /**
  * 处理 AI 输出中的 VCP 协议块
  * - <<<[VCP_DYNAMIC_FOLD]>>> ... <<<[END_VCP_DYNAMIC_FOLD]>>> -> 折叠块
@@ -312,6 +404,7 @@ export function processVcpContent(text: string, config: VcpConfig): VcpProcessRe
 	if (!config.enabled) {
 		return {
 			text,
+			historyText: normalizeVcpHistoryText(text),
 			notifications: [],
 			toolRequests: [],
 		}
@@ -321,6 +414,7 @@ export function processVcpContent(text: string, config: VcpConfig): VcpProcessRe
 	const toolRequests: VcpToolRequestBlock[] = []
 	const preservedBlocks: string[] = []
 	const shouldEscapeHtml = config.html.enabled === false
+	let historyText = text
 
 	const preserveBlock = (value: string): string => {
 		if (!shouldEscapeHtml) {
@@ -344,6 +438,13 @@ export function processVcpContent(text: string, config: VcpConfig): VcpProcessRe
 				return content.trim()
 			}
 		})
+		historyText = replaceDelimitedBlocks(historyText, foldStart, foldEnd, (content) => {
+			try {
+				return renderHistoryFoldSummary(parseFoldBlocks(content))
+			} catch {
+				return "[VCP Fold]"
+			}
+		})
 	}
 
 	if (config.vcpInfo.enabled) {
@@ -359,6 +460,9 @@ export function processVcpContent(text: string, config: VcpConfig): VcpProcessRe
 				}\n</details>`,
 			)
 		})
+		historyText = replaceDelimitedBlocks(historyText, infoStart, infoEnd, (content, index) =>
+			renderHistoryInfoSummary(parseInfoBlock(content, index)),
+		)
 	}
 
 	if (config.toolRequest.enabled) {
@@ -390,6 +494,7 @@ export function processVcpContent(text: string, config: VcpConfig): VcpProcessRe
 				}\n</details>`,
 			)
 		})
+		historyText = replaceDelimitedBlocks(historyText, requestStart, requestEnd, () => "")
 	}
 
 	if (shouldEscapeHtml) {
@@ -401,6 +506,7 @@ export function processVcpContent(text: string, config: VcpConfig): VcpProcessRe
 
 	return {
 		text: next,
+		historyText: normalizeVcpHistoryText(historyText),
 		notifications,
 		toolRequests: limitToolRequests(toolRequests, config.toolRequest.maxPerMessage),
 	}

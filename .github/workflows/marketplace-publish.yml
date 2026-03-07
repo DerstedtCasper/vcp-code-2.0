@@ -57,20 +57,20 @@ jobs:
                   pnpm vsix:production
 
                   # Save VSIX contents to a temporary file to avoid broken pipe issues.
-                  unzip -l bin/nova-code-${current_package_version}.vsix > /tmp/nova-code-vsix-contents.txt
+                  unzip -l bin/vcp-code-${current_package_version}.vsix > /tmp/vcp-code-vsix-contents.txt
 
                   # Check for required files.
-                  grep -q "extension/package.json" /tmp/nova-code-vsix-contents.txt || exit 1
-                  grep -q "extension/package.nls.json" /tmp/nova-code-vsix-contents.txt || exit 1
-                  grep -q "extension/dist/extension.js" /tmp/nova-code-vsix-contents.txt || exit 1
-                  grep -q "extension/webview-ui/audio/celebration.wav" /tmp/nova-code-vsix-contents.txt || exit 1
-                  grep -q "extension/webview-ui/build/assets/index.js" /tmp/nova-code-vsix-contents.txt || exit 1
-                  grep -q "extension/assets/codicons/codicon.ttf" /tmp/nova-code-vsix-contents.txt || exit 1
-                  grep -q "extension/assets/vscode-material-icons/icons/3d.svg" /tmp/nova-code-vsix-contents.txt || exit 1
-                  grep -q ".env" /tmp/nova-code-vsix-contents.txt || exit 1
+                  grep -q "extension/package.json" /tmp/vcp-code-vsix-contents.txt || exit 1
+                  grep -q "extension/package.nls.json" /tmp/vcp-code-vsix-contents.txt || exit 1
+                  grep -q "extension/dist/extension.js" /tmp/vcp-code-vsix-contents.txt || exit 1
+                  grep -q "extension/webview-ui/audio/celebration.wav" /tmp/vcp-code-vsix-contents.txt || exit 1
+                  grep -q "extension/webview-ui/build/assets/index.js" /tmp/vcp-code-vsix-contents.txt || exit 1
+                  grep -q "extension/assets/codicons/codicon.ttf" /tmp/vcp-code-vsix-contents.txt || exit 1
+                  grep -q "extension/assets/vscode-material-icons/icons/3d.svg" /tmp/vcp-code-vsix-contents.txt || exit 1
+                  grep -q ".env" /tmp/vcp-code-vsix-contents.txt || exit 1
 
                   # Clean up temporary file.
-                  rm /tmp/nova-code-vsix-contents.txt
+                  rm /tmp/vcp-code-vsix-contents.txt
             - name: Create and Push Git Tag
               run: |
                   current_package_version=$(node -p "require('./src/package.json').version")
@@ -111,13 +111,13 @@ jobs:
                     --title "Release v${current_package_version}" \
                     --notes "$changelog_content" \
                     --target ${{ env.GIT_REF }} \
-                    bin/nova-code-${current_package_version}.vsix
+                    bin/vcp-code-${current_package_version}.vsix
                   echo "Successfully created GitHub Release v${current_package_version}"
             - name: Upload VSIX artifact
               uses: actions/upload-artifact@v6
               with:
-                  name: nova-code-vsix
-                  path: bin/nova-code-${{ steps.get-version.outputs.version }}.vsix
+                  name: vcp-code-vsix
+                  path: bin/vcp-code-${{ steps.get-version.outputs.version }}.vsix
 
     publish-vscode:
         needs: create-release
@@ -146,7 +146,7 @@ jobs:
             - name: Download VSIX artifact
               uses: actions/download-artifact@v7
               with:
-                  name: nova-code-vsix
+                  name: vcp-code-vsix
                   path: bin/
             - name: Publish to VS Code Marketplace
               continue-on-error: true
@@ -156,8 +156,8 @@ jobs:
               run: |
                   current_package_version="${{ needs.create-release.outputs.version }}"
                   cd src
-                  npx vsce publish --packagePath ../bin/nova-code-${current_package_version}.vsix
-                  npx ovsx publish ../bin/nova-code-${current_package_version}.vsix
+                  npx vsce publish --packagePath ../bin/vcp-code-${current_package_version}.vsix
+                  npx ovsx publish ../bin/vcp-code-${current_package_version}.vsix
                   echo "Successfully published version $current_package_version to VS Code Marketplace"
 
     publish-jetbrains:

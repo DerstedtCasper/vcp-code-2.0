@@ -190,7 +190,7 @@ This will:
 To install your built extension:
 
 ```bash
-code --install-extension "$(ls -1v bin/nova-code-*.vsix | tail -n1)"
+code --install-extension "$(ls -1v bin/vcp-code-*.vsix | tail -n1)"
 ```
 
 Replace `[version]` with the current version number.

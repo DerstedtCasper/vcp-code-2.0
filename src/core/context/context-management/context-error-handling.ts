@@ -1,5 +1,17 @@
 import { APIError } from "openai"
 
+const COMMON_CONTEXT_ERROR_PATTERNS = [
+	/\bcontext\s*(?:length|window)\b/i,
+	/\bmaximum\s*context\b/i,
+	/\b(?:input\s*)?tokens?\s*exceed/i,
+	/\btoo\s*many\s*tokens?\b/i,
+	/\bmessages?\s*(?:are|is)?\s*too\s*long\b/i,
+	/\brequest\s*body\b.*\b(?:too\s*large|too\s*big)\b/i,
+	/\bpayload\b.*\btoo\s*large\b/i,
+	/\binput\b.*\btoo\s*large\b/i,
+	/\bbody\b.*\btoo\s*large\b/i,
+] as const
+
 export function checkContextWindowExceededError(error: unknown): boolean {
 	return (
 		checkIsOpenAIContextWindowError(error) ||
@@ -21,14 +33,7 @@ function checkIsOpenRouterContextWindowError(error: unknown): boolean {
 		const message: string = String(err.message || err.error?.message || "")
 
 		// Known OpenAI/OpenRouter-style signal (code 400 and message includes "context length")
-		const CONTEXT_ERROR_PATTERNS = [
-			/\bcontext\s*(?:length|window)\b/i,
-			/\bmaximum\s*context\b/i,
-			/\b(?:input\s*)?tokens?\s*exceed/i,
-			/\btoo\s*many\s*tokens?\b/i,
-		] as const
-
-		return String(status) === "400" && CONTEXT_ERROR_PATTERNS.some((pattern) => pattern.test(message))
+		return String(status) === "400" && COMMON_CONTEXT_ERROR_PATTERNS.some((pattern) => pattern.test(message))
 	} catch {
 		return false
 	}
@@ -42,7 +47,7 @@ function checkIsOpenAIContextWindowError(error: unknown): boolean {
 			return true
 		}
 
-		const KNOWN_CONTEXT_ERROR_SUBSTRINGS = ["token", "context length"] as const
+		const KNOWN_CONTEXT_ERROR_SUBSTRINGS = ["token", "context length", "request body", "payload"] as const
 
 		return (
 			Boolean(error) &&
@@ -78,6 +83,8 @@ function checkIsAnthropicContextWindowError(response: unknown): boolean {
 				/token.*limit/i,
 				/context_length_exceeded/i,
 				/max_tokens_to_sample/i,
+				/request body.*too large/i,
+				/payload.*too large/i,
 			]
 
 			// Additional check for Anthropic-specific error codes
@@ -107,7 +114,11 @@ function checkIsCerebrasContextWindowError(response: unknown): boolean {
 		const status = res.status ?? res.code ?? res.error?.status ?? res.response?.status
 		const message: string = String(res.message || res.error?.message || "")
 
-		return String(status) === "400" && message.includes("Please reduce the length of the messages or completion")
+		return (
+			String(status) === "400" &&
+			(message.includes("Please reduce the length of the messages or completion") ||
+				COMMON_CONTEXT_ERROR_PATTERNS.some((pattern) => pattern.test(message)))
+		)
 	} catch {
 		return false
 	}

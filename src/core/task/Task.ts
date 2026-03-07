@@ -164,7 +164,7 @@ import { AutoApprovalHandler, checkAutoApproval } from "../auto-approval"
 import { MessageManager } from "../message-manager"
 import { validateAndFixToolResultIds } from "./validateToolResultIds"
 import { deduplicateToolUseBlocks } from "./deduplicateToolUseBlocks"
-import { processVcpContent } from "./vcp/vcp-content"
+import { normalizeVcpHistoryText, processVcpContent } from "./vcp/vcp-content"
 import { isToolAllowed, normalizeToolName } from "./vcp/vcp-tool-request"
 
 const MAX_EXPONENTIAL_BACKOFF_SECONDS = 600 // 10 minutes
@@ -3735,9 +3735,21 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				// Apply VCP parsing to finalized assistant text before persisting history.
 				const providerState = await this.providerRef.deref()?.getState()
 				const effectiveVcpConfig = providerState?.vcpConfig ?? getDefaultVcpConfig()
+				let assistantMessageForDisplay = assistantMessage
+				let assistantMessageForHistory = normalizeVcpHistoryText(assistantMessage)
 				if (assistantMessage && effectiveVcpConfig.enabled) {
 					const processedVcp = processVcpContent(assistantMessage, effectiveVcpConfig)
-					assistantMessage = processedVcp.text
+					assistantMessageForDisplay = processedVcp.text
+					assistantMessageForHistory = processedVcp.historyText
+
+					const lastAssistantTextMessage = [...this.clineMessages]
+						.reverse()
+						.find((message) => message.type === "say" && message.say === "text" && message.partial !== true)
+					if (lastAssistantTextMessage && lastAssistantTextMessage.text !== assistantMessageForDisplay) {
+						lastAssistantTextMessage.text = assistantMessageForDisplay
+						await this.saveClineMessages()
+						this.updateClineMessage(lastAssistantTextMessage)
+					}
 
 					if (processedVcp.notifications.length > 0) {
 						const provider = this.providerRef.deref()
@@ -3810,7 +3822,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				// able to save the assistant's response.
 
 				// Check if we have any content to process (text or tool uses)
-				const hasTextContent = assistantMessage.length > 0
+				const hasTextContent = assistantMessageForHistory.length > 0
 
 				const hasToolUses = this.assistantMessageContent.some(
 					(block) => block.type === "tool_use" || block.type === "mcp_tool_use",
@@ -3836,10 +3848,10 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 					// novacode_change end
 
 					// Add text content if present
-					if (assistantMessage) {
+					if (assistantMessageForHistory) {
 						assistantContent.push({
 							type: "text" as const,
-							text: assistantMessage,
+							text: assistantMessageForHistory,
 						})
 					}
 
@@ -4906,6 +4918,12 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				this.currentRequestAbortController = undefined
 				const isContextWindowExceededError = checkContextWindowExceededError(error)
 
+				if (isContextWindowExceededError && retryAttempt < 2) {
+					await this.handleContextWindowExceededError()
+					yield* this.attemptApiRequest(retryAttempt + 1)
+					return
+				}
+
 				if (response === "retry_clicked") {
 					yield* this.attemptApiRequest(retryAttempt + 1)
 				} else {
@@ -5106,6 +5124,23 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		}
 
 		const cleanConversationHistory: (Anthropic.Messages.MessageParam | ReasoningItemForRequest)[] = []
+		const normalizeAssistantContent = (
+			content: Anthropic.Messages.MessageParam["content"] | undefined,
+		): Anthropic.Messages.ContentBlockParam[] => {
+			if (Array.isArray(content)) {
+				return content.map((block) =>
+					block.type === "text" ? { ...block, text: normalizeVcpHistoryText(block.text) } : block,
+				)
+			}
+
+			if (content === undefined) {
+				return []
+			}
+
+			return [
+				{ type: "text", text: normalizeVcpHistoryText(content) } satisfies Anthropic.Messages.TextBlockParam,
+			]
+		}
 
 		for (const msg of messages) {
 			// Standalone reasoning: send encrypted, skip plain text
@@ -5123,15 +5158,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 			// Preferred path: assistant message with embedded reasoning as first content block
 			if (msg.role === "assistant") {
-				const rawContent = msg.content
-
-				const contentArray: Anthropic.Messages.ContentBlockParam[] = Array.isArray(rawContent)
-					? (rawContent as Anthropic.Messages.ContentBlockParam[])
-					: rawContent !== undefined
-						? ([
-								{ type: "text", text: rawContent } satisfies Anthropic.Messages.TextBlockParam,
-							] as Anthropic.Messages.ContentBlockParam[])
-						: []
+				const contentArray = normalizeAssistantContent(msg.content)
 
 				const [first, ...rest] = contentArray
 
@@ -5227,7 +5254,19 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			if (msg.role) {
 				cleanConversationHistory.push({
 					role: msg.role,
-					content: msg.content as Anthropic.Messages.ContentBlockParam[] | string,
+					content:
+						msg.role === "assistant"
+							? (() => {
+									const normalizedContent = normalizeAssistantContent(msg.content)
+									if (normalizedContent.length === 0) {
+										return ""
+									}
+
+									return normalizedContent.length === 1 && normalizedContent[0].type === "text"
+										? (normalizedContent[0] as Anthropic.Messages.TextBlockParam).text
+										: normalizedContent
+								})()
+							: (msg.content as Anthropic.Messages.ContentBlockParam[] | string),
 				})
 			}
 		}

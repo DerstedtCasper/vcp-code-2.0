@@ -12,10 +12,62 @@ import { vscode } from "@src/utils/vscode"
 
 import CodeBlock from "../nova/common/CodeBlock" // novacode_change
 import MermaidBlock from "./MermaidBlock"
+import RichContentBlock from "./RichContentBlock"
 
 interface MarkdownBlockProps {
 	markdown?: string
 	htmlEnabled?: boolean
+}
+
+type RichContentLanguage = "html" | "javascript" | "css" | "python"
+
+const MARKDOWN_FENCE_LANGUAGES = new Set(["markdown", "md", "mdx"])
+const LATEX_FENCE_LANGUAGES = new Set(["latex", "tex", "math", "katex"])
+
+const STANDALONE_RICH_BLOCK_PATTERN =
+	/^\s*(?:<!doctype html\b|<html\b|<body\b|<head\b|<div\b|<section\b|<article\b|<main\b|<style\b|<script\b|<canvas\b|<svg\b)/i
+
+const looksLikeStandaloneRichBlock = (markdown: string, htmlEnabled: boolean) =>
+	htmlEnabled && !markdown.includes("```") && STANDALONE_RICH_BLOCK_PATTERN.test(markdown.trim())
+
+const looksLikeRichJavaScript = (source: string) =>
+	/\b(?:THREE|anime|requestAnimationFrame|document|window|HTMLElement|customElements|canvas)\b/.test(source) ||
+	/\bvcp-root\b/.test(source)
+
+const getRichContentLanguage = (language: string, source: string): RichContentLanguage | undefined => {
+	switch (language) {
+		case "html":
+		case "htm":
+			return "html"
+		case "css":
+			return "css"
+		case "python":
+		case "py":
+			return "python"
+		case "javascript":
+		case "js":
+		case "jsx":
+		case "typescript":
+		case "ts":
+		case "tsx":
+		case "threejs":
+			return looksLikeRichJavaScript(source) ? "javascript" : undefined
+		default:
+			return language === "text" && STANDALONE_RICH_BLOCK_PATTERN.test(source.trim()) ? "html" : undefined
+	}
+}
+
+const formatMathSnippet = (source: string) => {
+	const trimmed = source.trim()
+	if (!trimmed) {
+		return "$$\\text{ }$$"
+	}
+
+	if (/^\$\$[\s\S]*\$\$$/.test(trimmed) || /^\\\[[\s\S]*\\\]$/.test(trimmed)) {
+		return trimmed
+	}
+
+	return `$$\n${trimmed}\n$$`
 }
 
 const VCP_HTML_SCHEMA = {
@@ -223,6 +275,8 @@ const StyledMarkdown = styled.div`
 `
 
 const MarkdownBlock = memo(({ markdown, htmlEnabled = false }: MarkdownBlockProps) => {
+	const standaloneRichBlock = markdown ? looksLikeStandaloneRichBlock(markdown, htmlEnabled) : false
+
 	const components = useMemo(
 		() => ({
 			table: ({ children, ...props }: any) => {
@@ -301,7 +355,38 @@ const MarkdownBlock = memo(({ markdown, htmlEnabled = false }: MarkdownBlockProp
 
 				// Extract language from className
 				const match = /language-(\w+)/.exec(className)
-				const language = match ? match[1] : "text"
+				const language = (match ? match[1] : "text").toLowerCase()
+				const richLanguage = htmlEnabled ? getRichContentLanguage(language, codeString) : undefined
+
+				if (richLanguage) {
+					return <RichContentBlock source={codeString} language={richLanguage} />
+				}
+
+				if (MARKDOWN_FENCE_LANGUAGES.has(language)) {
+					return (
+						<div style={{ margin: "1em 0" }} data-testid="rendered-markdown-snippet">
+							<MarkdownBlock markdown={codeString} htmlEnabled={htmlEnabled} />
+						</div>
+					)
+				}
+
+				if (LATEX_FENCE_LANGUAGES.has(language)) {
+					return (
+						<div
+							style={{
+								margin: "1em 0",
+								padding: "0.75em 1em",
+								borderRadius: "8px",
+								background: "var(--vscode-textCodeBlock-background)",
+								overflowX: "auto",
+							}}
+							data-testid="rendered-latex-snippet">
+							<ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex as any]}>
+								{formatMathSnippet(codeString)}
+							</ReactMarkdown>
+						</div>
+					)
+				}
 
 				// Wrap CodeBlock in a div to ensure proper separation
 				return (
@@ -319,8 +404,16 @@ const MarkdownBlock = memo(({ markdown, htmlEnabled = false }: MarkdownBlockProp
 				)
 			},
 		}),
-		[],
+		[htmlEnabled],
 	)
+
+	if (markdown && standaloneRichBlock) {
+		return (
+			<StyledMarkdown>
+				<RichContentBlock source={markdown} language="html" standalone />
+			</StyledMarkdown>
+		)
+	}
 
 	return (
 		<StyledMarkdown>

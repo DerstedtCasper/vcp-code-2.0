@@ -125,7 +125,7 @@ export function getDefaultVcpRuntimeConfig(): VcpRuntimeConfig {
 			registrations: {},
 		},
 		preinstalledSkills: {
-			manifestVersion: "1.0.8",
+			manifestVersion: "1.0.9",
 			globalSkills: [
 				"agent-manager",
 				"codex-review",
@@ -363,7 +363,7 @@ export function getDefaultVcpConfig(): VcpConfig {
 			startMarker: "<<<[VCPINFO]>>>",
 			endMarker: "<<<[END_VCPINFO]>>>",
 		},
-		html: { enabled: false },
+		html: { enabled: true },
 		toolRequest: {
 			enabled: true,
 			bridgeMode: "execute",

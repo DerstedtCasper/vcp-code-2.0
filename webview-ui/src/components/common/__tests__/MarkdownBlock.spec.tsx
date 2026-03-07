@@ -15,6 +15,13 @@ vi.mock("@src/context/ExtensionStateContext", () => ({
 }))
 
 describe("MarkdownBlock", () => {
+	beforeEach(() => {
+		Object.assign(globalThis.URL, {
+			createObjectURL: vi.fn(() => "blob:rich-preview"),
+			revokeObjectURL: vi.fn(),
+		})
+	})
+
 	it("should correctly handle URLs with trailing punctuation", async () => {
 		const markdown = "Check out this link: https://example.com."
 		const { container } = render(<MarkdownBlock markdown={markdown} />)
@@ -114,5 +121,56 @@ describe("MarkdownBlock", () => {
 		expect(screen.getByText("Second level unordered")).toBeInTheDocument()
 		expect(screen.getByText("Third level ordered")).toBeInTheDocument()
 		expect(screen.getByText("Back to first level")).toBeInTheDocument()
+	})
+
+	it("should render standalone rich html bubbles through the rich content preview", () => {
+		render(<MarkdownBlock markdown={`<div id="vcp-root"><h1>Hello</h1></div>`} htmlEnabled />)
+
+		expect(screen.getByTestId("rich-content-preview")).toHaveAttribute("title", "vcp-rich-preview-html")
+	})
+
+	it("should render html code fences through the rich content preview", () => {
+		render(
+			<MarkdownBlock
+				markdown={`\`\`\`html
+<div id="vcp-root">Chart</div>
+\`\`\``}
+				htmlEnabled
+			/>,
+		)
+
+		expect(screen.getByTestId("rich-content-preview")).toHaveAttribute("title", "vcp-rich-preview-html")
+		expect(screen.getByText("Show source")).toBeInTheDocument()
+	})
+
+	it("should render markdown code fences as nested markdown content", () => {
+		render(
+			<MarkdownBlock
+				markdown={`\`\`\`md
+## Nested Title
+
+- Item A
+\`\`\``}
+				htmlEnabled
+			/>,
+		)
+
+		expect(screen.getByTestId("rendered-markdown-snippet")).toBeInTheDocument()
+		expect(screen.getByText("Nested Title")).toBeInTheDocument()
+		expect(screen.getByText("Item A")).toBeInTheDocument()
+	})
+
+	it("should render latex code fences as formatted math content", () => {
+		render(
+			<MarkdownBlock
+				markdown={`\`\`\`latex
+E = mc^2
+\`\`\``}
+				htmlEnabled
+			/>,
+		)
+
+		expect(screen.getByTestId("rendered-latex-snippet")).toBeInTheDocument()
+		expect(document.querySelector(".katex")).not.toBeNull()
 	})
 })

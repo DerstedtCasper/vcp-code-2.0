@@ -5,6 +5,10 @@
 ### Patch Changes
 
 - Add the VCP runtime model switcher flow for the active profile/provider, including live catalog fetch, default/quick model bindings, media dispatch, distributed skill bootstrap, and Windows-stable test execution.
+- Fix chat rich rendering so standalone HTML/Div payloads and HTML/CSS/JS/Python rich blocks render through a sandboxed VCP preview channel, while fenced Markdown/LaTeX snippets stay renderable in-chat by default.
+- Enable debounced hot reload for Settings view updates so provider, VCP, and bridge changes apply without a manual save round-trip.
+- Recover from oversized request-body/context-window 400 errors by detecting payload-too-large responses, forcing context reduction, and using conservative fallback context windows.
+- Align packaged version metadata to 1.0.9 across VSIX, JetBrains, and preinstalled-skill manifests.
 - Fix benchmark extension activation to prefer `novacode.nova-code` with fallback support for `novacode.Nova-Code`.
 - Fix eval setup extension detection/installation to support `novacode.nova-code` (and keep legacy fallback).
 - Ignore local `.codex-logs/` artifacts to prevent accidental commits.

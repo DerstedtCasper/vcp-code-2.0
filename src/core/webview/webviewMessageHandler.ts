@@ -4754,7 +4754,7 @@ export const webviewMessageHandler = async (
 			await persistVcpConfig(merged)
 			break
 		}
-		// novacode_change: v1.0.8 runtime message handlers
+		// novacode_change: runtime message handlers
 		case "fetchRuntimeProviderModels":
 		case "refreshRuntimeProviderModels": {
 			const { entries, error, nextConfig } = await fetchRuntimeProviderCatalog(
