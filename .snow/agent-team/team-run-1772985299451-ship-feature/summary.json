@@ -1,0 +1,29 @@
+{
+	"runId": "team-run-1772985299451-ship-feature",
+	"status": "completed",
+	"prompt": "Ship feature",
+	"members": [
+		{
+			"teamMemberId": "researcher",
+			"name": "Researcher",
+			"roleType": "research",
+			"sessionId": "session-research",
+			"ownership": {
+				"paths": ["src/a.ts"],
+				"summary": "Research ownership"
+			},
+			"status": "done"
+		},
+		{
+			"teamMemberId": "implementer",
+			"name": "Implementer",
+			"roleType": "implement",
+			"sessionId": "session-implement",
+			"ownership": {
+				"paths": ["src/b.ts"],
+				"summary": "Implement ownership"
+			},
+			"status": "done"
+		}
+	]
+}

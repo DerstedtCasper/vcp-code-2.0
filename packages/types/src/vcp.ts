@@ -156,6 +156,13 @@ export const vcpContextFoldStyleSchema = z.enum(["details", "comment"])
 export const vcpToolBridgeModeSchema = z.enum(["execute", "event"])
 export const vcpAgentWaveStrategySchema = z.enum(["sequential", "parallel", "adaptive"])
 export const vcpAgentHandoffFormatSchema = z.enum(["json", "markdown"])
+// novacode_change start
+export const vcpAgentTeamRoleTypeSchema = z.enum(["lead", "research", "implement", "review", "test", "general"])
+export const vcpAgentTeamOwnershipSchema = z.object({
+	paths: z.array(z.string()),
+	summary: z.string().optional(),
+})
+// novacode_change end
 
 export const vcpBridgePluginStatusSchema = z.enum(["active", "error", "idle"])
 export const vcpBridgeServerStatusSchema = z.enum(["online", "offline"])
@@ -195,6 +202,12 @@ export const vcpAgentTeamMemberSchema = z.object({
 	providerID: z.string(),
 	modelID: z.string(),
 	rolePrompt: z.string(),
+	apiConfigId: z.string().optional(), // novacode_change
+	roleType: vcpAgentTeamRoleTypeSchema.optional(), // novacode_change
+	phaseAffinity: z.array(z.string()).optional(), // novacode_change
+	capabilities: z.array(z.string()).optional(), // novacode_change
+	enabled: z.boolean().optional(), // novacode_change
+	ownership: vcpAgentTeamOwnershipSchema.optional(), // novacode_change
 })
 
 export const vcpAgentTeamConfigSchema = z.object({
@@ -284,6 +297,8 @@ export type VcpContextFoldConfig = z.infer<typeof vcpContextFoldConfigSchema>
 export type VcpInfoConfig = z.infer<typeof vcpInfoConfigSchema>
 export type VcpHtmlConfig = z.infer<typeof vcpHtmlConfigSchema>
 export type VcpToolRequestConfig = z.infer<typeof vcpToolRequestConfigSchema>
+export type VcpAgentTeamRoleType = z.infer<typeof vcpAgentTeamRoleTypeSchema> // novacode_change
+export type VcpAgentTeamOwnership = z.infer<typeof vcpAgentTeamOwnershipSchema> // novacode_change
 export type VcpAgentTeamMember = z.infer<typeof vcpAgentTeamMemberSchema>
 export type VcpAgentTeamConfig = z.infer<typeof vcpAgentTeamConfigSchema>
 export type VcpMemoryConfig = z.infer<typeof vcpMemoryConfigSchema>

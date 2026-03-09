@@ -86,7 +86,11 @@ Break work into clear sub-tasks, assign ownership explicitly in your plan, and c
 						const roleSummary = rolePrompt
 							? rolePrompt.replace(/\s+/g, " ").slice(0, 160)
 							: "No role prompt provided."
-						return `${index + 1}. ${member.id || member.name} -> ${member.providerID}/${member.modelID} | ${roleSummary}`
+						const roleType = member.roleType ? ` [${member.roleType}]` : ""
+						const profileBinding = member.apiConfigId ? ` profile=${member.apiConfigId}` : ""
+						return `${index + 1}. ${member.id || member.name}${roleType} -> ${member.providerID}/${
+							member.modelID
+						}${profileBinding} | ${roleSummary}`
 					})
 					.join("\n")
 			: "No members configured."

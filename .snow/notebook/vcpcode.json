@@ -1,0 +1,43 @@
+{
+	"docs/agent-manager-technical-report.md": [
+		{
+			"id": "notebook-1772936337001_tcnr882y9",
+			"filePath": "docs/agent-manager-technical-report.md",
+			"note": "已补充“用户感知收益不足：当前复杂度高于可见优势”章节，用于明确当前系统的基础设施投入与产品收益落差。",
+			"createdAt": "2026-03-08T10:18:57.001",
+			"updatedAt": "2026-03-08T10:18:57.001"
+		},
+		{
+			"id": "notebook-1772935119449_wbjynxena",
+			"filePath": "docs/agent-manager-technical-report.md",
+			"note": "技术汇报文档基于当前实现核对完成：当前系统应表述为主控型多 Agent Session Manager，而非自发式多 Agent 协同编排系统；后续若实现跨 Agent handoff/orchestrator，需要同步更新该文档。",
+			"createdAt": "2026-03-08T09:58:39.449",
+			"updatedAt": "2026-03-08T09:58:39.449"
+		}
+	],
+	"src/core/nova/agent-manager/AgentTeamCoordinator.ts": [
+		{
+			"id": "notebook-1773035436895_xupfwm97f",
+			"filePath": "src/core/nova/agent-manager/AgentTeamCoordinator.ts",
+			"note": "⚠️ launchWave() now snapshots prompt context once per wave before launching members. If future true parallel launch is added, preserve this wave-level snapshot behavior or later launches may miss unread handoffs consumed by earlier members in the same wave.",
+			"createdAt": "2026-03-09T13:50:36.895",
+			"updatedAt": "2026-03-09T13:50:36.895"
+		},
+		{
+			"id": "notebook-1772976876585_zru5ip069",
+			"filePath": "src/core/nova/agent-manager/AgentTeamCoordinator.ts",
+			"note": "⚠️ Current Agent Team is only a lightweight orchestration skeleton: executeWave() marks members done and emits handoff/session_completed immediately after launchSession returns sessionId, without waiting for actual worker completion. Blackboard/handoff currently act as state/UI artifacts, not a real shared-memory collaboration loop.",
+			"createdAt": "2026-03-08T21:34:36.585",
+			"updatedAt": "2026-03-08T21:34:36.585"
+		}
+	],
+	"webview-ui/src/nova/agent-manager/components/TeamControlPlane.tsx": [
+		{
+			"id": "notebook-1773031661874_109lfw9j2",
+			"filePath": "webview-ui/src/nova/agent-manager/components/TeamControlPlane.tsx",
+			"note": "⚠️ TeamControlPlane now relies on both status and consumedAt for handoff/blackboard consume display: handoff is considered consumed when status === 'consumed' OR consumedAt exists; blackboard entries always render a consumed/pending pill, so future UI changes must preserve this distinction.",
+			"createdAt": "2026-03-09T12:47:41.874",
+			"updatedAt": "2026-03-09T12:47:41.874"
+		}
+	]
+}

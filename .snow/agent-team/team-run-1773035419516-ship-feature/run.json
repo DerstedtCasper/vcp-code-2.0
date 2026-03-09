@@ -1,0 +1,178 @@
+{
+	"runId": "team-run-1773035419516-ship-feature",
+	"status": "completed",
+	"prompt": "Ship feature",
+	"createdAt": 1773035419516,
+	"updatedAt": 1773035419522,
+	"waveStrategy": "parallel",
+	"handoffFormat": "json",
+	"members": [
+		{
+			"teamMemberId": "researcher",
+			"name": "Researcher",
+			"providerId": "novacode",
+			"modelId": "model-a",
+			"rolePrompt": "Research the task and report findings.",
+			"roleType": "research",
+			"ownership": {
+				"paths": ["src/a.ts"],
+				"summary": "Research ownership"
+			},
+			"sessionId": "session-research",
+			"status": "done"
+		},
+		{
+			"teamMemberId": "implementer",
+			"name": "Implementer",
+			"providerId": "novacode",
+			"modelId": "model-b",
+			"rolePrompt": "Implement the approved plan.",
+			"roleType": "implement",
+			"ownership": {
+				"paths": ["src/b.ts"],
+				"summary": "Implement ownership"
+			},
+			"sessionId": "session-implement",
+			"status": "done"
+		}
+	],
+	"waves": [
+		{
+			"waveId": "wave-1773035419516-team-run-1773035419516-s",
+			"runId": "team-run-1773035419516-ship-feature",
+			"label": "Wave 1",
+			"index": 0,
+			"status": "completed",
+			"strategy": "parallel",
+			"teamMemberIds": ["researcher", "implementer"],
+			"sessionIds": ["session-research", "session-implement"],
+			"startedAt": 1773035419516,
+			"completedAt": 1773035419520
+		}
+	],
+	"handoffs": [
+		{
+			"handoffId": "handoff-1773035419520-team-run-1773035419516-s",
+			"runId": "team-run-1773035419516-ship-feature",
+			"waveId": "wave-1773035419516-team-run-1773035419516-s",
+			"fromTeamMemberId": "implementer",
+			"fromSessionId": "session-implement",
+			"status": "published",
+			"title": "Implementer handoff",
+			"summary": "Implemented successfully",
+			"canonical": {
+				"runId": "team-run-1773035419516-ship-feature",
+				"waveId": "wave-1773035419516-team-run-1773035419516-s",
+				"memberId": "implementer",
+				"sessionId": "session-implement",
+				"ownership": {
+					"paths": ["src/b.ts"],
+					"summary": "Implement ownership"
+				},
+				"status": "done",
+				"source": "complete",
+				"summary": "Implemented successfully"
+			},
+			"renderedText": "Implemented successfully",
+			"createdAt": 1773035419520
+		},
+		{
+			"handoffId": "handoff-1773035419518-team-run-1773035419516-s",
+			"runId": "team-run-1773035419516-ship-feature",
+			"waveId": "wave-1773035419516-team-run-1773035419516-s",
+			"fromTeamMemberId": "researcher",
+			"fromSessionId": "session-research",
+			"status": "published",
+			"title": "Researcher handoff",
+			"summary": "Research summary",
+			"canonical": {
+				"runId": "team-run-1773035419516-ship-feature",
+				"waveId": "wave-1773035419516-team-run-1773035419516-s",
+				"memberId": "researcher",
+				"sessionId": "session-research",
+				"ownership": {
+					"paths": ["src/a.ts"],
+					"summary": "Research ownership"
+				},
+				"status": "done",
+				"source": "ask_completion_result",
+				"summary": "Research summary"
+			},
+			"renderedText": "Research summary",
+			"createdAt": 1773035419518
+		}
+	],
+	"blackboard": [
+		{
+			"entryId": "blackboard-1773035419520-handoff-implementer-hand",
+			"runId": "team-run-1773035419516-ship-feature",
+			"waveId": "wave-1773035419516-team-run-1773035419516-s",
+			"teamMemberId": "implementer",
+			"sessionId": "session-implement",
+			"kind": "handoff",
+			"title": "Implementer handoff",
+			"content": "Implemented successfully",
+			"contentJson": {
+				"handoffId": "handoff-1773035419520-team-run-1773035419516-s",
+				"runId": "team-run-1773035419516-ship-feature",
+				"waveId": "wave-1773035419516-team-run-1773035419516-s",
+				"memberId": "implementer",
+				"sessionId": "session-implement",
+				"ownership": {
+					"paths": ["src/b.ts"],
+					"summary": "Implement ownership"
+				},
+				"status": "done",
+				"source": "complete",
+				"summary": "Implemented successfully"
+			},
+			"tags": ["handoff", "implementer"],
+			"createdAt": 1773035419520,
+			"updatedAt": 1773035419520
+		},
+		{
+			"entryId": "blackboard-1773035419518-handoff-researcher-hando",
+			"runId": "team-run-1773035419516-ship-feature",
+			"waveId": "wave-1773035419516-team-run-1773035419516-s",
+			"teamMemberId": "researcher",
+			"sessionId": "session-research",
+			"kind": "handoff",
+			"title": "Researcher handoff",
+			"content": "Research summary",
+			"contentJson": {
+				"handoffId": "handoff-1773035419518-team-run-1773035419516-s",
+				"runId": "team-run-1773035419516-ship-feature",
+				"waveId": "wave-1773035419516-team-run-1773035419516-s",
+				"memberId": "researcher",
+				"sessionId": "session-research",
+				"ownership": {
+					"paths": ["src/a.ts"],
+					"summary": "Research ownership"
+				},
+				"status": "done",
+				"source": "ask_completion_result",
+				"summary": "Research summary"
+			},
+			"tags": ["handoff", "researcher"],
+			"createdAt": 1773035419518,
+			"updatedAt": 1773035419518
+		},
+		{
+			"entryId": "blackboard-1773035419516-note-taskspec",
+			"runId": "team-run-1773035419516-ship-feature",
+			"kind": "note",
+			"title": "TaskSpec",
+			"content": "Ship feature",
+			"contentJson": {
+				"prompt": "Ship feature",
+				"mode": "agent_team",
+				"waveStrategy": "parallel",
+				"handoffFormat": "json"
+			},
+			"tags": ["task", "spec"],
+			"createdAt": 1773035419516,
+			"updatedAt": 1773035419516
+		}
+	],
+	"approvals": []
+}

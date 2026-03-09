@@ -153,6 +153,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 
 	const [isDiscardDialogShow, setDiscardDialogShow] = useState(false)
 	const [isChangeDetected, setChangeDetected] = useState(false)
+	const [isApiConfigurationDirty, setApiConfigurationDirty] = useState(false)
 	const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined)
 	const [activeTab, setActiveTab] = useState<SectionName>(
 		targetSection && sectionNames.includes(targetSection as SectionName)
@@ -284,6 +285,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 		setCachedState((prevCachedState) => ({ ...prevCachedState, ...extensionState }))
 		prevApiConfigName.current = currentApiConfigName
 		setChangeDetected(false)
+		setApiConfigurationDirty(false)
 		// novacode_change start - Don't reset editingApiConfigName if we have an editingProfile prop (from auth return)
 		if (!editingProfile) {
 			setEditingApiConfigName(currentApiConfigName || "default")
@@ -318,6 +320,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 					apiConfiguration: message.apiConfiguration,
 				}))
 				setChangeDetected(false)
+				setApiConfigurationDirty(false)
 				isLoadingProfileForEditing.current = false
 			}
 		}
@@ -348,7 +351,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 		// Only update if we're not already detecting changes
 		// This prevents overwriting user changes that haven't been saved yet
 		// Also skip if we're loading a profile for editing
-		if (!isChangeDetected && !isLoadingProfileForEditing.current) {
+		if (!isChangeDetected && !isApiConfigurationDirty && !isLoadingProfileForEditing.current) {
 			// When editing a different profile than the active one,
 			// don't overwrite apiConfiguration from extensionState since it contains
 			// the active profile's config, not the editing profile's config
@@ -364,7 +367,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 				setCachedState(extensionState)
 			}
 		}
-	}, [extensionState, isChangeDetected, editingApiConfigName, currentApiConfigName])
+	}, [extensionState, isChangeDetected, isApiConfigurationDirty, editingApiConfigName, currentApiConfigName])
 
 	// Bust the cache when settings are imported.
 	useEffect(() => {
@@ -373,13 +376,13 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 			if (message.type === "settingsImported") {
 				setCachedState((prevCachedState) => ({ ...prevCachedState, ...extensionState }))
 				setChangeDetected(false)
+				setApiConfigurationDirty(false)
 			}
 		}
 
 		window.addEventListener("message", handleMessage)
 		return () => window.removeEventListener("message", handleMessage)
 	})
-	// novacode_change end
 
 	const setCachedStateField: SetCachedStateField<keyof ExtensionStateContextType> = useCallback((field, value) => {
 		setCachedState((prevState) => {
@@ -514,7 +517,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 					value !== null
 
 				if (!isInitialSync) {
-					setChangeDetected(true)
+					setApiConfigurationDirty(true)
 				}
 				return { ...prevState, apiConfiguration: { ...prevState.apiConfiguration, [field]: value } }
 			})
@@ -607,14 +610,14 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 	}, [])
 
 	const isSettingValid = !errorMessage
+	const hasUnsavedChanges = isChangeDetected || isApiConfigurationDirty
 
 	const syncSettingsToHost = useCallback(() => {
-		if (!isSettingValid) {
+		if (!isSettingValid || !isChangeDetected) {
 			return false
 		}
 
 		const state = cachedState
-		const nextApiConfiguration = state.apiConfiguration ?? {}
 
 		vscode.postMessage({
 			type: "updateSettings",
@@ -707,11 +710,6 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 		vscode.postMessage({ type: "updateCondensingPrompt", text: state.customCondensingPrompt || "" })
 		vscode.postMessage({ type: "yoloGatekeeperApiConfigId", text: state.yoloGatekeeperApiConfigId || "" })
 		vscode.postMessage({ type: "setReasoningBlockCollapsed", bool: state.reasoningBlockCollapsed ?? true })
-		vscode.postMessage({
-			type: "upsertApiConfiguration",
-			text: editingApiConfigName,
-			apiConfiguration: nextApiConfiguration,
-		})
 		vscode.postMessage({ type: "telemetrySetting", text: state.telemetrySetting })
 		vscode.postMessage({ type: "systemNotificationsEnabled", bool: state.systemNotificationsEnabled })
 		vscode.postMessage({ type: "ghostServiceSettings", values: state.ghostServiceSettings })
@@ -737,11 +735,26 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 
 		setChangeDetected(false)
 		return true
-	}, [cachedState, currentApiConfigName, editingApiConfigName, isSettingValid])
+	}, [cachedState, currentApiConfigName, isChangeDetected, isSettingValid])
+
+	const saveApiConfigurationToHost = useCallback(() => {
+		if (!isSettingValid || !isApiConfigurationDirty) {
+			return false
+		}
+
+		vscode.postMessage({
+			type: "upsertApiConfiguration",
+			text: editingApiConfigName,
+			apiConfiguration: cachedState.apiConfiguration ?? {},
+		})
+		setApiConfigurationDirty(false)
+		return true
+	}, [cachedState.apiConfiguration, editingApiConfigName, isApiConfigurationDirty, isSettingValid])
 
 	const handleSubmit = useCallback(() => {
 		syncSettingsToHost()
-	}, [syncSettingsToHost])
+		saveApiConfigurationToHost()
+	}, [saveApiConfigurationToHost, syncSettingsToHost])
 
 	useDebounceEffect(
 		() => {
@@ -757,14 +770,14 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 
 	const checkUnsaveChanges = useCallback(
 		(then: () => void) => {
-			if (isChangeDetected) {
+			if (hasUnsavedChanges) {
 				confirmDialogHandler.current = then
 				setDiscardDialogShow(true)
 			} else {
 				then()
 			}
 		},
-		[isChangeDetected],
+		[hasUnsavedChanges],
 	)
 
 	useImperativeHandle(ref, () => ({ checkUnsaveChanges }), [checkUnsaveChanges])
@@ -776,11 +789,12 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 				// Discard changes: Reset state and flag
 				setCachedState(extensionState) // Revert to original state
 				setChangeDetected(false) // Reset change flag
+				setApiConfigurationDirty(false)
 				confirmDialogHandler.current?.() // Execute the pending action (e.g., tab switch)
 			}
 			// If confirm is false (Cancel), do nothing, dialog closes automatically
 		},
-		[setCachedState, setChangeDetected, extensionState], // Depend on extensionState to get the latest original state
+		[extensionState],
 	)
 
 	// From time to time there's a bug that triggers unsaved changes upon rendering the SettingsView
@@ -794,13 +808,12 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 			const renderEnd = performance.now()
 			const renderTime = renderEnd - renderStart.current
 
-			if (renderTime < 100 && isChangeDetected) {
+			if (renderTime < 100 && hasUnsavedChanges) {
 				console.info("Overwriting unsaved changes in less than 100ms")
 				onConfirmDialogResult(true)
 			}
 		}
-	}, [isChangeDetected, onConfirmDialogResult])
-	// novacode_change end
+	}, [hasUnsavedChanges, onConfirmDialogResult])
 
 	// Handle tab changes with unsaved changes check
 	const handleTabChange = useCallback(
@@ -1031,7 +1044,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 						content={
 							!isSettingValid
 								? errorMessage
-								: isChangeDetected
+								: hasUnsavedChanges
 									? t("settings:header.saveButtonTooltip")
 									: t("settings:header.nothingChangedTooltip")
 						}>
@@ -1039,7 +1052,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 							variant={isSettingValid ? "primary" : "secondary"}
 							className={!isSettingValid ? "!border-vscode-errorForeground" : ""}
 							onClick={handleSubmit}
-							disabled={!isChangeDetected || !isSettingValid}
+							disabled={!hasUnsavedChanges || !isSettingValid}
 							data-testid="save-button">
 							{t("settings:common.save")}
 						</Button>
@@ -1145,6 +1158,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 									<ApiConfigManager
 										currentApiConfigName={editingApiConfigName}
 										activeApiConfigName={currentApiConfigName}
+										hasUnsavedApiConfiguration={isApiConfigurationDirty}
 										listApiConfigMeta={listApiConfigMeta}
 										onSelectConfig={(configName: string) => {
 											checkUnsaveChanges(() => {
@@ -1159,6 +1173,9 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 											})
 										}}
 										onActivateConfig={(configName: string) => {
+											if (isApiConfigurationDirty) {
+												return
+											}
 											vscode.postMessage({ type: "loadApiConfiguration", text: configName })
 										}}
 										onDeleteConfig={(configName: string) => {
@@ -1180,6 +1197,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 												values: { oldName, newName },
 												apiConfiguration,
 											})
+											setApiConfigurationDirty(false)
 											if (oldName === editingApiConfigName) {
 												setEditingApiConfigName(newName)
 											}
@@ -1188,7 +1206,6 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 												prevApiConfigName.current = newName
 											}
 										}}
-										// novacode_change start - autocomplete profile type system
 										onUpsertConfig={(configName: string, profileType?: ProfileType) => {
 											vscode.postMessage({
 												type: "upsertApiConfiguration",
@@ -1198,9 +1215,11 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 													profileType: profileType || "chat",
 												},
 											})
+											setApiConfigurationDirty(false)
 											setEditingApiConfigName(configName)
 										}}
 									/>
+
 									{/* novacode_change end changes to allow for editting a non-active profile */}
 
 									{/* novacode_change start - pass editing profile name */}
@@ -1310,8 +1329,6 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 								onAutocompleteServiceSettingsChange={setAutocompleteServiceSettingsField}
 							/>
 						)}
-						{/* novacode_change end display section */}
-
 						{/* Notifications Section */}
 						{activeTab === "notifications" && (
 							<NotificationSettings
@@ -1320,7 +1337,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 								soundEnabled={soundEnabled}
 								soundVolume={soundVolume}
 								systemNotificationsEnabled={systemNotificationsEnabled}
-								areSettingsCommitted={!isChangeDetected}
+								areSettingsCommitted={!hasUnsavedChanges}
 								setCachedStateField={setCachedStateField}
 							/>
 						)}

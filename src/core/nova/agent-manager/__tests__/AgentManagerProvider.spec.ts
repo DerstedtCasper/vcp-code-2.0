@@ -1048,6 +1048,80 @@ describe("AgentManagerProvider telemetry", () => {
 		)
 	})
 
+	describe("team session settlement routing", () => {
+		it("prefers ask_completion_result over runtime complete fallback", async () => {
+			const coordinatorHandle = vi
+				.spyOn((provider as any).teamCoordinator, "handleSessionOutcome")
+				.mockResolvedValue(true)
+			const postMessageSpy = vi.spyOn(provider as any, "postMessage")
+			const sessionId = "team-session-success"
+			const registry = (provider as any).registry
+			registry.createSession(sessionId, "team success", undefined, {
+				teamRunId: "run-1",
+				teamMemberId: "member-1",
+				waveId: "wave-1",
+			})
+
+			await (provider as any).handleStateEventFromProcessor(sessionId, { eventType: "ask_completion_result" })
+			await (provider as any).handleRuntimeSessionCompleted(sessionId, 0)
+
+			expect(postMessageSpy).toHaveBeenCalledWith({
+				type: "agentManager.stateEvent",
+				sessionId,
+				eventType: "ask_completion_result",
+			})
+			expect(coordinatorHandle).toHaveBeenCalledTimes(1)
+			expect(coordinatorHandle).toHaveBeenCalledWith(
+				expect.objectContaining({
+					sessionId,
+					outcome: "completed",
+					source: "ask_completion_result",
+				}),
+			)
+		})
+
+		it("routes cancel and failure terminal events to team coordinator", async () => {
+			const coordinatorHandle = vi
+				.spyOn((provider as any).teamCoordinator, "handleSessionOutcome")
+				.mockResolvedValue(true)
+			const registry = (provider as any).registry
+			const cancelledSessionId = "team-session-cancelled"
+			const failedSessionId = "team-session-failed"
+			registry.createSession(cancelledSessionId, "team cancel", undefined, {
+				teamRunId: "run-cancel",
+				teamMemberId: "member-cancel",
+				waveId: "wave-cancel",
+			})
+			registry.createSession(failedSessionId, "team fail", undefined, {
+				teamRunId: "run-fail",
+				teamMemberId: "member-fail",
+				waveId: "wave-fail",
+			})
+			;(provider as any).stopAgentSession(cancelledSessionId)
+			;(provider as any).handleCliEvent(failedSessionId, {
+				streamEventType: "error",
+				error: "session exploded",
+				timestamp: new Date().toISOString(),
+			})
+
+			expect(coordinatorHandle).toHaveBeenCalledWith(
+				expect.objectContaining({
+					sessionId: cancelledSessionId,
+					outcome: "cancelled",
+					source: "cancel_session",
+				}),
+			)
+			expect(coordinatorHandle).toHaveBeenCalledWith(
+				expect.objectContaining({
+					sessionId: failedSessionId,
+					outcome: "failed",
+					source: "error",
+					message: "session exploded",
+				}),
+			)
+		})
+	})
+
 	describe("Regression Tests - finishWorktreeSession validation (P0)", () => {
 		it("should not attempt to finish non-running worktree sessions", async () => {
 			const registry = (provider as any).registry

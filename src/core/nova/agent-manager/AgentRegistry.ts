@@ -6,6 +6,11 @@ export interface CreateSessionOptions {
 	model?: string
 	mode?: string
 	yoloMode?: boolean
+	teamRunId?: string
+	teamMemberId?: string
+	waveId?: string
+	roleType?: AgentSession["roleType"]
+	ownership?: AgentSession["ownership"]
 }
 
 const MAX_SESSIONS = 10
@@ -40,6 +45,11 @@ export class AgentRegistry {
 			parallelMode: options?.parallelMode,
 			gitUrl: options?.gitUrl,
 			yoloMode: options?.yoloMode,
+			teamRunId: options?.teamRunId,
+			teamMemberId: options?.teamMemberId,
+			waveId: options?.waveId,
+			roleType: options?.roleType,
+			ownership: options?.ownership,
 		}
 		return this._pendingSession
 	}
@@ -75,6 +85,11 @@ export class AgentRegistry {
 			model: options?.model,
 			mode: options?.mode ?? DEFAULT_MODE_SLUG,
 			yoloMode: options?.yoloMode,
+			teamRunId: options?.teamRunId,
+			teamMemberId: options?.teamMemberId,
+			waveId: options?.waveId,
+			roleType: options?.roleType,
+			ownership: options?.ownership,
 		}
 
 		this.sessions.set(sessionId, session)

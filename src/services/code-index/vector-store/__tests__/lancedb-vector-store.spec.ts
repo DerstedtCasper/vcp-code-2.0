@@ -528,8 +528,10 @@ describe("LocalVectorStore", () => {
 
 			await store.deletePointsByFilePath(windowsPath)
 
-			// Backslashes should be preserved, only quotes escaped
-			expect(mockTable.delete).toHaveBeenCalledWith(`\`filePath\` IN ('C:\\Users\\test\\file.ts')`)
+			const normalizedPath = path.normalize(
+				path.isAbsolute(windowsPath) ? path.relative(workspacePath, windowsPath) : windowsPath,
+			)
+			expect(mockTable.delete).toHaveBeenCalledWith(`\`filePath\` IN ('${normalizedPath}')`)
 		})
 	})
 })

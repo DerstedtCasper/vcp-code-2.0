@@ -1,0 +1,18 @@
+{
+	"runId": "team-run-1773035419523-fail-feature",
+	"status": "failed",
+	"prompt": "Fail feature",
+	"members": [
+		{
+			"teamMemberId": "researcher",
+			"name": "Researcher",
+			"roleType": "research",
+			"sessionId": "session-research",
+			"ownership": {
+				"paths": ["src/a.ts"],
+				"summary": "Research ownership"
+			},
+			"status": "error"
+		}
+	]
+}

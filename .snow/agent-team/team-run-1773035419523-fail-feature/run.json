@@ -1,0 +1,61 @@
+{
+	"runId": "team-run-1773035419523-fail-feature",
+	"status": "failed",
+	"prompt": "Fail feature",
+	"createdAt": 1773035419523,
+	"updatedAt": 1773035419525,
+	"waveStrategy": "adaptive",
+	"handoffFormat": "json",
+	"members": [
+		{
+			"teamMemberId": "researcher",
+			"name": "Researcher",
+			"providerId": "novacode",
+			"modelId": "model-a",
+			"rolePrompt": "Research the task and report findings.",
+			"roleType": "research",
+			"ownership": {
+				"paths": ["src/a.ts"],
+				"summary": "Research ownership"
+			},
+			"sessionId": "session-research",
+			"status": "error"
+		}
+	],
+	"waves": [
+		{
+			"waveId": "wave-1773035419523-team-run-1773035419523-f",
+			"runId": "team-run-1773035419523-fail-feature",
+			"label": "Wave 1",
+			"index": 0,
+			"status": "failed",
+			"strategy": "adaptive",
+			"teamMemberIds": ["researcher"],
+			"sessionIds": ["session-research"],
+			"startedAt": 1773035419523,
+			"completedAt": 1773035419525,
+			"error": "boom"
+		}
+	],
+	"handoffs": [],
+	"blackboard": [
+		{
+			"entryId": "blackboard-1773035419523-note-taskspec",
+			"runId": "team-run-1773035419523-fail-feature",
+			"kind": "note",
+			"title": "TaskSpec",
+			"content": "Fail feature",
+			"contentJson": {
+				"prompt": "Fail feature",
+				"mode": "agent_team",
+				"waveStrategy": "adaptive",
+				"handoffFormat": "json"
+			},
+			"tags": ["task", "spec"],
+			"createdAt": 1773035419523,
+			"updatedAt": 1773035419523
+		}
+	],
+	"approvals": [],
+	"error": "boom"
+}
