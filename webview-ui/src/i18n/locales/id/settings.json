@@ -634,10 +634,9 @@
 			"none": "Tidak Ada",
 			"minimal": "Minimal (Tercepat)",
 			"high": "Tinggi",
-			"xhigh": "Sangat tinggi",
+			"xhigh": "Ekstra Tinggi",
 			"medium": "Sedang",
-			"low": "Rendah",
-			"xhigh": "Ekstra Tinggi"
+			"low": "Rendah"
 		},
 		"verbosity": {
 			"label": "Verbositas Output",
@@ -670,7 +669,8 @@
 		"autocompleteLabel": "(Pelengkapan Otomatis)",
 		"autocomplete": {
 			"onlyOneAllowed": "Hanya satu profil pelengkapan otomatis yang diizinkan. Profil \"{{existingName}}\" sudah dikonfigurasi untuk pelengkapan otomatis. Silakan ubah jenisnya terlebih dahulu atau hapus."
-		}
+		},
+		"saveProfileBeforeActivating": "Save this profile before making it active"
 	},
 	"browser": {
 		"enable": {

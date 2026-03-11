@@ -731,7 +731,8 @@
 		"autocompleteLabel": "(الإكمال التلقائي)",
 		"autocomplete": {
 			"onlyOneAllowed": "يُسمح بملف إكمال تلقائي واحد فقط. الملف الشخصي \"{{existingName}}\" مُكوّن بالفعل للإكمال التلقائي. يرجى تغيير نوعه أولاً أو حذفه."
-		}
+		},
+		"saveProfileBeforeActivating": "Save this profile before making it active"
 	},
 	"contextWindow": {
 		"description": "أقصى سياق محادثة",

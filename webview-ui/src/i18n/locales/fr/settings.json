@@ -619,8 +619,7 @@
 			"high": "Élevé",
 			"xhigh": "Très élevé",
 			"medium": "Moyen",
-			"low": "Faible",
-			"xhigh": "Très élevé"
+			"low": "Faible"
 		},
 		"verbosity": {
 			"label": "Verbosité de la sortie",
@@ -670,7 +669,8 @@
 			"supportedProvidersDesc1": "Le fournisseur SAP AI Core ne prend actuellement en charge que les modèles de fondation pour les fournisseurs LLM suivants :",
 			"supportedProvidersDesc2": "Envisagez de passer au mode Orchestration pour accéder à plus de modèles.",
 			"supportedProvidersDesc3": "En savoir plus sur le mode Orchestration"
-		}
+		},
+		"saveProfileBeforeActivating": "Save this profile before making it active"
 	},
 	"browser": {
 		"enable": {

@@ -257,6 +257,41 @@ export function SessionDetail() {
 				</div>
 			</div>
 
+			{selectedSession.teamRunId && (
+				<div
+					className="am-team-info-bar"
+					style={{
+						display: "flex",
+						alignItems: "center",
+						gap: "8px",
+						padding: "4px 12px",
+						backgroundColor: "var(--vscode-editorWidget-background)",
+						borderBottom: "1px solid var(--vscode-editorWidget-border)",
+						fontSize: "11px",
+						color: "var(--vscode-descriptionForeground)",
+						flexWrap: "wrap",
+					}}>
+					<span>🤖 Team Member</span>
+					{selectedSession.roleType && (
+						<span
+							style={{
+								padding: "1px 6px",
+								borderRadius: "3px",
+								backgroundColor: "var(--vscode-badge-background)",
+								color: "var(--vscode-badge-foreground)",
+							}}>
+							{selectedSession.roleType}
+						</span>
+					)}
+					{selectedSession.waveId && <span>Wave: {selectedSession.waveId.split("-").pop()}</span>}
+					{selectedSession.ownership?.paths && selectedSession.ownership.paths.length > 0 && (
+						<span title={selectedSession.ownership.paths.join(", ")}>
+							📁 {selectedSession.ownership.paths.length} path(s)
+						</span>
+					)}
+				</div>
+			)}
+
 			{selectedSession.status === "error" && selectedSession.error && (
 				<div className="am-session-error-banner" role="alert">
 					<AlertCircle size={16} />

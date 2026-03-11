@@ -86,10 +86,40 @@ Break work into clear sub-tasks, assign ownership explicitly in your plan, and c
 						const roleSummary = rolePrompt
 							? rolePrompt.replace(/\s+/g, " ").slice(0, 160)
 							: "No role prompt provided."
-						return `${index + 1}. ${member.id || member.name} -> ${member.providerID}/${member.modelID} | ${roleSummary}`
+						const roleType = member.roleType ? ` [${member.roleType}]` : ""
+						const profileBinding = member.apiConfigId ? ` profile=${member.apiConfigId}` : ""
+						return `${index + 1}. ${member.id || member.name}${roleType} -> ${member.providerID}/${
+							member.modelID
+						}${profileBinding} | ${roleSummary}`
 					})
 					.join("\n")
 			: "No members configured."
+
+	// Build ownership summary lines for members with explicit ownership
+	const ownershipLines = members
+		.filter((m) => m.ownership?.paths && m.ownership.paths.length > 0)
+		.map(
+			(m) =>
+				`- ${m.id || m.name}: ${m.ownership!.paths.join(", ")}${
+					m.ownership!.summary ? ` (${m.ownership!.summary})` : ""
+				}`,
+		)
+		.join("\n")
+
+	const ownershipBlock = ownershipLines
+		? `
+
+### MANDATORY Ownership Constraints
+Each team member listed below is assigned exclusive ownership of specific file paths. You MUST NOT read, write, or modify files outside your assigned ownership scope. Violations will be treated as collaboration failures.
+${ownershipLines}`
+		: ""
+
+	const fileSeparationBlock = teamConfig.requireFileSeparation
+		? `
+
+### ENFORCED File Separation Policy
+File separation is ENABLED. Each team member MUST restrict all file operations (read, write, create, delete) strictly to their assigned ownership paths. Cross-boundary file access is PROHIBITED. When file separation is active, members operate in isolated worktree branches to prevent merge conflicts.`
+		: ""
 
 	return `## Agent Team Coordination
 
@@ -101,8 +131,9 @@ Agent Team mode is active. Operate as the coordinator for a configured multi-age
 
 Configured team members:
 ${memberLines}
+${ownershipBlock}${fileSeparationBlock}
 
-Delegate mentally according to the roster above, preserve separation of responsibilities, and produce a merged final outcome that reflects the configured handoff style.`
+Delegate according to the roster above, strictly respect ownership boundaries, and produce a merged final outcome that reflects the configured handoff style.`
 }
 
 async function generatePrompt(

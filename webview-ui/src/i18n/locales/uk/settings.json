@@ -725,7 +725,8 @@
 		"autocompleteLabel": "(Автодоповнення)",
 		"autocomplete": {
 			"onlyOneAllowed": "Дозволено лише один профіль автодоповнення. Профіль \"{{existingName}}\" вже налаштовано для автодоповнення. Будь ласка, спочатку зміни його тип або видали його."
-		}
+		},
+		"saveProfileBeforeActivating": "Save this profile before making it active"
 	},
 	"contextWindow": {
 		"description": "Максимальний контекст розмови",

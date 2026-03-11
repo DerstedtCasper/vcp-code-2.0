@@ -11,7 +11,7 @@ import {
 import { sessionMachineUiStateAtom } from "../state/atoms/stateMachine"
 import { vscode } from "../utils/vscode"
 import { formatRelativeTime, createRelativeTimeLabels } from "../utils/timeUtils"
-import { Plus, Loader2, RefreshCw, GitBranch, Folder, Share2, MoreVertical, FileCode, Zap } from "lucide-react"
+import { Plus, Loader2, RefreshCw, GitBranch, Folder, Share2, MoreVertical, FileCode, Zap, Users } from "lucide-react"
 
 export function SessionSidebar() {
 	const { t } = useTranslation("agentManager")
@@ -127,15 +127,12 @@ export function SessionSidebar() {
 						<p>{t("sidebar.emptyState")}</p>
 					</div>
 				) : (
-					sessions.map((session) => (
-						<SessionItem
-							key={session.sessionId}
-							session={session}
-							isSelected={selectedId === session.sessionId}
-							uiState={machineUiState[session.sessionId]}
-							onSelect={() => handleSelectSession(session.sessionId)}
-						/>
-					))
+					<GroupedSessionList
+						sessions={sessions}
+						selectedId={selectedId}
+						machineUiState={machineUiState}
+						onSelectSession={handleSelectSession}
+					/>
 				)}
 			</div>
 		</div>
@@ -223,7 +220,28 @@ function SessionItem({
 				</div>
 			)}
 			<div className="am-session-content">
-				<div className="am-session-label">{session.label}</div>
+				<div className="am-session-label">
+					{session.teamRunId && (
+						<span style={{ marginRight: "4px", fontSize: "12px" }} title={`Team: ${session.teamRunId}`}>
+							🤖
+						</span>
+					)}
+					{session.label}
+					{session.roleType && (
+						<span
+							className="am-session-role-badge"
+							style={{
+								fontSize: "10px",
+								padding: "1px 4px",
+								borderRadius: "3px",
+								backgroundColor: "var(--vscode-badge-background)",
+								color: "var(--vscode-badge-foreground)",
+								marginLeft: "4px",
+							}}>
+							{session.roleType}
+						</span>
+					)}
+				</div>
 				<div className="am-session-meta">
 					{session.status === "creating" && isActive
 						? t("status.creating")
@@ -282,5 +300,98 @@ function SessionItem({
 				</div>
 			)}
 		</div>
+	)
+}
+
+/**
+ * Groups sessions by teamRunId and renders team groups with headers,
+ * followed by standalone (non-team) sessions.
+ */
+function GroupedSessionList({
+	sessions,
+	selectedId,
+	machineUiState,
+	onSelectSession,
+}: {
+	sessions: AgentSession[]
+	selectedId: string | null
+	machineUiState: Record<string, { showSpinner: boolean; isActive: boolean } | undefined>
+	onSelectSession: (id: string) => void
+}) {
+	const { teamGroups, standaloneSessions } = useMemo(() => {
+		const groups = new Map<string, AgentSession[]>()
+		const standalone: AgentSession[] = []
+
+		for (const session of sessions) {
+			if (session.teamRunId) {
+				const group = groups.get(session.teamRunId)
+				if (group) {
+					group.push(session)
+				} else {
+					groups.set(session.teamRunId, [session])
+				}
+			} else {
+				standalone.push(session)
+			}
+		}
+
+		return { teamGroups: groups, standaloneSessions: standalone }
+	}, [sessions])
+
+	return (
+		<>
+			{/* Team groups first */}
+			{Array.from(teamGroups.entries()).map(([teamRunId, teamSessions]) => (
+				<div key={teamRunId} className="am-team-group">
+					<div
+						className="am-team-group-header"
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: "4px",
+							padding: "4px 8px",
+							fontSize: "11px",
+							color: "var(--vscode-descriptionForeground)",
+							backgroundColor: "var(--vscode-sideBarSectionHeader-background)",
+							borderBottom: "1px solid var(--vscode-sideBarSectionHeader-border, transparent)",
+						}}>
+						<Users size={12} />
+						<span style={{ fontWeight: 500 }}>Team Run</span>
+						<span style={{ opacity: 0.7 }}>{teamRunId.split("-").pop()}</span>
+						<span
+							style={{
+								marginLeft: "auto",
+								padding: "0px 4px",
+								borderRadius: "3px",
+								backgroundColor: "var(--vscode-badge-background)",
+								color: "var(--vscode-badge-foreground)",
+								fontSize: "10px",
+							}}>
+							{teamSessions.length}
+						</span>
+					</div>
+					{teamSessions.map((session) => (
+						<SessionItem
+							key={session.sessionId}
+							session={session}
+							isSelected={selectedId === session.sessionId}
+							uiState={machineUiState[session.sessionId]}
+							onSelect={() => onSelectSession(session.sessionId)}
+						/>
+					))}
+				</div>
+			))}
+
+			{/* Standalone sessions after */}
+			{standaloneSessions.map((session) => (
+				<SessionItem
+					key={session.sessionId}
+					session={session}
+					isSelected={selectedId === session.sessionId}
+					uiState={machineUiState[session.sessionId]}
+					onSelect={() => onSelectSession(session.sessionId)}
+				/>
+			))}
+		</>
 	)
 }

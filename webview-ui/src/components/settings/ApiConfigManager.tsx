@@ -27,6 +27,7 @@ import {
 interface ApiConfigManagerProps {
 	currentApiConfigName?: string
 	activeApiConfigName?: string // novacode_change: Track which profile is actually active
+	hasUnsavedApiConfiguration?: boolean
 	listApiConfigMeta?: ProviderSettingsEntry[]
 	organizationAllowList?: OrganizationAllowList
 	onSelectConfig: (configName: string) => void
@@ -39,6 +40,7 @@ interface ApiConfigManagerProps {
 const ApiConfigManager = ({
 	currentApiConfigName = "",
 	activeApiConfigName, // novacode_change: Track which profile is actually active
+	hasUnsavedApiConfiguration = false,
 	listApiConfigMeta = [],
 	organizationAllowList,
 	onSelectConfig,
@@ -48,7 +50,6 @@ const ApiConfigManager = ({
 	onUpsertConfig,
 }: ApiConfigManagerProps) => {
 	const { t } = useAppTranslation()
-
 	const [isRenaming, setIsRenaming] = useState(false)
 	const [isCreating, setIsCreating] = useState(false)
 	const [inputValue, setInputValue] = useState("")
@@ -322,16 +323,21 @@ const ApiConfigManager = ({
 					</div>
 					{/* novacode_change start Show "Make Active Profile" button when editing != active */}
 					{isEditingDifferentProfile && onActivateConfig && (
-						<StandardTooltip content={t("settings:providers.makeActiveTooltip")}>
+						<StandardTooltip
+							content={
+								hasUnsavedApiConfiguration
+									? t("settings:providers.saveProfileBeforeActivating")
+									: t("settings:providers.makeActiveTooltip")
+							}>
 							<Button
 								className="mt-2"
 								onClick={() => onActivateConfig(currentApiConfigName)}
+								disabled={hasUnsavedApiConfiguration}
 								data-testid="activate-profile-button">
 								{t("settings:providers.makeActiveProfile")}
 							</Button>
 						</StandardTooltip>
 					)}
-					{/* novacode_change end Show "Make Active Profile" button when editing != active */}
 				</>
 			)}
 

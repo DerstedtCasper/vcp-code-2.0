@@ -636,8 +636,7 @@
 			"high": "Высокие",
 			"xhigh": "Очень высокие",
 			"medium": "Средние",
-			"low": "Низкие",
-			"xhigh": "Очень высокие"
+			"low": "Низкие"
 		},
 		"verbosity": {
 			"label": "Подробность вывода",
@@ -670,7 +669,8 @@
 		"autocompleteLabel": "(Автодополнение)",
 		"autocomplete": {
 			"onlyOneAllowed": "Разрешён только один профиль автодополнения. Профиль \"{{existingName}}\" уже настроен для автодополнения. Пожалуйста, сначала измени его тип или удали его."
-		}
+		},
+		"saveProfileBeforeActivating": "Save this profile before making it active"
 	},
 	"browser": {
 		"enable": {

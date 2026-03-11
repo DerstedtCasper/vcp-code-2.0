@@ -195,7 +195,7 @@ describe("AgentManagerProvider CLI spawning", () => {
 			const processHandler = (provider as any).processHandler
 
 			registry.clearPendingSession()
-			processHandler.pendingProcess = {}
+			processHandler.pendingProcesses.set(9999, { process: {}, prompt: "test", startTime: Date.now() })
 
 			let resolved = false
 			const waitPromise = (provider as any).waitForPendingSessionToClear().then(() => {
@@ -205,7 +205,7 @@ describe("AgentManagerProvider CLI spawning", () => {
 			await Promise.resolve()
 			expect(resolved).toBe(false)
 
-			processHandler.pendingProcess = null
+			processHandler.pendingProcesses.clear()
 			vi.advanceTimersByTime(200)
 			await waitPromise
 			expect(resolved).toBe(true)
@@ -504,12 +504,12 @@ describe("AgentManagerProvider CLI spawning", () => {
 			const proc = forkMock.mock.results[0].value
 
 			const processHandler = (provider as any).processHandler
-			expect(processHandler.pendingProcess).not.toBeNull()
+			expect(processHandler.pendingProcesses.size).toBeGreaterThan(0)
 
 			provider.dispose()
 
 			expect(proc.kill).toHaveBeenCalledWith("SIGTERM")
-			expect(processHandler.pendingProcess).toBeNull()
+			expect(processHandler.pendingProcesses.size).toBe(0)
 		})
 
 		it("kills all running processes on dispose", async () => {
@@ -958,6 +958,44 @@ describe("AgentManagerProvider telemetry", () => {
 		)
 	})
 
+	it("preserves team metadata from pending launch into created session", async () => {
+		await (provider as any).startAgentSession("team task", {
+			parallelMode: true,
+			teamRunId: "run-1",
+			teamMemberId: "member-1",
+			waveId: "wave-1",
+			roleType: "implement",
+			ownership: { paths: ["src/feature.ts"], summary: "Implements feature" },
+		})
+
+		expect((provider as any).registry.pendingSession).toEqual(
+			expect.objectContaining({
+				parallelMode: true,
+				teamRunId: "run-1",
+				teamMemberId: "member-1",
+				waveId: "wave-1",
+				roleType: "implement",
+				ownership: { paths: ["src/feature.ts"], summary: "Implements feature" },
+			}),
+		)
+
+		const forkMock = (await import("node:child_process")).fork as unknown as Mock
+		const proc = forkMock.mock.results[0].value as EventEmitter & { stdout: EventEmitter }
+		proc.emit("message", { type: "ready" })
+
+		const createdSession = (provider as any).registry.getSessions()[0]
+		expect(createdSession).toEqual(
+			expect.objectContaining({
+				parallelMode: expect.objectContaining({ enabled: true }),
+				teamRunId: "run-1",
+				teamMemberId: "member-1",
+				waveId: "wave-1",
+				roleType: "implement",
+				ownership: { paths: ["src/feature.ts"], summary: "Implements feature" },
+			}),
+		)
+	})
+
 	it("tracks session completed telemetry when complete event is received", async () => {
 		// Create a session directly in the registry
 		const registry = (provider as any).registry
@@ -1046,6 +1084,113 @@ describe("AgentManagerProvider telemetry", () => {
 			sessionId,
 			true, // useWorktree = true (parallel mode)
 		)
+	})
+
+	describe("team session settlement routing", () => {
+		it("prefers ask_completion_result over runtime complete fallback", async () => {
+			const coordinatorHandle = vi
+				.spyOn((provider as any).teamCoordinator, "handleSessionOutcome")
+				.mockResolvedValue(true)
+			const postMessageSpy = vi.spyOn(provider as any, "postMessage")
+			const sessionId = "team-session-success"
+			const registry = (provider as any).registry
+			registry.createSession(sessionId, "team success", undefined, {
+				teamRunId: "run-1",
+				teamMemberId: "member-1",
+				waveId: "wave-1",
+			})
+
+			await (provider as any).handleStateEventFromProcessor(sessionId, { eventType: "ask_completion_result" })
+			await (provider as any).handleRuntimeSessionCompleted(sessionId, 0)
+
+			expect(postMessageSpy).toHaveBeenCalledWith({
+				type: "agentManager.stateEvent",
+				sessionId,
+				eventType: "ask_completion_result",
+			})
+			expect(coordinatorHandle).toHaveBeenCalledTimes(1)
+			expect(coordinatorHandle).toHaveBeenCalledWith(
+				expect.objectContaining({
+					sessionId,
+					outcome: "completed",
+					source: "ask_completion_result",
+				}),
+			)
+		})
+
+		it("routes cancel and failure terminal events to team coordinator", async () => {
+			const coordinatorHandle = vi
+				.spyOn((provider as any).teamCoordinator, "handleSessionOutcome")
+				.mockResolvedValue(true)
+			const registry = (provider as any).registry
+			const cancelledSessionId = "team-session-cancelled"
+			const failedSessionId = "team-session-failed"
+			registry.createSession(cancelledSessionId, "team cancel", undefined, {
+				teamRunId: "run-cancel",
+				teamMemberId: "member-cancel",
+				waveId: "wave-cancel",
+			})
+			registry.createSession(failedSessionId, "team fail", undefined, {
+				teamRunId: "run-fail",
+				teamMemberId: "member-fail",
+				waveId: "wave-fail",
+			})
+			;(provider as any).stopAgentSession(cancelledSessionId)
+			;(provider as any).handleCliEvent(failedSessionId, {
+				streamEventType: "error",
+				error: "session exploded",
+				timestamp: new Date().toISOString(),
+			})
+
+			expect(coordinatorHandle).toHaveBeenCalledWith(
+				expect.objectContaining({
+					sessionId: cancelledSessionId,
+					outcome: "cancelled",
+					source: "cancel_session",
+				}),
+			)
+			expect(coordinatorHandle).toHaveBeenCalledWith(
+				expect.objectContaining({
+					sessionId: failedSessionId,
+					outcome: "failed",
+					source: "error",
+					message: "session exploded",
+				}),
+			)
+		})
+
+		it("routes team approval responses through the coordinator and refreshes team run state", async () => {
+			const resolveApproval = vi.spyOn((provider as any).teamCoordinator, "resolveApproval").mockResolvedValue({
+				approvalId: "approval-1",
+				runId: "run-1",
+				waveId: "wave-1",
+				status: "approved",
+				kind: "external",
+				title: "Approve Wave 1 launch",
+				message: "approved",
+				createdAt: Date.now(),
+				resolvedAt: Date.now(),
+			} as any)
+			const postTeamRunStateToWebview = vi.spyOn(provider as any, "postTeamRunStateToWebview")
+
+			await (provider as any).handleMessage({
+				type: "agentManager.respondToTeamApproval",
+				runId: "run-1",
+				approvalId: "approval-1",
+				approved: true,
+				reason: "looks good",
+			})
+
+			await Promise.resolve()
+
+			expect(resolveApproval).toHaveBeenCalledWith({
+				runId: "run-1",
+				approvalId: "approval-1",
+				approved: true,
+				reason: "looks good",
+			})
+			expect(postTeamRunStateToWebview).toHaveBeenCalledTimes(1)
+		})
 	})
 
 	describe("Regression Tests - finishWorktreeSession validation (P0)", () => {

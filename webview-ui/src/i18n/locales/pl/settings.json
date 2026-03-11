@@ -636,8 +636,7 @@
 			"high": "Wysoki",
 			"xhigh": "Bardzo wysoki",
 			"medium": "Średni",
-			"low": "Niski",
-			"xhigh": "Bardzo wysoki"
+			"low": "Niski"
 		},
 		"verbosity": {
 			"label": "Szczegółowość danych wyjściowych",
@@ -670,7 +669,8 @@
 		"autocompleteLabel": "(Autouzupełnianie)",
 		"autocomplete": {
 			"onlyOneAllowed": "Dozwolony jest tylko jeden profil autouzupełniania. Profil \"{{existingName}}\" jest już skonfigurowany do autouzupełniania. Najpierw zmień jego typ lub usuń go."
-		}
+		},
+		"saveProfileBeforeActivating": "Save this profile before making it active"
 	},
 	"browser": {
 		"enable": {

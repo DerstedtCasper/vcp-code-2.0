@@ -620,7 +620,6 @@
 			"low": "低",
 			"medium": "中",
 			"high": "高",
-			"xhigh": "超高",
 			"xhigh": "超高"
 		},
 		"verbosity": {
@@ -680,7 +679,8 @@
 		"autocompleteLabel": "(自動完成)",
 		"autocomplete": {
 			"onlyOneAllowed": "只允許一個自動完成設定檔。設定檔「{{existingName}}」已設定為自動完成。請先變更其類型或刪除它。"
-		}
+		},
+		"saveProfileBeforeActivating": "Save this profile before making it active"
 	},
 	"browser": {
 		"enable": {

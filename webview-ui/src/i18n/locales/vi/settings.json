@@ -636,8 +636,7 @@
 			"high": "Cao",
 			"xhigh": "Rất cao",
 			"medium": "Trung bình",
-			"low": "Thấp",
-			"xhigh": "Rất cao"
+			"low": "Thấp"
 		},
 		"verbosity": {
 			"label": "Mức độ chi tiết đầu ra",
@@ -670,7 +669,8 @@
 		"autocompleteLabel": "(Tự động hoàn thành)",
 		"autocomplete": {
 			"onlyOneAllowed": "Chỉ cho phép một hồ sơ tự động hoàn thành. Hồ sơ \"{{existingName}}\" đã được cấu hình cho tự động hoàn thành. Vui lòng thay đổi loại của nó trước hoặc xóa nó."
-		}
+		},
+		"saveProfileBeforeActivating": "Save this profile before making it active"
 	},
 	"browser": {
 		"enable": {

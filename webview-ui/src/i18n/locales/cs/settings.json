@@ -718,7 +718,8 @@
 		"autocompleteLabel": "(Automatické dokončování)",
 		"autocomplete": {
 			"onlyOneAllowed": "Je povolen pouze jeden profil automatického dokončování. Profil \"{{existingName}}\" je již nakonfigurován pro automatické dokončování. Nejprve změň jeho typ nebo ho smaž."
-		}
+		},
+		"saveProfileBeforeActivating": "Save this profile before making it active"
 	},
 	"contextWindow": {
 		"description": "Maximální kontext konverzace",

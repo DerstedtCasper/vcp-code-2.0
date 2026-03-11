@@ -1,5 +1,6 @@
 import { atom } from "jotai"
 import { atomFamily } from "jotai/utils"
+import type { AgentTeamOwnership, AgentTeamRoleType } from "./teamRun"
 
 export type AgentStatus = "creating" | "running" | "done" | "error" | "stopped"
 export type SessionSource = "local" | "remote"
@@ -29,6 +30,11 @@ export interface AgentSession {
 	yoloMode?: boolean // True if session was started with auto-approval enabled
 	model?: string // Model ID used for this session
 	mode?: string // Mode slug used for this session (e.g., "code", "architect")
+	teamRunId?: string
+	teamMemberId?: string
+	waveId?: string
+	roleType?: AgentTeamRoleType
+	ownership?: AgentTeamOwnership
 }
 
 /**
@@ -42,6 +48,11 @@ export interface PendingSession {
 	gitUrl?: string
 	autoMode?: boolean // True if session will be started with --auto flag
 	yoloMode?: boolean // True if session will be started with auto-approval enabled
+	teamRunId?: string
+	teamMemberId?: string
+	waveId?: string
+	roleType?: AgentTeamRoleType
+	ownership?: AgentTeamOwnership
 }
 
 export interface RemoteSession {

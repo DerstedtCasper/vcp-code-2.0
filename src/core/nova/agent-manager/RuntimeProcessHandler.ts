@@ -25,6 +25,9 @@ import type {
 } from "./CliOutputParser"
 import type { ClineMessage, ModeConfig, ProviderSettings } from "@roo-code/types"
 import { Package } from "../../../shared/package"
+import type { CreateSessionOptions } from "./AgentRegistry"
+
+type AgentSessionMetadata = Pick<CreateSessionOptions, "roleType" | "ownership">
 
 /**
  * Timeout for pending sessions (ms) - if "ready" message doesn't arrive within this time,
@@ -90,6 +93,11 @@ interface PendingProcessInfo {
 	timeoutId?: NodeJS.Timeout
 	model?: string
 	mode?: string // Mode slug (e.g., "code", "architect", "debug")
+	teamRunId?: string
+	teamMemberId?: string
+	waveId?: string
+	roleType?: AgentSessionMetadata["roleType"]
+	ownership?: AgentSessionMetadata["ownership"]
 	images?: string[]
 	sessionData?: SessionData // For resuming with history
 }
@@ -121,7 +129,7 @@ export interface RuntimeProcessHandlerCallbacks {
 
 export class RuntimeProcessHandler {
 	private activeSessions: Map<string, ActiveProcessInfo> = new Map()
-	private pendingProcess: PendingProcessInfo | null = null
+	private pendingProcesses: Map<number, PendingProcessInfo> = new Map()
 	// Track whether we've sent api_req_started for each session
 	private sentApiReqStarted: Set<string> = new Set()
 	// Track pending resume continuations - sent after session is loaded from server
@@ -140,9 +148,32 @@ export class RuntimeProcessHandler {
 		this.vscodeAppRoot = vscodeAppRoot
 	}
 
-	private clearPendingTimeout(): void {
-		if (this.pendingProcess?.timeoutId) {
-			clearTimeout(this.pendingProcess.timeoutId)
+	private clearPendingTimeout(pid: number): void {
+		const pending = this.pendingProcesses.get(pid)
+		if (pending?.timeoutId) {
+			clearTimeout(pending.timeoutId)
+		}
+	}
+
+	/**
+	 * Get pending process info for a given child process
+	 */
+	private getPendingForProcess(proc: ChildProcess): PendingProcessInfo | undefined {
+		if (proc.pid === undefined) return undefined
+		return this.pendingProcesses.get(proc.pid)
+	}
+
+	/**
+	 * Get the first pending session info for backward-compatible callback
+	 */
+	private getFirstPendingSessionInfo(): { prompt: string; label: string; startTime: number } | null {
+		if (this.pendingProcesses.size === 0) return null
+		const first = this.pendingProcesses.values().next().value
+		if (!first) return null
+		return {
+			prompt: first.prompt,
+			label: first.desiredLabel || first.prompt.replace(/\s+/g, " ").trim().substring(0, 40),
+			startTime: first.startTime,
 		}
 	}
 
@@ -224,6 +255,11 @@ export class RuntimeProcessHandler {
 			worktreeInfo?: { branch: string; path: string; parentBranch: string }
 			model?: string
 			mode?: string // Mode slug (e.g., "code", "architect", "debug")
+			teamRunId?: string
+			teamMemberId?: string
+			waveId?: string
+			roleType?: AgentSessionMetadata["roleType"]
+			ownership?: AgentSessionMetadata["ownership"]
 			customModes?: ModeConfig[] // Custom modes including organization modes
 			images?: string[]
 			autoApprove?: boolean
@@ -311,6 +347,11 @@ export class RuntimeProcessHandler {
 					worktreeInfo?: { branch: string; path: string; parentBranch: string }
 					model?: string
 					mode?: string // Mode slug (e.g., "code", "architect", "debug")
+					teamRunId?: string
+					teamMemberId?: string
+					waveId?: string
+					roleType?: AgentSessionMetadata["roleType"]
+					ownership?: AgentSessionMetadata["ownership"]
 					customModes?: ModeConfig[] // Custom modes including organization modes
 					images?: string[]
 					sessionData?: SessionData // For resuming with history
@@ -332,6 +373,11 @@ export class RuntimeProcessHandler {
 					gitUrl: options?.gitUrl,
 					model: options?.model,
 					mode: options?.mode,
+					teamRunId: options?.teamRunId,
+					teamMemberId: options?.teamMemberId,
+					waveId: options?.waveId,
+					roleType: options?.roleType,
+					ownership: options?.ownership,
 				})
 				this.registry.updateSessionStatus(options!.sessionId!, "creating")
 			}
@@ -350,6 +396,11 @@ export class RuntimeProcessHandler {
 			const pendingSession = this.registry.setPendingSession(prompt, {
 				parallelMode: options?.parallelMode,
 				gitUrl: options?.gitUrl,
+				teamRunId: options?.teamRunId,
+				teamMemberId: options?.teamMemberId,
+				waveId: options?.waveId,
+				roleType: options?.roleType,
+				ownership: options?.ownership,
 			})
 			this.callbacks.onPendingSessionChanged(pendingSession)
 		}
@@ -375,7 +426,7 @@ export class RuntimeProcessHandler {
 			})
 
 			// Store pending process info
-			this.pendingProcess = {
+			const pendingInfo: PendingProcessInfo = {
 				process: proc,
 				prompt,
 				startTime: Date.now(),
@@ -386,13 +437,21 @@ export class RuntimeProcessHandler {
 				gitUrl: options?.gitUrl,
 				model: options?.model,
 				mode: options?.mode,
+				teamRunId: options?.teamRunId,
+				teamMemberId: options?.teamMemberId,
+				waveId: options?.waveId,
+				roleType: options?.roleType,
+				ownership: options?.ownership,
 				images: options?.images,
 				sessionData: options?.sessionData,
 			}
+			if (proc.pid !== undefined) {
+				this.pendingProcesses.set(proc.pid, pendingInfo)
+			}
 
 			// Set up timeout for pending session
-			this.pendingProcess.timeoutId = setTimeout(() => {
-				if (this.pendingProcess?.process === proc) {
+			pendingInfo.timeoutId = setTimeout(() => {
+				if (proc.pid !== undefined && this.pendingProcesses.get(proc.pid)?.process === proc) {
 					this.callbacks.onLog(`Agent session timed out after ${PENDING_SESSION_TIMEOUT_MS}ms`)
 					this.handleSessionTimeout(proc, onEvent)
 				}
@@ -421,7 +480,9 @@ export class RuntimeProcessHandler {
 
 			// Clean up pending state
 			this.registry.clearPendingSession()
-			this.callbacks.onPendingSessionChanged(null)
+			this.callbacks.onPendingSessionChanged(
+				this.pendingProcesses.size > 0 ? this.getFirstPendingSessionInfo() : null,
+			)
 		}
 	}
 
@@ -433,7 +494,8 @@ export class RuntimeProcessHandler {
 		msg: AgentIPCMessage,
 		onEvent: (sessionId: string, event: StreamEvent) => void,
 	): void {
-		const sessionId = this.getSessionIdForProcess(proc) || this.pendingProcess?.desiredSessionId || "pending"
+		const sessionId =
+			this.getSessionIdForProcess(proc) || this.getPendingForProcess(proc)?.desiredSessionId || "pending"
 
 		// Log incoming IPC message from agent (except verbose log messages)
 		if (msg.type !== "log") {
@@ -497,42 +559,50 @@ export class RuntimeProcessHandler {
 	 * Handle agent "ready" message - similar to session_created
 	 */
 	private handleAgentReady(proc: ChildProcess, onEvent: (sessionId: string, event: StreamEvent) => void): void {
-		if (!this.pendingProcess || this.pendingProcess.process !== proc) {
+		const pending = this.getPendingForProcess(proc)
+		if (!pending) {
 			return
 		}
 
-		this.clearPendingTimeout()
+		if (proc.pid !== undefined) {
+			this.clearPendingTimeout(proc.pid)
+		}
 
 		// Generate or use provided session ID
-		const sessionId = this.pendingProcess.desiredSessionId || this.generateSessionId()
-		const prompt = this.pendingProcess.prompt
+		const sessionId = pending.desiredSessionId || this.generateSessionId()
+		const prompt = pending.prompt
 
 		// Check if this is a resume (desiredSessionId means we're resuming an existing session)
-		const isResume = !!this.pendingProcess.desiredSessionId
+		const isResume = !!pending.desiredSessionId
 
 		// Create the session in registry
 		this.registry.createSession(sessionId, prompt, Date.now(), {
-			parallelMode: this.pendingProcess.parallelMode,
-			labelOverride: this.pendingProcess.desiredLabel,
-			gitUrl: this.pendingProcess.gitUrl,
-			model: this.pendingProcess.model,
-			mode: this.pendingProcess.mode,
+			parallelMode: pending.parallelMode,
+			labelOverride: pending.desiredLabel,
+			gitUrl: pending.gitUrl,
+			model: pending.model,
+			mode: pending.mode,
+			teamRunId: pending.teamRunId,
+			teamMemberId: pending.teamMemberId,
+			waveId: pending.waveId,
+			roleType: pending.roleType,
+			ownership: pending.ownership,
 		})
 		this.registry.updateSessionStatus(sessionId, "running")
 
 		// Update parallel mode info with worktree details if available
-		if (this.pendingProcess.worktreeInfo) {
+		if (pending.worktreeInfo) {
 			this.registry.updateParallelModeInfo(sessionId, {
-				branch: this.pendingProcess.worktreeInfo.branch,
-				worktreePath: this.pendingProcess.worktreeInfo.path,
-				parentBranch: this.pendingProcess.worktreeInfo.parentBranch,
+				branch: pending.worktreeInfo.branch,
+				worktreePath: pending.worktreeInfo.path,
+				parentBranch: pending.worktreeInfo.parentBranch,
 			})
 		}
 
-		// Capture data before clearing pendingProcess
-		const images = this.pendingProcess.images
-		const capturedPrompt = this.pendingProcess.prompt
-		const sessionData = this.pendingProcess.sessionData
+		// Capture data before clearing pending
+		const images = pending.images
+		const capturedPrompt = pending.prompt
+		const sessionData = pending.sessionData
 
 		// Move to active sessions
 		this.activeSessions.set(sessionId, {
@@ -540,16 +610,20 @@ export class RuntimeProcessHandler {
 			sessionId,
 		})
 
-		// Clear pending state
+		// Clear this pending entry (not all)
 		this.registry.clearPendingSession()
 
-		// Capture worktree info before clearing pendingProcess
-		const worktreeInfo = this.pendingProcess.worktreeInfo
-		const parallelMode = this.pendingProcess.parallelMode
-		this.pendingProcess = null
+		// Capture worktree info before removing pending
+		const worktreeInfo = pending.worktreeInfo
+		const parallelMode = pending.parallelMode
+		if (proc.pid !== undefined) {
+			this.pendingProcesses.delete(proc.pid)
+		}
 
 		this.callbacks.onStateChanged()
-		this.callbacks.onPendingSessionChanged(null)
+		this.callbacks.onPendingSessionChanged(
+			this.pendingProcesses.size > 0 ? this.getFirstPendingSessionInfo() : null,
+		)
 
 		// Pass resume info if this is a resumed session with history
 		const resumeInfo = isResume && sessionData ? { prompt: capturedPrompt, images: images } : undefined
@@ -650,7 +724,9 @@ export class RuntimeProcessHandler {
 			const chatMessages = state.chatMessages || state.clineMessages
 
 			this.callbacks.onLog(
-				`[ExtMsg] ${sessionId}: state update with ${chatMessages?.length || 0} messages (sentApiReqStarted=${this.sentApiReqStarted.has(sessionId)})`,
+				`[ExtMsg] ${sessionId}: state update with ${
+					chatMessages?.length || 0
+				} messages (sentApiReqStarted=${this.sentApiReqStarted.has(sessionId)})`,
 			)
 
 			// Check for mode changes and notify callback
@@ -749,7 +825,9 @@ export class RuntimeProcessHandler {
 			// Extension is now waiting for user input via await this.ask()
 			// Safe to send the askResponse now
 			this.callbacks.onLog(
-				`[AgentManager] Session ${sessionId} reached ${lastMessage.ask} state, sending continuation with prompt: "${pendingContinuation.prompt.slice(0, 50)}..."`,
+				`[AgentManager] Session ${sessionId} reached ${
+					lastMessage.ask
+				} state, sending continuation with prompt: "${pendingContinuation.prompt.slice(0, 50)}..."`,
 			)
 			this.pendingResumeContinuation.delete(sessionId)
 
@@ -803,16 +881,21 @@ export class RuntimeProcessHandler {
 
 		this.callbacks.onLog(`Agent error: ${errorMsg}`)
 
-		if (this.pendingProcess?.process === proc) {
+		const pending = this.getPendingForProcess(proc)
+		if (pending) {
 			// Error during session creation
-			this.clearPendingTimeout()
+			if (proc.pid !== undefined) {
+				this.clearPendingTimeout(proc.pid)
+				this.pendingProcesses.delete(proc.pid)
+			}
 			this.callbacks.onStartSessionFailed({
 				type: "spawn_error",
 				message: errorMsg,
 			})
 			this.registry.clearPendingSession()
-			this.pendingProcess = null
-			this.callbacks.onPendingSessionChanged(null)
+			this.callbacks.onPendingSessionChanged(
+				this.pendingProcesses.size > 0 ? this.getFirstPendingSessionInfo() : null,
+			)
 		} else if (sessionId) {
 			// Error in active session
 			const errorEvent: ErrorStreamEvent = {
@@ -847,10 +930,14 @@ export class RuntimeProcessHandler {
 		// Kill the process
 		proc.kill("SIGTERM")
 
-		// Clean up pending state
+		// Clean up this pending entry
+		if (proc.pid !== undefined) {
+			this.pendingProcesses.delete(proc.pid)
+		}
 		this.registry.clearPendingSession()
-		this.pendingProcess = null
-		this.callbacks.onPendingSessionChanged(null)
+		this.callbacks.onPendingSessionChanged(
+			this.pendingProcesses.size > 0 ? this.getFirstPendingSessionInfo() : null,
+		)
 	}
 
 	/**
@@ -863,17 +950,22 @@ export class RuntimeProcessHandler {
 		onEvent: (sessionId: string, event: StreamEvent) => void,
 	): void {
 		const sessionId = this.getSessionIdForProcess(proc)
+		const pending = this.getPendingForProcess(proc)
 
-		if (this.pendingProcess?.process === proc) {
+		if (pending) {
 			// Exit during pending state
-			this.clearPendingTimeout()
+			if (proc.pid !== undefined) {
+				this.clearPendingTimeout(proc.pid)
+				this.pendingProcesses.delete(proc.pid)
+			}
 			this.callbacks.onStartSessionFailed({
 				type: "unknown",
 				message: `Agent process exited unexpectedly (code: ${code}, signal: ${signal})`,
 			})
 			this.registry.clearPendingSession()
-			this.pendingProcess = null
-			this.callbacks.onPendingSessionChanged(null)
+			this.callbacks.onPendingSessionChanged(
+				this.pendingProcesses.size > 0 ? this.getFirstPendingSessionInfo() : null,
+			)
 		} else if (sessionId) {
 			// Exit of active session
 			this.activeSessions.delete(sessionId)
@@ -909,15 +1001,20 @@ export class RuntimeProcessHandler {
 	private handleProcessError(proc: ChildProcess, error: Error): void {
 		this.callbacks.onLog(`Agent process error: ${error.message}`)
 
-		if (this.pendingProcess?.process === proc) {
-			this.clearPendingTimeout()
+		const pending = this.getPendingForProcess(proc)
+		if (pending) {
+			if (proc.pid !== undefined) {
+				this.clearPendingTimeout(proc.pid)
+				this.pendingProcesses.delete(proc.pid)
+			}
 			this.callbacks.onStartSessionFailed({
 				type: "spawn_error",
 				message: error.message,
 			})
 			this.registry.clearPendingSession()
-			this.pendingProcess = null
-			this.callbacks.onPendingSessionChanged(null)
+			this.callbacks.onPendingSessionChanged(
+				this.pendingProcesses.size > 0 ? this.getFirstPendingSessionInfo() : null,
+			)
 		}
 	}
 
@@ -1013,12 +1110,12 @@ export class RuntimeProcessHandler {
 	 * Stop all active processes
 	 */
 	public stopAllProcesses(): void {
-		// Stop pending process
-		if (this.pendingProcess) {
-			this.clearPendingTimeout()
-			this.pendingProcess.process.kill("SIGTERM")
-			this.pendingProcess = null
+		// Stop all pending processes
+		for (const [pid, pending] of this.pendingProcesses) {
+			if (pending.timeoutId) clearTimeout(pending.timeoutId)
+			pending.process.kill("SIGTERM")
 		}
+		this.pendingProcesses.clear()
 
 		// Stop all active sessions
 		for (const info of this.activeSessions.values()) {
@@ -1033,14 +1130,29 @@ export class RuntimeProcessHandler {
 	/**
 	 * Cancel a pending session
 	 */
-	public cancelPendingSession(): void {
-		if (this.pendingProcess) {
-			this.clearPendingTimeout()
-			this.pendingProcess.process.kill("SIGTERM")
-			this.registry.clearPendingSession()
-			this.pendingProcess = null
-			this.callbacks.onPendingSessionChanged(null)
+	public cancelPendingSession(desiredSessionId?: string): void {
+		if (desiredSessionId) {
+			// Cancel a specific pending session
+			for (const [pid, pending] of this.pendingProcesses) {
+				if (pending.desiredSessionId === desiredSessionId) {
+					if (pending.timeoutId) clearTimeout(pending.timeoutId)
+					pending.process.kill("SIGTERM")
+					this.pendingProcesses.delete(pid)
+					break
+				}
+			}
+		} else {
+			// Cancel all pending sessions (backward compatible)
+			for (const [pid, pending] of this.pendingProcesses) {
+				if (pending.timeoutId) clearTimeout(pending.timeoutId)
+				pending.process.kill("SIGTERM")
+			}
+			this.pendingProcesses.clear()
 		}
+		this.registry.clearPendingSession()
+		this.callbacks.onPendingSessionChanged(
+			this.pendingProcesses.size > 0 ? this.getFirstPendingSessionInfo() : null,
+		)
 	}
 
 	/**
@@ -1061,7 +1173,7 @@ export class RuntimeProcessHandler {
 	 * Check if there's a pending session
 	 */
 	public hasPendingSession(): boolean {
-		return this.pendingProcess !== null
+		return this.pendingProcesses.size > 0
 	}
 
 	/**

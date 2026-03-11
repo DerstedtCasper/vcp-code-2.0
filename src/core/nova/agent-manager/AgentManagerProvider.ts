@@ -16,6 +16,7 @@ import { SetupScriptService } from "./SetupScriptService"
 import { SetupScriptRunner } from "./SetupScriptRunner"
 import { AgentTaskRunner, AgentTasks } from "./AgentTaskRunner"
 import { RuntimeProcessHandler, type RuntimeProcessHandlerCallbacks } from "./RuntimeProcessHandler"
+import { AgentTeamCoordinator, type TeamSessionOutcome } from "./AgentTeamCoordinator"
 import type { StreamEvent, NovacodeStreamEvent, NovacodePayload, WelcomeStreamEvent } from "./CliOutputParser"
 import { extractRawText, tryParsePayloadJson } from "./askErrorParser"
 import { RemoteSessionService } from "./RemoteSessionService"
@@ -26,7 +27,7 @@ import { getNonce } from "../../webview/getNonce"
 import { getViteDevServerConfig } from "../../webview/getViteDevServerConfig"
 import { getRemoteUrl } from "../../../services/code-index/managed/git-utils"
 import { normalizeGitUrl } from "./normalizeGitUrl"
-import type { ClineMessage } from "@roo-code/types"
+import type { ClineMessage, VcpAgentTeamConfig } from "@roo-code/types"
 import { getModelId, type ModeConfig, type ProviderSettings } from "@roo-code/types"
 import { DEFAULT_MODE_SLUG, DEFAULT_MODES } from "@roo-code/types"
 import {
@@ -43,7 +44,13 @@ import { extractSessionConfigs, MAX_VERSION_COUNT } from "./multiVersionUtils"
 import { SessionManager } from "../../../shared/nova/cli-sessions/core/SessionManager"
 import { WorkspaceGitService } from "./WorkspaceGitService"
 import { SessionTerminalManager } from "./SessionTerminalManager"
-import { startSessionMessageSchema, type StartSessionMessage } from "./types"
+import {
+	startSessionMessageSchema,
+	respondToTeamApprovalMessageSchema,
+	cancelTeamRunMessageSchema,
+	cancelTeamMemberMessageSchema,
+	type StartSessionMessage,
+} from "./types"
 import { openImage } from "../../../integrations/misc/image-handler"
 import { getModelsFromCache } from "../../../api/providers/fetchers/modelCache"
 import { isRouterName, type ModelRecord } from "../../../shared/api"
@@ -95,6 +102,9 @@ export class AgentManagerProvider implements vscode.Disposable {
 	private availableModels: { provider: string; currentModel: string; models: ModelRecord } | null = null
 	// Flag to track if models are being fetched
 	private fetchingModels: boolean = false
+	private teamCoordinator: AgentTeamCoordinator
+	private teamRunEvents: import("./types").TeamRunEvent[] = []
+	private readonly teamSessionSettlement = new Map<string, { completedSignalReceived: boolean; finalized: boolean }>()
 
 	constructor(
 		private readonly context: vscode.ExtensionContext,
@@ -152,7 +162,9 @@ export class AgentManagerProvider implements vscode.Disposable {
 					const isResumedSession = existingMessages.length > 0
 
 					this.outputChannel.appendLine(
-						`[AgentManager] onSessionCreated: sessionId=${latestSession.sessionId}, existingMessages=${existingMessages.length}, isResumed=${isResumedSession}, hasResumeInfo=${!!resumeInfo}`,
+						`[AgentManager] onSessionCreated: sessionId=${latestSession.sessionId}, existingMessages=${
+							existingMessages.length
+						}, isResumed=${isResumedSession}, hasResumeInfo=${!!resumeInfo}`,
 					)
 
 					// For resumed sessions, preserve existing history
@@ -186,15 +198,8 @@ export class AgentManagerProvider implements vscode.Disposable {
 					)
 				}
 			},
-			onSessionCompleted: (sessionId) => {
-				// Notify webview state machine of completion when process exits successfully
-				// This ensures the state machine transitions to completed state
-				// (needed because completion_result events from CLI stdout can be truncated)
-				this.postMessage({
-					type: "agentManager.stateEvent",
-					sessionId,
-					eventType: "ask_completion_result",
-				})
+			onSessionCompleted: (sessionId, exitCode) => {
+				void this.handleRuntimeSessionCompleted(sessionId, exitCode)
 			},
 			onPaymentRequiredPrompt: (payload) => this.showPaymentRequiredPrompt(payload),
 			onSessionRenamed: (oldId, newId) => this.handleSessionRenamed(oldId, newId),
@@ -233,9 +238,58 @@ export class AgentManagerProvider implements vscode.Disposable {
 			postChatMessages: (sessionId, messages) =>
 				this.postMessage({ type: "agentManager.chatMessages", sessionId, messages }),
 			postState: () => this.postStateToWebview(),
-			postStateEvent: (sessionId, payload) =>
-				this.postMessage({ type: "agentManager.stateEvent", sessionId, ...payload }),
+			postStateEvent: (sessionId, payload) => void this.handleStateEventFromProcessor(sessionId, payload),
 			onPaymentRequiredPrompt: (payload) => this.showPaymentRequiredPrompt(payload),
+		})
+		this.teamCoordinator = new AgentTeamCoordinator({
+			workspacePath: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || this.context.extensionUri.fsPath,
+			readProviderState: async () => {
+				const state = await this.provider.getState()
+				return { listApiConfigMeta: state.listApiConfigMeta }
+			},
+			resolveProviderProfile: ({ id }) => this.provider.providerSettingsManager.getProfile({ id }),
+			launchSession: async ({
+				prompt,
+				label,
+				mode,
+				model,
+				apiConfigurationOverride,
+				parallelMode,
+				teamRunId,
+				teamMemberId,
+				waveId,
+				roleType,
+				ownership,
+			}) => {
+				const beforeIds = new Set(this.registry.getSessions().map((session) => session.sessionId))
+				const sessionCountBefore = this.registry.getSessions().length
+				await this.startAgentSession(prompt, {
+					parallelMode,
+					labelOverride: label,
+					mode,
+					model,
+					apiConfigurationOverride,
+					teamRunId,
+					teamMemberId,
+					waveId,
+					roleType,
+					ownership,
+				})
+				await this.waitForPendingSessionToClear(sessionCountBefore)
+				const afterSessions = this.registry.getSessions()
+				const createdSession =
+					afterSessions.find((session) => !beforeIds.has(session.sessionId)) ?? afterSessions[0]
+				if (!createdSession) {
+					throw new Error("Failed to capture launched team session")
+				}
+				return { sessionId: createdSession.sessionId }
+			},
+			onStateUpdated: () => this.postTeamRunStateToWebview(),
+			onEvent: (event) => {
+				this.teamRunEvents = [event, ...this.teamRunEvents].slice(0, 40)
+				this.postMessage({ type: "agentManager.teamRunEvent", event })
+			},
+			log: (message) => this.outputChannel.appendLine(message),
 		})
 	}
 
@@ -254,7 +308,9 @@ export class AgentManagerProvider implements vscode.Disposable {
 			// Pass base64 data URLs directly - the extension expects this format
 			message.images = images
 			this.outputChannel.appendLine(
-				`[AgentManager] buildRuntimeMessage: attaching ${images.length} images, first image length: ${images[0]?.length || 0}`,
+				`[AgentManager] buildRuntimeMessage: attaching ${images.length} images, first image length: ${
+					images[0]?.length || 0
+				}`,
 			)
 		}
 
@@ -334,12 +390,14 @@ export class AgentManagerProvider implements vscode.Disposable {
 			this.outputChannel.appendLine(`[AgentManager] Wrote session ID ${sessionId} to worktree ${worktreePath}`)
 		} catch (error) {
 			this.outputChannel.appendLine(
-				`[AgentManager] Failed to write session ID to worktree: ${error instanceof Error ? error.message : String(error)}`,
+				`[AgentManager] Failed to write session ID to worktree: ${
+					error instanceof Error ? error.message : String(error)
+				}`,
 			)
 		}
 	}
 
-	private handleMessage(message: { type: string; [key: string]: unknown }): void {
+	private async handleMessage(message: { type: string; [key: string]: unknown }): Promise<void> {
 		this.outputChannel.appendLine(`Agent Manager received message: ${JSON.stringify(message)}`)
 
 		try {
@@ -397,6 +455,50 @@ export class AgentManagerProvider implements vscode.Disposable {
 						message.text as string | undefined,
 					)
 					break
+				case "agentManager.respondToTeamApproval": {
+					const parsedMessage = respondToTeamApprovalMessageSchema.safeParse(message)
+					if (!parsedMessage.success) {
+						this.outputChannel.appendLine(
+							`[AgentManager] Invalid respondToTeamApproval message: ${parsedMessage.error.message}`,
+						)
+						break
+					}
+					await this.respondToTeamApproval(
+						parsedMessage.data.runId,
+						parsedMessage.data.approvalId,
+						parsedMessage.data.approved,
+						parsedMessage.data.reason,
+					)
+					break
+				}
+				case "agentManager.cancelTeamRun": {
+					const parsed = cancelTeamRunMessageSchema.safeParse(message)
+					if (!parsed.success) {
+						this.outputChannel.appendLine(
+							`[AgentManager] Invalid cancelTeamRun message: ${parsed.error.message}`,
+						)
+						break
+					}
+					if (this.teamCoordinator && parsed.data.runId) {
+						await this.teamCoordinator.cancelTeamRun(parsed.data.runId)
+						this.postTeamRunStateToWebview()
+					}
+					break
+				}
+				case "agentManager.cancelTeamMember": {
+					const parsed = cancelTeamMemberMessageSchema.safeParse(message)
+					if (!parsed.success) {
+						this.outputChannel.appendLine(
+							`[AgentManager] Invalid cancelTeamMember message: ${parsed.error.message}`,
+						)
+						break
+					}
+					if (this.teamCoordinator && parsed.data.runId && parsed.data.teamMemberId) {
+						await this.teamCoordinator.cancelTeamMember(parsed.data.runId, parsed.data.teamMemberId)
+						this.postTeamRunStateToWebview()
+					}
+					break
+				}
 				case "agentManager.removeSession":
 					this.removeSession(message.sessionId as string)
 					break
@@ -455,11 +557,8 @@ export class AgentManagerProvider implements vscode.Disposable {
 	 * Supports multi-version mode: when versions > 1, spawns multiple sessions sequentially.
 	 */
 	private async handleStartSession(message: { [key: string]: unknown }): Promise<void> {
-		// Reset auth warning dedupe for each start attempt so users see the login prompt
-		// every time they try to start an agent and authentication fails.
 		this.lastAuthErrorMessage = undefined
 
-		// Validate message using zod schema for type safety
 		const parseResult = startSessionMessageSchema.safeParse(message)
 		if (!parseResult.success) {
 			this.outputChannel.appendLine(`[AgentManager] Invalid startSession message: ${parseResult.error.message}`)
@@ -469,25 +568,30 @@ export class AgentManagerProvider implements vscode.Disposable {
 
 		const validatedMessage: StartSessionMessage = parseResult.data
 		const { prompt, parallelMode = false, existingBranch, model, mode, images } = validatedMessage
-
-		// For agent-runtime, pass base64 images directly (not file paths)
-		// The extension expects base64 data URLs in the format "data:image/png;base64,..."
 		if (images && images.length > 0) {
 			this.outputChannel.appendLine(`[AgentManager] Passing ${images.length} images (base64) to new session`)
 		}
 
-		// Clamp versions to valid range to prevent runaway process spawning
+		const providerState = await this.provider.getState()
+		const teamConfig = providerState.vcpConfig?.agentTeam
+		if (mode === "agent_team" && teamConfig?.enabled) {
+			const typedTeamConfig: VcpAgentTeamConfig = teamConfig
+			await this.teamCoordinator.startRun(typedTeamConfig, {
+				prompt,
+				mode,
+				requestedModel: model,
+			})
+			this.postTeamRunStateToWebview()
+			return
+		}
+
 		const rawVersions = validatedMessage.versions ?? 1
 		const versions = Math.min(Math.max(rawVersions, 1), MAX_VERSION_COUNT)
-		// Only use labels if they match the version count, otherwise ignore
 		const rawLabels = validatedMessage.labels
 		const labels = rawLabels?.length === versions ? rawLabels : undefined
-
-		// Extract session configurations
 		const configs = extractSessionConfigs({ prompt, versions, labels, parallelMode, existingBranch })
 
 		if (configs.length === 1) {
-			// Single session - spawn directly
 			const config = configs[0]
 			await this.startAgentSession(config.prompt, {
 				parallelMode: config.parallelMode,
@@ -500,27 +604,21 @@ export class AgentManagerProvider implements vscode.Disposable {
 			return
 		}
 
-		// Multi-version mode: spawn sessions sequentially
-		// We need to wait for each pending session to clear before starting the next
 		this.outputChannel.appendLine(`[AgentManager] Starting ${configs.length} versions in multi-version mode`)
-
 		for (let i = 0; i < configs.length; i++) {
 			const config = configs[i]
 			this.outputChannel.appendLine(`[AgentManager] Starting version ${i + 1}/${configs.length}: ${config.label}`)
-
+			const sessionCountBefore = this.registry.getSessions().length
 			await this.startAgentSession(config.prompt, {
 				parallelMode: config.parallelMode,
 				labelOverride: config.label,
 				existingBranch: config.existingBranch,
 				model,
 				mode,
-				images, // Send images to all versions
+				images,
 			})
-
-			// Wait for the pending session to transition to active before spawning the next
-			// This is necessary because RuntimeProcessHandler only supports one pendingProcess at a time
 			if (i < configs.length - 1) {
-				await this.waitForPendingSessionToClear()
+				await this.waitForPendingSessionToClear(sessionCountBefore)
 			}
 		}
 
@@ -530,23 +628,29 @@ export class AgentManagerProvider implements vscode.Disposable {
 	/**
 	 * Wait for any pending session to transition to active/error state.
 	 * Returns immediately if no session is pending.
+	 * When sessionCountBefore is provided, waits until a new session appears
+	 * (used by team coordinator to detect specific session creation).
 	 */
-	private waitForPendingSessionToClear(): Promise<void> {
+	private waitForPendingSessionToClear(sessionCountBefore?: number): Promise<void> {
 		return new Promise((resolve) => {
-			const hasPending = () => !!this.registry.pendingSession || this.processHandler?.hasPendingProcess()
+			const isDone = () => {
+				if (sessionCountBefore !== undefined) {
+					// Wait for a new session to appear beyond the snapshot count
+					return this.registry.getSessions().length > sessionCountBefore
+				}
+				// Legacy behavior: wait for all pending to clear
+				return !this.registry.pendingSession && !this.processHandler?.hasPendingProcess()
+			}
 
-			// Check immediately - if no pending session/process, resolve right away
-			if (!hasPending()) {
+			if (isDone()) {
 				resolve()
 				return
 			}
 
-			// Track timeout so we can clear it when session clears
 			let timeoutId: ReturnType<typeof setTimeout> | undefined
 
-			// Poll until pending session clears
 			const checkInterval = setInterval(() => {
-				if (!hasPending()) {
+				if (isDone()) {
 					clearInterval(checkInterval)
 					if (timeoutId) {
 						clearTimeout(timeoutId)
@@ -555,7 +659,6 @@ export class AgentManagerProvider implements vscode.Disposable {
 				}
 			}, 100)
 
-			// Timeout after 30 seconds to avoid hanging forever
 			timeoutId = setTimeout(() => {
 				clearInterval(checkInterval)
 				this.outputChannel.appendLine(`[AgentManager] Timeout waiting for pending session to clear`)
@@ -576,7 +679,9 @@ export class AgentManagerProvider implements vscode.Disposable {
 			this.outputChannel.appendLine(`[AgentManager] Current git URL: ${this.currentGitUrl}`)
 		} catch (error) {
 			this.outputChannel.appendLine(
-				`[AgentManager] Could not get git URL for workspace: ${error instanceof Error ? error.message : String(error)}`,
+				`[AgentManager] Could not get git URL for workspace: ${
+					error instanceof Error ? error.message : String(error)
+				}`,
 			)
 		}
 	}
@@ -662,6 +767,12 @@ export class AgentManagerProvider implements vscode.Disposable {
 			model?: string
 			mode?: string // Mode slug (e.g., "code", "architect")
 			images?: string[] // Image file paths to include with the initial prompt
+			apiConfigurationOverride?: ProviderSettings
+			teamRunId?: string
+			teamMemberId?: string
+			waveId?: string
+			roleType?: AgentSession["roleType"]
+			ownership?: AgentSession["ownership"]
 		},
 	): Promise<void> {
 		if (!prompt) {
@@ -729,6 +840,12 @@ export class AgentManagerProvider implements vscode.Disposable {
 				model: options?.model,
 				mode: options?.mode,
 				images: options?.images, // Images are sent with prompt via stdin newTask message
+				apiConfigurationOverride: options?.apiConfigurationOverride,
+				teamRunId: options?.teamRunId,
+				teamMemberId: options?.teamMemberId,
+				waveId: options?.waveId,
+				roleType: options?.roleType,
+				ownership: options?.ownership,
 			},
 			onSetupFailed,
 		)
@@ -791,6 +908,12 @@ export class AgentManagerProvider implements vscode.Disposable {
 			model?: string
 			mode?: string // Mode slug (e.g., "code", "architect")
 			images?: string[] // Image file paths to include with the initial prompt
+			apiConfigurationOverride?: ProviderSettings
+			teamRunId?: string
+			teamMemberId?: string
+			waveId?: string
+			roleType?: AgentSession["roleType"]
+			ownership?: AgentSession["ownership"]
 			sessionData?: {
 				uiMessages: ClineMessage[]
 				apiConversationHistory: unknown[]
@@ -810,15 +933,17 @@ export class AgentManagerProvider implements vscode.Disposable {
 		const workspace = options.effectiveWorkspace || workspaceFolder
 
 		const processStartTime = Date.now()
-		let apiConfiguration: ProviderSettings | undefined
-		try {
-			apiConfiguration = await this.getApiConfigurationForCli()
-		} catch (error) {
-			this.outputChannel.appendLine(
-				`[AgentManager] Failed to read provider settings: ${
-					error instanceof Error ? error.message : String(error)
-				}`,
-			)
+		let apiConfiguration: ProviderSettings | undefined = options.apiConfigurationOverride
+		if (!apiConfiguration) {
+			try {
+				apiConfiguration = await this.getApiConfigurationForCli()
+			} catch (error) {
+				this.outputChannel.appendLine(
+					`[AgentManager] Failed to read provider settings: ${
+						error instanceof Error ? error.message : String(error)
+					}`,
+				)
+			}
 		}
 
 		// Fetch custom modes (including organization modes) to pass to the agent process
@@ -835,9 +960,7 @@ export class AgentManagerProvider implements vscode.Disposable {
 			)
 		} catch (error) {
 			this.outputChannel.appendLine(
-				`[AgentManager] Failed to fetch custom modes: ${
-					error instanceof Error ? error.message : String(error)
-				}`,
+				`[AgentManager] Failed to fetch custom modes: ${error instanceof Error ? error.message : String(error)}`,
 			)
 		}
 
@@ -900,7 +1023,9 @@ export class AgentManagerProvider implements vscode.Disposable {
 				const eventTimestamp = event.payload?.timestamp
 				if (eventTimestamp && eventTimestamp > 1000 && eventTimestamp < processStartTime) {
 					this.outputChannel.appendLine(
-						`[AgentManager] Filtering replayed event: ${event.payload?.say || event.payload?.ask || "unknown"} (ts=${eventTimestamp} < start=${processStartTime})`,
+						`[AgentManager] Filtering replayed event: ${
+							event.payload?.say || event.payload?.ask || "unknown"
+						} (ts=${eventTimestamp} < start=${processStartTime})`,
 					)
 					return
 				}
@@ -922,33 +1047,49 @@ export class AgentManagerProvider implements vscode.Disposable {
 				if (event.details) {
 					this.log(sessionId, `Details: ${JSON.stringify(event.details)}`)
 				}
-				// Track session error telemetry
+				void this.routeTeamSessionOutcome({
+					sessionId,
+					outcome: "failed",
+					source: "error",
+					message: event.error,
+				})
 				captureAgentManagerSessionError(sessionId, session?.parallelMode?.enabled ?? false, event.error)
 				break
 			}
 			case "complete": {
 				const session = this.registry.getSession(sessionId)
+				const wasStopped = session?.status === "stopped"
 				const isSuccess = event.exitCode === 0 || event.exitCode === undefined
-				this.registry.updateSessionStatus(sessionId, isSuccess ? "done" : "error", event.exitCode)
+				this.registry.updateSessionStatus(
+					sessionId,
+					isSuccess ? "done" : wasStopped ? "stopped" : "error",
+					event.exitCode,
+				)
 				this.log(sessionId, isSuccess ? "Agent completed" : `Agent failed with exit code ${event.exitCode}`)
 				void this.fetchAndPostRemoteSessions()
-				// Notify webview state machine of completion (only on success)
-				// This is needed because completion_result events can be truncated in stdout chunking
 				if (isSuccess) {
-					this.postMessage({
-						type: "agentManager.stateEvent",
-						sessionId,
-						eventType: "ask_completion_result",
-					})
-					// Track session completed telemetry
 					captureAgentManagerSessionCompleted(sessionId, session?.parallelMode?.enabled ?? false)
+				} else if (wasStopped) {
+					void this.routeTeamSessionOutcome({
+						sessionId,
+						outcome: "cancelled",
+						source: "process_exit",
+						message: `Process exited after stop request (${event.exitCode})`,
+						exitCode: event.exitCode,
+					})
 				} else {
-					// Track session error telemetry
 					captureAgentManagerSessionError(
 						sessionId,
 						session?.parallelMode?.enabled ?? false,
 						`Exit code ${event.exitCode}`,
 					)
+					void this.routeTeamSessionOutcome({
+						sessionId,
+						outcome: "failed",
+						source: "complete",
+						exitCode: event.exitCode,
+						message: `Exit code ${event.exitCode}`,
+					})
 				}
 				break
 			}
@@ -956,7 +1097,12 @@ export class AgentManagerProvider implements vscode.Disposable {
 				const session = this.registry.getSession(sessionId)
 				this.registry.updateSessionStatus(sessionId, "stopped", undefined, event.reason)
 				this.log(sessionId, event.reason || "Execution interrupted")
-				// Track session stopped telemetry
+				void this.routeTeamSessionOutcome({
+					sessionId,
+					outcome: "cancelled",
+					source: "interrupted",
+					message: event.reason || "Execution interrupted",
+				})
 				captureAgentManagerSessionStopped(sessionId, session?.parallelMode?.enabled ?? false)
 				break
 			}
@@ -967,6 +1113,79 @@ export class AgentManagerProvider implements vscode.Disposable {
 				this.handleWelcomeEvent(sessionId, event as WelcomeStreamEvent)
 				break
 		}
+	}
+
+	private getTeamSessionSettlement(sessionId: string) {
+		let settlement = this.teamSessionSettlement.get(sessionId)
+		if (!settlement) {
+			settlement = { completedSignalReceived: false, finalized: false }
+			this.teamSessionSettlement.set(sessionId, settlement)
+		}
+		return settlement
+	}
+
+	private async handleStateEventFromProcessor(
+		sessionId: string,
+		payload: { eventType: string; partial?: boolean },
+	): Promise<void> {
+		this.postMessage({ type: "agentManager.stateEvent", sessionId, ...payload })
+		if (payload.eventType !== "ask_completion_result") {
+			return
+		}
+
+		const settlement = this.getTeamSessionSettlement(sessionId)
+		settlement.completedSignalReceived = true
+		await this.routeTeamSessionOutcome({
+			sessionId,
+			outcome: "completed",
+			source: "ask_completion_result",
+		})
+	}
+
+	private async handleRuntimeSessionCompleted(sessionId: string, exitCode: number | null): Promise<void> {
+		if (exitCode !== null && exitCode !== undefined && exitCode !== 0) {
+			return
+		}
+
+		const settlement = this.getTeamSessionSettlement(sessionId)
+		if (settlement.completedSignalReceived || settlement.finalized) {
+			return
+		}
+
+		this.postMessage({
+			type: "agentManager.stateEvent",
+			sessionId,
+			eventType: "ask_completion_result",
+		})
+		await this.routeTeamSessionOutcome({
+			sessionId,
+			outcome: "completed",
+			source: "complete",
+			exitCode: exitCode ?? undefined,
+		})
+	}
+
+	private async routeTeamSessionOutcome(outcome: TeamSessionOutcome): Promise<void> {
+		const settlement = this.getTeamSessionSettlement(outcome.sessionId)
+		if (settlement.finalized) {
+			return
+		}
+		if (outcome.outcome === "completed" && outcome.source === "complete" && settlement.completedSignalReceived) {
+			return
+		}
+
+		const handled = await this.teamCoordinator.handleSessionOutcome(outcome)
+		if (!handled) {
+			if (outcome.outcome !== "completed") {
+				settlement.finalized = true
+			}
+			return
+		}
+
+		if (outcome.outcome === "completed") {
+			settlement.completedSignalReceived = true
+		}
+		settlement.finalized = true
 	}
 
 	/**
@@ -1133,21 +1352,23 @@ export class AgentManagerProvider implements vscode.Disposable {
 
 		this.registry.updateSessionStatus(sessionId, "stopped", undefined, "Stopped by user")
 		this.log(sessionId, "Stopped by user")
-		this.postStateToWebview()
-
-		// Notify webview state machine of cancellation
-		// This ensures the state machine transitions to stopped state
 		this.postMessage({
 			type: "agentManager.stateEvent",
 			sessionId,
 			eventType: "cancel_session",
 		})
+		void this.routeTeamSessionOutcome({
+			sessionId,
+			outcome: "cancelled",
+			source: "cancel_session",
+			message: "Stopped by user",
+		})
+		this.postStateToWebview()
 
 		this.firstApiReqStarted.delete(sessionId)
 		this.processStartTimes.delete(sessionId)
 		this.sendingMessageMap.delete(sessionId)
 
-		// Track session stopped telemetry
 		captureAgentManagerSessionStopped(sessionId, session?.parallelMode?.enabled ?? false)
 	}
 
@@ -1449,7 +1670,9 @@ export class AgentManagerProvider implements vscode.Disposable {
 			}
 		} catch (error) {
 			this.outputChannel.appendLine(
-				`[AgentManager] Failed to fetch session data for resume: ${error instanceof Error ? error.message : String(error)}`,
+				`[AgentManager] Failed to fetch session data for resume: ${
+					error instanceof Error ? error.message : String(error)
+				}`,
 			)
 		}
 
@@ -1582,6 +1805,33 @@ export class AgentManagerProvider implements vscode.Disposable {
 		this.log(sessionId, `Approval response sent: ${approved ? "approved" : "rejected"}`)
 	}
 
+	private async respondToTeamApproval(
+		runId: string,
+		approvalId: string,
+		approved: boolean,
+		reason?: string,
+	): Promise<void> {
+		try {
+			const approval = await this.teamCoordinator.resolveApproval({ runId, approvalId, approved, reason })
+			if (!approval) {
+				this.outputChannel.appendLine(
+					`[AgentManager] Team approval not found: runId=${runId}, approvalId=${approvalId}`,
+				)
+				return
+			}
+
+			this.outputChannel.appendLine(
+				`[AgentManager] Team approval resolved: ${approvalId} -> ${approved ? "approved" : "rejected"}`,
+			)
+			this.postTeamRunStateToWebview()
+		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : String(error)
+			this.outputChannel.appendLine(
+				`[AgentManager] Failed to resolve team approval ${approvalId} for run ${runId}: ${errorMessage}`,
+			)
+		}
+	}
+
 	private async safeWriteToStdin(sessionId: string, payload: object, label: string): Promise<void> {
 		try {
 			await this.processHandler.writeToStdin(sessionId, payload)
@@ -1616,6 +1866,7 @@ export class AgentManagerProvider implements vscode.Disposable {
 		this.firstApiReqStarted.delete(sessionId)
 		this.processStartTimes.delete(sessionId)
 		this.sendingMessageMap.delete(sessionId)
+		this.teamSessionSettlement.delete(sessionId)
 	}
 
 	private getFilteredState() {
@@ -1626,6 +1877,14 @@ export class AgentManagerProvider implements vscode.Disposable {
 		this.postMessage({
 			type: "agentManager.state",
 			state: this.getFilteredState(),
+		})
+		this.postTeamRunStateToWebview()
+	}
+
+	private postTeamRunStateToWebview(): void {
+		this.postMessage({
+			type: "agentManager.teamRunState",
+			state: this.teamCoordinator.getState(),
 		})
 	}
 
