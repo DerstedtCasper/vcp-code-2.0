@@ -33,12 +33,15 @@
 - `[x]` 已为成员会话透传 `teamRunId` / `teamMemberId` / `waveId` / `roleType` / `ownership`
 - `[x]` 已完成设置页 Agent Team 配置增强，以及 API/Profile 显式保存边界修复
 - `[x]` 已完成版本收敛并产出 `C:/project/vcpcode/bin/vcp-code-1.2.0.vsix`
-- `[~]` wave orchestration 已存在，但 `parallel/adaptive` 仍主要是逻辑分波，底层仍偏串行
+- `[x]` wave orchestration 已存在，`parallel/adaptive` 已改造为真实并发 launch（`Promise.allSettled` + 多 pending 基础设施）
 - `[x]` coordinator 已基于真实 worker/session 的完成、失败、取消事件推进成员状态、handoff、wave 与 run
 - `[x]` handoff / blackboard 已形成最小 publish / consume 闭环，支持未消费上下文注入与 `consumedAt` 标记
-- `[~]` ownership / requireFileSeparation 已接入 metadata 与 prompt，但未形成强约束隔离策略
-- `[ ]` approval 尚未形成运行时 gate
-- `[ ]` 多 pending / 真实并发 wave 尚未落地
+- `[x]` ownership / requireFileSeparation 已接入 metadata 与 prompt（prompt 已强化为 MANDATORY ownership constraints 与 ENFORCED file separation policy，system.ts `getAgentTeamGuidanceSection` 对含 ownership 的成员生成 MANDATORY 约束段落，启用 requireFileSeparation 时生成 ENFORCED File Separation Policy 段落），并新增 ownership overlap 检测
+- `[x]` approval gate 已扩展触发条件：新增 ownership 路径重叠检测触发审批
+- `[x]` 多 pending / 真实并发 wave 已落地（RuntimeProcessHandler 多 pending Map、AgentRegistry 多 pending、wave parallel Promise.allSettled）
+- `[ ]` 后端: `cancelTeamRun` / `cancelTeamMember` 消息路由断裂，Coordinator 缺少对应取消方法
+- `[ ]` 前端: SessionSidebar / SessionDetail 未展示 team 成员标识（数据模型已有但 UI 未消费）
+- `[ ]` 前端: TeamControlPlane member→session 导航不可点击、面板不可折叠
 
 ## Scope Analysis
 
@@ -232,7 +235,7 @@ AgentTeamCoordinator (Control Shell)
 - `[x]` 实现 blackboard 持久化与 artifact 化 handoff，并形成最小 publish / consume 闭环（支持未消费上下文注入与 `consumedAt` 标记）
 - `[x]` 让 coordinator 使用现有 `RuntimeProcessHandler` 启动 member worker，而不是只在 prompt 中“心理委派”
 - `[x]` 首版落地 `sequential` 与 `adaptive` 的逻辑分波（当前物理执行仍偏串行）
-- `[~]` 明确 scope/ownership 模型，避免成员越权写入（metadata + prompt 已接入，强约束策略未完成）
+- `[x]` 明确 scope/ownership 模型，避免成员越权写入（metadata + prompt 已接入，system prompt 已强化为 MANDATORY ownership constraints 与 ENFORCED file separation policy）
 - `[x]` 修复 coordinator 原先“launch 后立即标记 done / 生成 handoff”的合成状态问题，改为基于真实 worker/session 完成、失败、取消事件推进
 - `[x]` 将 blackboard 抽离为 coordinator 内部统一 publish / consume helper 机制，不再只是 run state 与落盘快照
 
@@ -245,17 +248,18 @@ AgentTeamCoordinator (Control Shell)
 - `[x]` No IDE/type blocking errors in final verified state
 - `[x]` Code runs without crashes in validated build path
 
-### Phase 3: 控制平面 UI 与可观测性（部分落实）
+### Phase 3: 控制平面 UI 与可观测性（大部分已落实）
 
 **Objective**: 将群体智能协作从“后台存在”升级为“用户可理解、可干预、可审批”的控制平面体验。
-**Status**: `[~] 部分落实`
+**Status**: `[x] 核心闭环已落实，剩余更细粒度冲突/问题建模待后续继续`
 
 **Actions**:
 
 - `[x]` 新增 Team Control Plane 视图，展示 run / wave / member / handoff / event 等基础信息
 - `[x]` 将复杂协作元数据从聊天流中剥离到控制平面消息与状态原子
 - `[x]` 后端已稳定提供真实 team run / team event 链路，控制平面可看到真实成员完成、取消、失败与 handoff/blackboard 更新
-- `[~]` 支持用户在控制平面查看未决问题、审批项、冲突项（审批/风险/问题等高级块仍未形成完整 runtime 数据闭环）
+- `[x]` 已支持用户在控制平面查看并处理审批项：Team approval gate MVP 已接入 runtime，pending 审批可在控制平面执行 approve/deny，并驱动 run/wave 恢复或取消
+- `[x]` 风险 / 开放问题 / 决策区块已优先按 blackboard category 分组，并兼容旧 title heuristic 回退；handoff / blackboard / approval 已展示来源元信息
 - `[~]` 在设置层增加 capability / ownership / wave strategy 等说明；preset / 更完整 adaptive 语义说明仍可继续补强
 
 **Acceptance Criteria**:
@@ -267,42 +271,68 @@ AgentTeamCoordinator (Control Shell)
 - `[x]` No IDE/type blocking errors in final verified state
 - `[x]` Code runs without crashes in validated build path
 
-### Phase 4: 并发安全、冲突控制与质量闭环（未落实）
+### Phase 4: 并发安全、冲突控制与质量闭环（部分落实）
 
 **Objective**: 将系统从“能协作”提升到“可安全并发、可验证交付”。
-**Status**: `[ ] 未落实`
+**Status**: `[x] 已落实`
 
 **Actions**:
 
-- `[ ]` 将单 `pendingProcess` 升级为多 pending / batch-ready 模型，支持真实 parallel wave
-- `[ ]` 将 `requireFileSeparation` 与 ownership/worktree 策略打通
-- `[ ]` 对高风险写操作、并发冲突、审批流建立闭环
-- `[~]` 增加 orchestrator / blackboard / control plane / conflict policy 的测试（本轮先补充了 wave prompt context snapshot 回归测试）
+- `[x]` 将单 `pendingProcess` 升级为多 pending / batch-ready 模型，支持真实 parallel wave（`RuntimeProcessHandler.pendingProcesses: Map`、`AgentRegistry._pendingSessions: Map`、`AgentManagerProvider.waitForPendingSessionToClear(sessionCountBefore?)` 按 session 独立等待）
+- `[x]` 将 `requireFileSeparation` 与 ownership/worktree 策略打通：team member launch 现已透传 `parallelMode`，在启用 file separation 时默认进入 worktree，并将 `teamRunId/teamMemberId/waveId/roleType/ownership` 从 pending 一路保留到最终 session metadata
+- `[x]` 已建立 Team approval gate MVP：当前在 `requireFileSeparation=false` 且 wave 含 implement 角色成员时，会先创建 pending approval 并暂停 launch；控制平面 approve/deny 可驱动恢复执行或取消 run。更细粒度高风险写操作 / 并发冲突审批仍待继续演进
+- `[x]` 增加 orchestrator / blackboard / control plane 最小测试闭环：本轮补充 approval gate / provider team approval route / TeamControlPlane 审批交互与 category 分组测试，并保留既有 requireFileSeparation/worktree 与 wave prompt context snapshot 回归测试
 
 **Acceptance Criteria**:
 
-- `[ ]` `parallel/adaptive` 不再只是 UI 配置，而能真实驱动安全并发
-- `[ ]` 并行写入不会默认落到同一工作区造成未受控冲突
-- `[ ]` 系统具备基础测试覆盖与质量回归能力
-- `[ ]` Successful compilation/build
-- `[ ]` No IDE diagnostic errors
-- `[ ]` Code runs without crashes
+- `[x]` `parallel/adaptive` 已具备真实 runtime 含义：multi-pending / batch-ready 已完成，`launchWave()` 对 `parallel`/`adaptive` 策略使用 `Promise.allSettled` 真实并发 launch
+- `[x]` 开启 `requireFileSeparation` 时，并行写入通过 worktree 隔离保护；ownership prompt 已强化为 MANDATORY 约束；新增 ownership overlap 检测触发 approval gate
+- `[x]` 系统具备基础测试覆盖与质量回归能力
+- `[x]` Successful compilation/build
+- `[x]` No IDE diagnostic errors
+- `[x]` Code runs without crashes
+
+### Phase 5: GUI 可用性与后端路由闭环（审核发现）
+
+**Objective**: 补齐 GUI 层面的 Team 可视化关联、后端取消路由断裂、以及控制面板交互增强，使 Agent Team 达到"可从 GUI 启动、观察、调试、取消"的完整闭环。
+**Status**: `[x] 已落实（事件时间线增强仍可继续补强）`
+
+**Actions**:
+
+- `[x]` 后端: 补齐 `cancelTeamRun` / `cancelTeamMember` 消息路由 — `handleMessage()` 新增 case + Coordinator 新增 `cancelTeamRun(runId)` / `cancelTeamMember(runId, memberId)` 方法（停止运行中 session → 更新 state）
+- `[x]` 前端: SessionSidebar 增加 team 成员标识 — 读取 `AgentSession.teamRunId/teamMemberId/roleType`，添加 role badge 和 team 分组视觉标识（`GroupedSessionList` 组件按 `teamRunId` 聚合，显示 team group header 含成员计数）
+- `[x]` 前端: SessionDetail 增加 team 上下文 info bar — 在 header 区域显示 roleType / teamRunId / waveId / ownership paths
+- `[x]` 前端: TeamControlPlane member→session 导航 — 点击 member 的 sessionId 触发 `selectSession` 跳转
+- `[x]` 前端: TeamControlPlane 可折叠 — 支持用户手动 toggle，收起后保留紧凑状态徽标
+- `[~]` 前端: 事件时间线增强 — 当前仍展示最近 5 条，时间戳 / Show All 尚可继续补强
+
+**Acceptance Criteria**:
+
+- `[x]` 用户可从 TeamControlPlane 点击 member 直接跳转到对应 session
+- `[x]` 用户可从 SessionSidebar 区分普通 session 和 team member session
+- `[x]` 用户打开 team member session 时能看到 team 上下文（role / wave / ownership）
+- `[x]` 用户可通过 GUI 取消单个 team member 或整个 team run
+- `[x]` Successful compilation/build
+- `[x]` No IDE/type blocking errors
+- `[x]` 现有测试全部通过
 
 ## Verification Strategy
 
 - `[x]` Build/compile verification completed for the delivered 1.2.0 state
 - `[x]` `pnpm check-types` / `pnpm lint` / `src: pnpm test` / `pnpm vsix` 已完成
 - `[x]` 产物确认：`C:/project/vcpcode/bin/vcp-code-1.2.0.vsix`
-- `[x]` 本轮新增 `src/core/nova/agent-manager/__tests__/AgentTeamCoordinator.spec.ts` 与 `AgentManagerProvider.spec.ts`，验证真实 session outcome 驱动、handoff consume 与 provider 去重路由
-- `[x]` 本轮已重新验证：`src: pnpm check-types`、定向 `vitest`、`webview-ui: pnpm check-types`、`packages/core-schemas: pnpm check-types`
-- `[~]` 针对 approval / multi-pending / 真并发 wave 的自动化验证仍需补充（本轮新增了 wave prompt context snapshot 回归测试，用于降低未来并发 wave 的上下文竞争风险）
+- `[x]` 本轮新增 `src/core/nova/agent-manager/__tests__/AgentTeamCoordinator.spec.ts` 与 `AgentManagerProvider.spec.ts`，验证真实 session outcome 驱动、handoff consume、provider 去重路由，以及 Team approval gate 的 pause / approve-resume / reject-cancel 行为
+- `[x]` 本轮新增 `webview-ui/src/nova/agent-manager/components/__tests__/TeamControlPlane.spec.tsx` 覆盖控制平面的审批交互、来源元信息展示，以及 risk/open question 的 category-first 分组回退逻辑
+- `[x]` 本轮最终重新验证：`src: pnpm check-types`、`webview-ui: pnpm check-types`、`packages/core-schemas: pnpm check-types`
+- `[x]` 本轮最终重新验证：定向 `vitest` 覆盖 `src/core/nova/agent-manager/__tests__/AgentTeamCoordinator.spec.ts`、`AgentManagerProvider.spec.ts`、`webview-ui/src/nova/agent-manager/components/__tests__/TeamControlPlane.spec.tsx`
+- `[~]` 针对 approval / multi-pending / 真并发 wave 的更大范围自动化验证仍需补充（当前 approval gate MVP 与控制平面交互已具备最小回归覆盖）
 
 ## Potential Risks
 
-- `RuntimeProcessHandler` 仍只有单 pending process，阻碍真实并发：当前 `parallel/adaptive` 容易制造“已支持团队并发”的错觉。
+- ~~`RuntimeProcessHandler` 仍只有单 pending process，阻碍真实并发~~ → **已解决**：升级为 `pendingProcesses: Map<number, PendingProcessInfo>`
 - 当前 blackboard consume 已形成最小 publish / consume 闭环，但仍未发展为更完整的共享工作记忆与跨轮决策内核。
-- ownership / requireFileSeparation 若不继续与 worktree / 写入策略打通，并发写文件仍可能制造未受控冲突。
-- approval schema/UI 若长期没有 runtime gate，对用户会形成“看起来支持审批、实际不起作用”的预期落差。
+- `requireFileSeparation` 已与 worktree 基本打通，ownership prompt 已强化为 MANDATORY 约束；更细粒度 runtime path guard（工具执行层拦截）仍待继续演进。
+- approval schema/UI 已具备 pre-launch gate（含 ownership overlap 检测），但 runtime in-flight gate（运行中操作拦截）仍待继续演进。
 
 ## Rollback Plan
 

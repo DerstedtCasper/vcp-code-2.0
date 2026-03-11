@@ -33,7 +33,8 @@ const baseConfig: VcpAgentTeamConfig = {
 }
 
 describe("AgentTeamCoordinator", () => {
-	it("does not mark members done until real session outcome arrives and consumes unread handoff context", async () => {
+	it("does not mark members done until real session outcome arrives and pauses implement waves behind approval", async () => {
+		const events: Array<{ kind?: string; approval?: { approvalId?: string; status?: string } }> = []
 		const launchSession = vi
 			.fn()
 			.mockResolvedValueOnce({ sessionId: "session-research" })
@@ -43,6 +44,7 @@ describe("AgentTeamCoordinator", () => {
 			readProviderState: async () => ({ listApiConfigMeta: [] }),
 			resolveProviderProfile: async () => ({ name: "default" }) as any,
 			launchSession,
+			onEvent: (event) => events.push(event),
 		})
 
 		await coordinator.startRun(baseConfig, { prompt: "Ship feature", mode: "agent_team" })
@@ -65,12 +67,44 @@ describe("AgentTeamCoordinator", () => {
 		run = coordinator.getState().runs[0]
 		expect(run.members[0]?.status).toBe("done")
 		expect(run.waves[0]?.status).toBe("completed")
-		expect(run.members[1]?.status).toBe("running")
+		expect(run.waves[1]?.status).toBe("pending")
+		expect(run.members[1]?.status).toBe("creating")
 		expect(run.handoffs).toHaveLength(1)
-		expect(run.handoffs[0]?.status).toBe("consumed")
-		expect(run.handoffs[0]?.consumedAt).toBeTypeOf("number")
-		const handoffEntry = run.blackboard.find((entry) => entry.kind === "handoff")
-		expect(handoffEntry?.consumedAt).toBeTypeOf("number")
+		expect(run.handoffs[0]?.status).toBe("published")
+		expect(run.handoffs[0]?.consumedAt).toBeUndefined()
+		expect(run.approvals).toHaveLength(1)
+		const approval = run.approvals[0]
+		expect(approval?.status).toBe("pending")
+		expect(approval?.waveId).toBe(run.waves[1]?.waveId)
+		const pendingApprovalEntry = run.blackboard.find((entry) => entry.kind === "approval")
+		expect((pendingApprovalEntry?.contentJson as Record<string, unknown> | undefined)?.approvalId).toBe(
+			approval?.approvalId,
+		)
+		expect((pendingApprovalEntry?.contentJson as Record<string, unknown> | undefined)?.status).toBe("pending")
+		expect(
+			events.some(
+				(event) => event.kind === "approval_requested" && event.approval?.approvalId === approval?.approvalId,
+			),
+		).toBe(true)
+		expect(launchSession).toHaveBeenCalledTimes(1)
+
+		await coordinator.resolveApproval({
+			runId: run.runId,
+			approvalId: approval!.approvalId,
+			approved: true,
+			reason: "Proceed",
+		})
+
+		run = coordinator.getState().runs[0]
+		expect(run.approvals[0]?.status).toBe("approved")
+		expect(run.members[1]?.status).toBe("running")
+		expect(run.waves[1]?.status).toBe("running")
+		const resolvedApprovalEntry = run.blackboard.find((entry) => entry.kind === "approval")
+		expect((resolvedApprovalEntry?.contentJson as Record<string, unknown> | undefined)?.status).toBe("approved")
+		expect(resolvedApprovalEntry?.consumedAt).toBeTypeOf("number")
+		expect(
+			events.some((event) => event.kind === "blackboard_updated" && event.approval?.status === "approved"),
+		).toBe(true)
 
 		const secondPrompt = launchSession.mock.calls[1]?.[0]?.prompt as string
 		expect(secondPrompt).toContain("Unread handoffs")
@@ -95,6 +129,7 @@ describe("AgentTeamCoordinator", () => {
 			...baseConfig,
 			waveStrategy: "parallel",
 			maxParallel: 2,
+			requireFileSeparation: true,
 		}
 		const launchSession = vi
 			.fn()
@@ -145,6 +180,88 @@ describe("AgentTeamCoordinator", () => {
 		run = coordinator.getState().runs[0]
 		expect(run.status).toBe("completed")
 		expect(run.waves[0]?.status).toBe("completed")
+	})
+
+	it("enables worktree mode and fallback ownership when requireFileSeparation is enabled", async () => {
+		const separatedConfig: VcpAgentTeamConfig = {
+			...baseConfig,
+			requireFileSeparation: true,
+			members: [
+				{
+					...baseConfig.members[0],
+					ownership: undefined,
+				},
+			],
+		}
+		const launchSession = vi.fn().mockResolvedValue({ sessionId: "session-separated" })
+		const coordinator = new AgentTeamCoordinator({
+			workspacePath: "C:/project/vcpcode",
+			readProviderState: async () => ({ listApiConfigMeta: [] }),
+			resolveProviderProfile: async () => ({ name: "default" }) as any,
+			launchSession,
+		})
+
+		await coordinator.startRun(separatedConfig, { prompt: "Ship feature", mode: "agent_team" })
+
+		expect(launchSession).toHaveBeenCalledWith(
+			expect.objectContaining({
+				parallelMode: true,
+				ownership: {
+					paths: [expect.stringContaining(".snow/agent-team/")],
+					summary: undefined,
+				},
+			}),
+		)
+	})
+
+	it("cancels a pending run when approval is rejected", async () => {
+		const events: Array<{ kind?: string; approval?: { status?: string } }> = []
+		const launchSession = vi.fn()
+		const coordinator = new AgentTeamCoordinator({
+			workspacePath: "C:/project/vcpcode",
+			readProviderState: async () => ({ listApiConfigMeta: [] }),
+			resolveProviderProfile: async () => ({ name: "default" }) as any,
+			launchSession,
+			onEvent: (event) => events.push(event),
+		})
+
+		await coordinator.startRun(
+			{
+				...baseConfig,
+				members: [baseConfig.members[1]],
+			},
+			{ prompt: "Ship guarded feature", mode: "agent_team" },
+		)
+
+		let run = coordinator.getState().runs[0]
+		expect(launchSession).not.toHaveBeenCalled()
+		expect(run.status).toBe("running")
+		expect(run.waves[0]?.status).toBe("pending")
+		expect(run.approvals).toHaveLength(1)
+
+		const approval = run.approvals[0]!
+		const resolved = await coordinator.resolveApproval({
+			runId: run.runId,
+			approvalId: approval.approvalId,
+			approved: false,
+			reason: "Unsafe overlap",
+		})
+
+		expect(resolved?.status).toBe("rejected")
+		run = coordinator.getState().runs[0]
+		expect(run.status).toBe("cancelled")
+		expect(run.error).toContain("Unsafe overlap")
+		expect(run.currentWaveId).toBeUndefined()
+		expect(run.waves[0]?.status).toBe("cancelled")
+		expect(run.members[0]?.status).toBe("stopped")
+		const approvalEntry = run.blackboard.find((entry) => entry.kind === "approval")
+		expect((approvalEntry?.contentJson as Record<string, unknown> | undefined)?.status).toBe("rejected")
+		expect(approvalEntry?.consumedAt).toBeTypeOf("number")
+		expect(events.some((event) => event.kind === "approval_requested")).toBe(true)
+		expect(
+			events.some((event) => event.kind === "blackboard_updated" && event.approval?.status === "rejected"),
+		).toBe(true)
+		expect(events.some((event) => event.kind === "run_cancelled")).toBe(true)
 	})
 
 	it("marks run failed on failed session outcome", async () => {

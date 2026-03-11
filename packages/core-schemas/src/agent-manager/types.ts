@@ -17,6 +17,22 @@ export const teamRunStatusSchema = z.enum(["pending", "running", "completed", "f
 export const teamWaveStatusSchema = z.enum(["pending", "running", "completed", "failed", "cancelled"])
 export const teamHandoffStatusSchema = z.enum(["draft", "published", "consumed"])
 export const teamApprovalStatusSchema = z.enum(["pending", "approved", "rejected"])
+export const teamBlackboardCategorySchema = z.enum([
+	"task_spec",
+	"risk",
+	"open_question",
+	"decision",
+	"artifact",
+	"handoff",
+	"note",
+])
+export const teamApprovalAskTypeSchema = z.enum([
+	"tool",
+	"command",
+	"browser_action_launch",
+	"use_mcp_server",
+	"followup",
+])
 export const teamRunEventTypeSchema = z.enum([
 	"run_started",
 	"wave_started",
@@ -105,6 +121,7 @@ export const teamBlackboardEntrySchema = z.object({
 	teamMemberId: z.string().optional(),
 	sessionId: z.string().optional(),
 	kind: z.enum(["note", "decision", "artifact", "handoff", "approval"]),
+	category: teamBlackboardCategorySchema.optional(),
 	title: z.string(),
 	content: z.string().optional(),
 	contentJson: z.record(z.string(), z.unknown()).optional(),
@@ -122,6 +139,8 @@ export const teamApprovalRequestSchema = z.object({
 	teamMemberId: z.string().optional(),
 	status: teamApprovalStatusSchema,
 	kind: z.enum(["command", "tool", "question", "external"]),
+	askType: teamApprovalAskTypeSchema.optional(),
+	requestKey: z.string().optional(),
 	title: z.string(),
 	message: z.string().optional(),
 	metadata: z.record(z.string(), z.unknown()).optional(),
@@ -238,6 +257,25 @@ export const startSessionMessageSchema = z.object({
 	yoloMode: z.boolean().optional(), // True to enable auto-approval (default: true)
 })
 
+export const respondToTeamApprovalMessageSchema = z.object({
+	type: z.literal("agentManager.respondToTeamApproval"),
+	runId: z.string(),
+	approvalId: z.string(),
+	approved: z.boolean(),
+	reason: z.string().optional(),
+})
+
+export const cancelTeamMemberMessageSchema = z.object({
+	type: z.literal("agentManager.cancelTeamMember"),
+	runId: z.string(),
+	teamMemberId: z.string(),
+})
+
+export const cancelTeamRunMessageSchema = z.object({
+	type: z.literal("agentManager.cancelTeamRun"),
+	runId: z.string(),
+})
+
 export const agentManagerMessageSchema = z.discriminatedUnion("type", [
 	z.object({ type: z.literal("agentManager.webviewReady") }),
 	startSessionMessageSchema,
@@ -247,6 +285,9 @@ export const agentManagerMessageSchema = z.discriminatedUnion("type", [
 	z.object({ type: z.literal("agentManager.listBranches") }),
 	z.object({ type: z.literal("agentManager.refreshModels") }),
 	z.object({ type: z.literal("agentManager.setMode"), sessionId: z.string(), mode: z.string() }),
+	respondToTeamApprovalMessageSchema,
+	cancelTeamMemberMessageSchema,
+	cancelTeamRunMessageSchema,
 ])
 
 /**
@@ -335,6 +376,8 @@ export type TeamRunStatus = z.infer<typeof teamRunStatusSchema>
 export type TeamWaveStatus = z.infer<typeof teamWaveStatusSchema>
 export type TeamHandoffStatus = z.infer<typeof teamHandoffStatusSchema>
 export type TeamApprovalStatus = z.infer<typeof teamApprovalStatusSchema>
+export type TeamBlackboardCategory = z.infer<typeof teamBlackboardCategorySchema>
+export type TeamApprovalAskType = z.infer<typeof teamApprovalAskTypeSchema>
 export type TeamRunEventType = z.infer<typeof teamRunEventTypeSchema>
 export type TeamRunMember = z.infer<typeof teamRunMemberSchema>
 export type TeamWave = z.infer<typeof teamWaveSchema>
@@ -355,3 +398,6 @@ export type AgentManagerState = z.infer<typeof agentManagerStateSchema>
 export type AgentManagerMessage = z.infer<typeof agentManagerMessageSchema>
 export type AgentManagerExtensionMessage = z.infer<typeof agentManagerExtensionMessageSchema>
 export type StartSessionMessage = z.infer<typeof startSessionMessageSchema>
+export type RespondToTeamApprovalMessage = z.infer<typeof respondToTeamApprovalMessageSchema>
+export type CancelTeamMemberMessage = z.infer<typeof cancelTeamMemberMessageSchema>
+export type CancelTeamRunMessage = z.infer<typeof cancelTeamRunMessageSchema>

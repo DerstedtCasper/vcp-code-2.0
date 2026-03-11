@@ -140,6 +140,12 @@
 		"role": "Role",
 		"ownership": "Ownership",
 		"session": "Session",
+		"member": "Member",
+		"wave": "Wave",
+		"kind": "Kind",
+		"askType": "Ask type",
+		"source": "Source",
+		"target": "Target",
 		"approvals": "Approvals",
 		"noApprovals": "No approvals yet.",
 		"handoffs": "Handoffs",
@@ -147,6 +153,8 @@
 		"pendingConsumption": "Pending consumption",
 		"consumed": "Consumed",
 		"statusPending": "Pending",
+		"statusApproved": "Approved",
+		"statusRejected": "Rejected",
 		"statusCreating": "Creating",
 		"statusRunning": "Running",
 		"statusCompleted": "Completed",
@@ -159,6 +167,11 @@
 		"openQuestions": "Open questions",
 		"noOpenQuestions": "No open questions yet.",
 		"latestEvents": "Latest events",
-		"noEvents": "No events yet."
+		"noEvents": "No events yet.",
+		"cancelRun": "Cancel Run",
+		"cancelMember": "Cancel Member",
+		"viewSession": "View Session",
+		"collapse": "Collapse Team Control Plane",
+		"expand": "Expand Team Control Plane"
 	}
 }

@@ -140,6 +140,12 @@
 		"role": "角色",
 		"ownership": "负责路径",
 		"session": "会话",
+		"member": "成员",
+		"wave": "波次",
+		"kind": "类型",
+		"askType": "请求类型",
+		"source": "来源",
+		"target": "目标",
 		"approvals": "审批",
 		"noApprovals": "暂无审批。",
 		"handoffs": "交接",
@@ -147,6 +153,8 @@
 		"pendingConsumption": "待消费",
 		"consumed": "已消费",
 		"statusPending": "待处理",
+		"statusApproved": "已批准",
+		"statusRejected": "已拒绝",
 		"statusCreating": "创建中",
 		"statusRunning": "运行中",
 		"statusCompleted": "已完成",
@@ -159,6 +167,11 @@
 		"openQuestions": "开放问题",
 		"noOpenQuestions": "暂无开放问题。",
 		"latestEvents": "最近事件",
-		"noEvents": "暂无事件。"
+		"noEvents": "暂无事件。",
+		"cancelRun": "取消运行",
+		"cancelMember": "取消成员",
+		"viewSession": "查看会话",
+		"collapse": "收起 Team 控制平面",
+		"expand": "展开 Team 控制平面"
 	}
 }

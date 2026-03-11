@@ -5,6 +5,7 @@ import type { ProviderSettings, VcpAgentTeamConfig, VcpAgentTeamMember } from "@
 import type {
 	AgentTeamOwnership,
 	AgentTeamRoleType,
+	TeamApprovalRequest,
 	TeamBlackboardEntry,
 	TeamHandoff,
 	TeamRun,
@@ -27,6 +28,7 @@ export interface AgentTeamCoordinatorDependencies {
 		mode?: string
 		model?: string
 		apiConfigurationOverride?: ProviderSettings
+		parallelMode?: boolean
 		teamRunId: string
 		teamMemberId: string
 		waveId: string
@@ -270,7 +272,7 @@ export class AgentTeamCoordinator {
 		})
 
 		const waveMembers = this.getWaveMembers(run, wave)
-		if (waveMembers.some((entry) => !isMemberTerminal(entry.status))) {
+		if (waveMembers.some((entry: TeamRunMember) => !isMemberTerminal(entry.status))) {
 			await this.writeRunArtifacts(run)
 			return
 		}
@@ -388,6 +390,332 @@ export class AgentTeamCoordinator {
 		this.runPlans.delete(runId)
 	}
 
+	/**
+	 * Cancel an entire team run from external trigger (e.g. GUI).
+	 * Stops all running member sessions and marks the run as cancelled.
+	 */
+	public async cancelTeamRun(runId: string): Promise<void> {
+		const run = this.state.runs.find((entry) => entry.runId === runId)
+		if (!run || run.status === "completed" || run.status === "failed" || run.status === "cancelled") {
+			return
+		}
+		// Cancel all running members via handleSessionOutcome
+		for (const member of run.members) {
+			if (member.sessionId && member.status === "running") {
+				await this.handleSessionOutcome({
+					sessionId: member.sessionId,
+					outcome: "cancelled",
+					source: "cancel_session",
+					message: "Team run cancelled by user",
+				})
+			}
+		}
+		// If run is still not cancelled (e.g. no running members), force cancel
+		// Re-check status as a string because handleSessionOutcome may have mutated it
+		const currentStatus = run.status as string
+		if (currentStatus !== "cancelled" && currentStatus !== "failed") {
+			const currentWave = run.waves.find((w) => w.waveId === run.currentWaveId)
+			if (currentWave) {
+				// Build a synthetic member+outcome for the private cancelRun
+				const anyMember = run.members[0]
+				if (anyMember) {
+					await this.cancelRun(run, currentWave, anyMember, {
+						sessionId: anyMember.sessionId ?? "",
+						outcome: "cancelled",
+						source: "cancel_session",
+						message: "Team run cancelled by user",
+					})
+				}
+			}
+		}
+	}
+
+	/**
+	 * Cancel a single team member from external trigger (e.g. GUI).
+	 */
+	public async cancelTeamMember(runId: string, teamMemberId: string): Promise<void> {
+		const run = this.state.runs.find((entry) => entry.runId === runId)
+		if (!run) {
+			return
+		}
+
+		const member = run.members.find((m) => m.teamMemberId === teamMemberId)
+		if (!member || !member.sessionId || member.status !== "running") {
+			return
+		}
+
+		await this.handleSessionOutcome({
+			sessionId: member.sessionId,
+			outcome: "cancelled",
+			source: "cancel_session",
+			message: "Team member cancelled by user",
+		})
+	}
+
+	public async resolveApproval(params: {
+		runId: string
+		approvalId: string
+		approved: boolean
+		reason?: string
+	}): Promise<TeamApprovalRequest | undefined> {
+		const run = this.state.runs.find((entry) => entry.runId === params.runId)
+		if (!run) {
+			return undefined
+		}
+		const approval = run.approvals.find((entry) => entry.approvalId === params.approvalId)
+		if (!approval) {
+			return undefined
+		}
+		if (approval.status !== "pending") {
+			return approval
+		}
+
+		const resolvedAt = this.getNow()
+		const reason = params.reason?.trim()
+		approval.status = params.approved ? "approved" : "rejected"
+		approval.resolvedAt = resolvedAt
+		const approvalEntry = this.updateApprovalEntry(run, approval, resolvedAt, reason)
+
+		if (!params.approved) {
+			await this.rejectRunFromApproval(run, approval, resolvedAt, reason, approvalEntry)
+			return approval
+		}
+
+		this.persistRun(run)
+		this.emitEvent({
+			eventId: uniqueId("team-event", resolvedAt, `${approval.approvalId}-approved`),
+			runId: run.runId,
+			waveId: approval.waveId,
+			sessionId: approval.sessionId,
+			teamMemberId: approval.teamMemberId,
+			kind: "blackboard_updated",
+			createdAt: resolvedAt,
+			title: `Approval approved: ${approval.title}`,
+			message: reason || "Execution resumed.",
+			approval,
+			blackboardEntry: approvalEntry,
+		})
+		await this.writeRunArtifacts(run)
+		if (approval.waveId) {
+			await this.launchWave(run.runId, approval.waveId)
+		}
+		return approval
+	}
+
+	private getWaveLaunchApproval(run: TeamRun, waveId: string): TeamApprovalRequest | undefined {
+		return run.approvals.find(
+			(entry) => entry.waveId === waveId && (entry.metadata?.gate as string | undefined) === "wave_launch",
+		)
+	}
+
+	private shouldPauseForWaveApproval(
+		run: TeamRun,
+		wave: TeamWave,
+		config: VcpAgentTeamConfig,
+		waveMembers: TeamRunMember[],
+	): boolean {
+		const existingApproval = this.getWaveLaunchApproval(run, wave.waveId)
+		if (existingApproval?.status === "approved") {
+			return false
+		}
+
+		// Condition 1 (existing): No file separation + implement roles = conflict risk
+		if (!config.requireFileSeparation) {
+			const hasImplementRole = waveMembers.some((m) => m.roleType === "implement")
+			if (hasImplementRole) {
+				return true
+			}
+		}
+
+		// Condition 2 (new): Wave with multiple members that have overlapping ownership
+		if (waveMembers.length > 1) {
+			const hasOverlap = this.detectOwnershipOverlap(waveMembers)
+			if (hasOverlap) {
+				return true
+			}
+		}
+
+		return false
+	}
+
+	private detectOwnershipOverlap(members: TeamRunMember[]): boolean {
+		const allPaths: Array<{ memberId: string; path: string }> = []
+		for (const member of members) {
+			if (member.ownership?.paths) {
+				for (const p of member.ownership.paths) {
+					allPaths.push({ memberId: member.teamMemberId, path: p })
+				}
+			}
+		}
+		// Check if any two members have paths that are prefixes of each other
+		for (let i = 0; i < allPaths.length; i++) {
+			for (let j = i + 1; j < allPaths.length; j++) {
+				if (allPaths[i].memberId !== allPaths[j].memberId) {
+					const a = allPaths[i].path.replace(/\\/g, "/")
+					const b = allPaths[j].path.replace(/\\/g, "/")
+					if (a.startsWith(b) || b.startsWith(a) || a === b) {
+						return true
+					}
+				}
+			}
+		}
+		return false
+	}
+
+	private async requestWaveApproval(
+		run: TeamRun,
+		wave: TeamWave,
+		config: VcpAgentTeamConfig,
+		waveMembers: TeamRunMember[],
+	): Promise<TeamApprovalRequest> {
+		const existingApproval = this.getWaveLaunchApproval(run, wave.waveId)
+		if (existingApproval) {
+			return existingApproval
+		}
+
+		const now = this.getNow()
+		const memberNames = waveMembers.map((member) => member.name)
+		const memberIds = waveMembers.map((member) => member.teamMemberId)
+		const roleTypes = waveMembers.map((member) => member.roleType ?? "general")
+		const approval: TeamApprovalRequest = {
+			approvalId: uniqueId("approval", now, `${run.runId}-${wave.waveId}`),
+			runId: run.runId,
+			waveId: wave.waveId,
+			status: "pending",
+			kind: "external",
+			title: `Approve ${wave.label} launch`,
+			message: `Wave launch is paused because implement-role members will run without file separation: ${memberNames.join(
+				", ",
+			)}. Approve to continue.`,
+			metadata: {
+				gate: "wave_launch",
+				strategy: wave.strategy,
+				requireFileSeparation: config.requireFileSeparation,
+				memberIds,
+				memberNames,
+				roleTypes,
+			},
+			createdAt: now,
+		}
+		const approvalEntry = toBlackboardEntry({
+			runId: run.runId,
+			waveId: wave.waveId,
+			kind: "approval",
+			title: approval.title,
+			content: approval.message,
+			contentJson: {
+				approvalId: approval.approvalId,
+				status: approval.status,
+				...approval.metadata,
+			},
+			tags: ["approval", "wave_launch", wave.waveId, approval.status],
+			now,
+		})
+		run.currentWaveId = wave.waveId
+		run.updatedAt = now
+		run.approvals.unshift(approval)
+		run.blackboard.unshift(approvalEntry)
+		this.persistRun(run)
+		this.emitEvent({
+			eventId: uniqueId("team-event", now, `${approval.approvalId}-requested`),
+			runId: run.runId,
+			waveId: wave.waveId,
+			kind: "approval_requested",
+			createdAt: now,
+			title: approval.title,
+			message: approval.message,
+			approval,
+			blackboardEntry: approvalEntry,
+		})
+		await this.writeRunArtifacts(run)
+		return approval
+	}
+
+	private updateApprovalEntry(
+		run: TeamRun,
+		approval: TeamApprovalRequest,
+		now: number,
+		reason?: string,
+	): TeamBlackboardEntry | undefined {
+		const approvalEntry = run.blackboard.find((entry: TeamBlackboardEntry) => {
+			const contentJson = entry.contentJson as Record<string, unknown> | undefined
+			return entry.kind === "approval" && contentJson?.approvalId === approval.approvalId
+		})
+		if (!approvalEntry) {
+			return undefined
+		}
+
+		approvalEntry.content = approval.message
+		approvalEntry.updatedAt = now
+		approvalEntry.consumedAt = now
+		approvalEntry.contentJson = {
+			...(approvalEntry.contentJson ?? {}),
+			approvalId: approval.approvalId,
+			status: approval.status,
+			resolvedAt: approval.resolvedAt,
+			reason: reason || undefined,
+		}
+		approvalEntry.tags = Array.from(
+			new Set([
+				...(approvalEntry.tags ?? []).filter(
+					(tag: string) => !["pending", "approved", "rejected"].includes(tag),
+				),
+				approval.status,
+			]),
+		)
+		return approvalEntry
+	}
+
+	private async rejectRunFromApproval(
+		run: TeamRun,
+		approval: TeamApprovalRequest,
+		rejectedAt: number,
+		reason: string | undefined,
+		approvalEntry: TeamBlackboardEntry | undefined,
+	): Promise<void> {
+		const message = reason ? `Team approval rejected: ${reason}` : `Team approval rejected for ${approval.title}`
+		const wave = approval.waveId ? run.waves.find((entry) => entry.waveId === approval.waveId) : undefined
+		if (wave && wave.status === "pending") {
+			wave.status = "cancelled"
+			wave.completedAt = rejectedAt
+			wave.error = message
+		}
+		for (const member of run.members) {
+			if (!isMemberTerminal(member.status) && !member.sessionId) {
+				member.status = "stopped"
+			}
+		}
+		run.status = "cancelled"
+		run.error = message
+		run.currentWaveId = undefined
+		run.updatedAt = rejectedAt
+		this.persistRun(run)
+		this.emitEvent({
+			eventId: uniqueId("team-event", rejectedAt, `${approval.approvalId}-rejected`),
+			runId: run.runId,
+			waveId: approval.waveId,
+			sessionId: approval.sessionId,
+			teamMemberId: approval.teamMemberId,
+			kind: "blackboard_updated",
+			createdAt: rejectedAt,
+			title: `Approval rejected: ${approval.title}`,
+			message,
+			approval,
+			blackboardEntry: approvalEntry,
+		})
+		this.emitEvent({
+			eventId: uniqueId("team-event", rejectedAt, `${run.runId}-approval-cancelled`),
+			runId: run.runId,
+			waveId: approval.waveId,
+			kind: "run_cancelled",
+			createdAt: rejectedAt,
+			title: "Team run cancelled",
+			message,
+		})
+		await this.writeRunArtifacts(run)
+		this.runPlans.delete(run.runId)
+	}
+
 	private async resolveMembers(members: VcpAgentTeamMember[], requestedModel?: string): Promise<TeamRunMember[]> {
 		const providerState = await this.deps.readProviderState()
 		const metaEntries = providerState.listApiConfigMeta ?? []
@@ -488,6 +816,12 @@ export class AgentTeamCoordinator {
 			return
 		}
 
+		const waveMembers = this.getWaveMembers(run, wave)
+		if (this.shouldPauseForWaveApproval(run, wave, plan.config, waveMembers)) {
+			await this.requestWaveApproval(run, wave, plan.config, waveMembers)
+			return
+		}
+
 		const startedAt = this.getNow()
 		wave.status = "running"
 		wave.startedAt = startedAt
@@ -515,75 +849,125 @@ export class AgentTeamCoordinator {
 			promptContexts.set(teamMemberId, this.collectPromptContext(run, wave, member))
 		}
 
+		// Resolve all member launch contexts upfront (before any concurrent launch)
+		const memberLaunchTasks: Array<{
+			member: TeamRunMember
+			promptContext: PromptContextSnapshot
+		}> = []
 		for (const teamMemberId of wave.teamMemberIds) {
 			const member = run.members.find((entry) => entry.teamMemberId === teamMemberId)
 			if (!member || run.status !== "running") {
 				continue
 			}
-
-			const launchTime = this.getNow()
-			const ownership = normalizeOwnership(
-				member.ownership,
-				plan.config.requireFileSeparation ? `.snow/agent-team/${runId}/${teamMemberId}` : undefined,
-			)
 			const promptContext = promptContexts.get(teamMemberId) ?? this.collectPromptContext(run, wave, member)
-			const apiConfigurationOverride = await this.resolveApiConfigurationOverride(member)
-			const launchPrompt = this.buildMemberPrompt(
-				run,
-				wave,
-				member,
-				plan.config,
-				plan.options,
-				ownership,
-				promptContext,
-			)
+			memberLaunchTasks.push({ member, promptContext })
+		}
 
-			try {
-				const launched = await this.deps.launchSession({
-					prompt: launchPrompt,
-					label: `${member.name} · ${wave.label}`,
-					mode: plan.options.mode,
-					model: member.modelId,
-					apiConfigurationOverride,
-					teamRunId: runId,
-					teamMemberId: member.teamMemberId,
-					waveId: wave.waveId,
-					roleType: member.roleType,
-					ownership,
-				})
-				member.sessionId = launched.sessionId
-				member.status = "running"
-				member.ownership = ownership
-				wave.sessionIds.push(launched.sessionId)
-				this.consumePromptContext(run, promptContext, {
-					now: this.getNow(),
-					teamMemberId: member.teamMemberId,
-					sessionId: launched.sessionId,
-				})
-				this.persistRun(run)
-				this.emitEvent({
-					eventId: uniqueId("team-event", launchTime, `${member.teamMemberId}-launched`),
-					runId,
-					waveId: wave.waveId,
-					sessionId: launched.sessionId,
-					teamMemberId: member.teamMemberId,
-					kind: "member_launched",
-					createdAt: launchTime,
-					title: `${member.name} launched`,
-					message: `${member.providerId ?? "unknown"}/${member.modelId ?? "unknown"}`,
-				})
-			} catch (error) {
-				await this.failRun(run, wave, member, {
-					sessionId: member.sessionId ?? `${runId}:${member.teamMemberId}`,
+		const isParallel = wave.strategy === "parallel" || wave.strategy === "adaptive"
+
+		if (isParallel && memberLaunchTasks.length > 1) {
+			// Parallel launch: all members in this wave start concurrently
+			const results = await Promise.allSettled(
+				memberLaunchTasks.map(({ member, promptContext }) =>
+					this.launchMember(run, wave, member, plan, promptContext),
+				),
+			)
+			// Check for failures
+			const failures = results.filter((r): r is PromiseRejectedResult => r.status === "rejected")
+			if (failures.length > 0) {
+				const firstError = failures[0].reason
+				// If any member failed to launch, fail the run
+				const failedMember =
+					memberLaunchTasks.find(({ member }) => !member.sessionId)?.member ?? memberLaunchTasks[0].member
+				await this.failRun(run, wave, failedMember, {
+					sessionId: failedMember.sessionId ?? `${runId}:${failedMember.teamMemberId}`,
 					outcome: "failed",
 					source: "process_exit",
-					message: error instanceof Error ? error.message : String(error),
+					message: firstError instanceof Error ? firstError.message : String(firstError),
 				})
-				throw error
+				throw firstError
+			}
+		} else {
+			// Sequential launch: one member at a time
+			for (const { member, promptContext } of memberLaunchTasks) {
+				try {
+					await this.launchMember(run, wave, member, plan, promptContext)
+				} catch (error) {
+					await this.failRun(run, wave, member, {
+						sessionId: member.sessionId ?? `${runId}:${member.teamMemberId}`,
+						outcome: "failed",
+						source: "process_exit",
+						message: error instanceof Error ? error.message : String(error),
+					})
+					throw error
+				}
 			}
 		}
 
 		await this.writeRunArtifacts(run)
+	}
+
+	private async launchMember(
+		run: TeamRun,
+		wave: TeamWave,
+		member: TeamRunMember,
+		plan: { config: VcpAgentTeamConfig; options: StartTeamRunOptions },
+		promptContext: PromptContextSnapshot,
+	): Promise<void> {
+		if (run.status !== "running") {
+			return
+		}
+
+		const launchTime = this.getNow()
+		const ownership = normalizeOwnership(
+			member.ownership,
+			plan.config.requireFileSeparation ? `.snow/agent-team/${run.runId}/${member.teamMemberId}` : undefined,
+		)
+		const apiConfigurationOverride = await this.resolveApiConfigurationOverride(member)
+		const launchPrompt = this.buildMemberPrompt(
+			run,
+			wave,
+			member,
+			plan.config,
+			plan.options,
+			ownership,
+			promptContext,
+		)
+
+		const launched = await this.deps.launchSession({
+			prompt: launchPrompt,
+			label: `${member.name} · ${wave.label}`,
+			mode: plan.options.mode,
+			model: member.modelId,
+			apiConfigurationOverride,
+			parallelMode: plan.config.requireFileSeparation,
+			teamRunId: run.runId,
+			teamMemberId: member.teamMemberId,
+			waveId: wave.waveId,
+			roleType: member.roleType,
+			ownership,
+		})
+		member.sessionId = launched.sessionId
+		member.status = "running"
+		member.ownership = ownership
+		wave.sessionIds.push(launched.sessionId)
+		this.consumePromptContext(run, promptContext, {
+			now: this.getNow(),
+			teamMemberId: member.teamMemberId,
+			sessionId: launched.sessionId,
+		})
+		this.persistRun(run)
+		this.emitEvent({
+			eventId: uniqueId("team-event", launchTime, `${member.teamMemberId}-launched`),
+			runId: run.runId,
+			waveId: wave.waveId,
+			sessionId: launched.sessionId,
+			teamMemberId: member.teamMemberId,
+			kind: "member_launched",
+			createdAt: launchTime,
+			title: `${member.name} launched`,
+			message: `${member.providerId ?? "unknown"}/${member.modelId ?? "unknown"}`,
+		})
 	}
 
 	private buildMemberPrompt(
@@ -595,11 +979,33 @@ export class AgentTeamCoordinator {
 		ownership: AgentTeamOwnership | undefined,
 		promptContext: PromptContextSnapshot,
 	) {
-		const ownershipText = ownership
-			? `Ownership:\n- Paths: ${(ownership.paths ?? []).join(", ") || "n/a"}\n- Summary: ${
-					ownership.summary ?? "n/a"
-				}`
-			: "Ownership:\n- No explicit ownership assigned."
+		let ownershipText: string
+		if (ownership) {
+			const pathsList = (ownership.paths ?? []).map((p) => `- ${p}`).join("\n")
+			ownershipText = [
+				"## Ownership Constraints (MANDATORY)",
+				"",
+				"You are assigned to the following file/path scope. You MUST NOT create, modify, or delete files outside these paths:",
+				pathsList || "- (no paths specified)",
+				"",
+				ownership.summary ? `Scope description: ${ownership.summary}` : "",
+				"",
+				"If you need to modify files outside your assigned scope, you must clearly state this limitation in your response and suggest the coordinator handle it in a subsequent wave.",
+			]
+				.filter((line) => line !== undefined)
+				.join("\n")
+		} else {
+			ownershipText = "Ownership:\n- No explicit ownership assigned."
+		}
+
+		let fileSeparationText: string | undefined
+		if (config.requireFileSeparation) {
+			fileSeparationText = [
+				"## File Separation Policy (ENFORCED)",
+				"",
+				"This team run enforces strict file separation between members. Each member works in an isolated workspace (worktree). DO NOT attempt to modify files that belong to other team members' ownership scope.",
+			].join("\n")
+		}
 
 		return [
 			`Team Run ID: ${run.runId}`,
@@ -612,7 +1018,7 @@ export class AgentTeamCoordinator {
 			member.rolePrompt?.trim() ? `Role instructions:\n${member.rolePrompt.trim()}` : undefined,
 			promptContext.sections.length > 0 ? promptContext.sections.join("\n\n") : undefined,
 			`Task objective:\n${options.prompt}`,
-			config.requireFileSeparation ? "Respect file/path separation boundaries when making changes." : undefined,
+			fileSeparationText,
 		]
 			.filter(Boolean)
 			.join("\n\n")
@@ -767,7 +1173,9 @@ export class AgentTeamCoordinator {
 
 	private getWaveMembers(run: TeamRun, wave: TeamWave) {
 		return wave.teamMemberIds
-			.map((teamMemberId) => run.members.find((entry) => entry.teamMemberId === teamMemberId))
+			.map((teamMemberId: string) =>
+				run.members.find((entry: TeamRunMember) => entry.teamMemberId === teamMemberId),
+			)
 			.filter((entry): entry is TeamRunMember => Boolean(entry))
 	}
 

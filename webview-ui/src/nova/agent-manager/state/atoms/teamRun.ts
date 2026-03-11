@@ -20,6 +20,15 @@ export type TeamRunStatus = "pending" | "running" | "completed" | "failed" | "ca
 export type TeamWaveStatus = TeamRunStatus
 export type TeamHandoffStatus = "draft" | "published" | "consumed"
 export type TeamApprovalStatus = "pending" | "approved" | "rejected"
+export type TeamBlackboardCategory =
+	| "task_spec"
+	| "risk"
+	| "open_question"
+	| "decision"
+	| "artifact"
+	| "handoff"
+	| "note"
+export type TeamApprovalAskType = "tool" | "command" | "browser_action_launch" | "use_mcp_server" | "followup"
 export type TeamRunEventType =
 	| "run_started"
 	| "wave_started"
@@ -83,6 +92,7 @@ export interface TeamBlackboardEntry {
 	teamMemberId?: string
 	sessionId?: string
 	kind: "note" | "decision" | "artifact" | "handoff" | "approval"
+	category?: TeamBlackboardCategory
 	title: string
 	content?: string
 	contentJson?: Record<string, unknown>
@@ -100,6 +110,8 @@ export interface TeamApprovalRequest {
 	teamMemberId?: string
 	status: TeamApprovalStatus
 	kind: "command" | "tool" | "question" | "external"
+	askType?: TeamApprovalAskType
+	requestKey?: string
 	title: string
 	message?: string
 	metadata?: Record<string, unknown>
@@ -323,6 +335,18 @@ function normalizeBlackboardEntry(value: unknown, index: number, runIdFallback: 
 		return null
 	}
 
+	const category = asString(source.category)
+	const normalizedCategory =
+		category === "task_spec" ||
+		category === "risk" ||
+		category === "open_question" ||
+		category === "decision" ||
+		category === "artifact" ||
+		category === "handoff" ||
+		category === "note"
+			? category
+			: undefined
+
 	return {
 		entryId: asString(source.entryId) ?? asString(source.id) ?? `blackboard-${index + 1}`,
 		runId: asString(source.runId) ?? runIdFallback,
@@ -330,6 +354,7 @@ function normalizeBlackboardEntry(value: unknown, index: number, runIdFallback: 
 		teamMemberId: asString(source.teamMemberId),
 		sessionId: asString(source.sessionId),
 		kind,
+		category: normalizedCategory,
 		title: asString(source.title) ?? `Entry ${index + 1}`,
 		content: asString(source.content),
 		contentJson: asObject(source.contentJson),
@@ -351,6 +376,16 @@ function normalizeApproval(value: unknown, index: number, runIdFallback: string)
 		return null
 	}
 
+	const askType = asString(source.askType)
+	const normalizedAskType =
+		askType === "tool" ||
+		askType === "command" ||
+		askType === "browser_action_launch" ||
+		askType === "use_mcp_server" ||
+		askType === "followup"
+			? askType
+			: undefined
+
 	return {
 		approvalId: asString(source.approvalId) ?? asString(source.id) ?? `approval-${index + 1}`,
 		runId: asString(source.runId) ?? runIdFallback,
@@ -359,6 +394,8 @@ function normalizeApproval(value: unknown, index: number, runIdFallback: string)
 		teamMemberId: asString(source.teamMemberId),
 		status: normalizeApprovalStatus(source.status),
 		kind,
+		askType: normalizedAskType,
+		requestKey: asString(source.requestKey),
 		title: asString(source.title) ?? `Approval ${index + 1}`,
 		message: asString(source.message),
 		metadata: asObject(source.metadata),

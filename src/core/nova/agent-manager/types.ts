@@ -13,12 +13,13 @@ export {
 	agentStatusSchema,
 	sessionSourceSchema,
 	parallelModeInfoSchema,
-	agentTeamRoleTypeSchema,
 	agentTeamOwnershipSchema,
 	teamRunStatusSchema,
 	teamWaveStatusSchema,
 	teamHandoffStatusSchema,
 	teamApprovalStatusSchema,
+	teamBlackboardCategorySchema,
+	teamApprovalAskTypeSchema,
 	teamRunEventTypeSchema,
 	teamRunMemberSchema,
 	teamWaveSchema,
@@ -36,6 +37,9 @@ export {
 	availableModelSchema,
 	availableModeSchema,
 	startSessionMessageSchema,
+	respondToTeamApprovalMessageSchema,
+	cancelTeamMemberMessageSchema,
+	cancelTeamRunMessageSchema,
 	// Types
 	type AgentTeamRoleType,
 	type AgentTeamOwnership,
@@ -43,6 +47,8 @@ export {
 	type TeamWaveStatus,
 	type TeamHandoffStatus,
 	type TeamApprovalStatus,
+	type TeamBlackboardCategory,
+	type TeamApprovalAskType,
 	type TeamRunEventType,
 	type TeamRunMember,
 	type TeamWave,
@@ -63,6 +69,9 @@ export {
 	type AvailableModel,
 	type AvailableMode,
 	type StartSessionMessage,
+	type RespondToTeamApprovalMessage,
+	type CancelTeamMemberMessage,
+	type CancelTeamRunMessage,
 } from "@novacode/core-schemas"
 
 // Re-export remote session shape from shared session client for consistency

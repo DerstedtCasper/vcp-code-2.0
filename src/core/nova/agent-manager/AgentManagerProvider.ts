@@ -44,7 +44,13 @@ import { extractSessionConfigs, MAX_VERSION_COUNT } from "./multiVersionUtils"
 import { SessionManager } from "../../../shared/nova/cli-sessions/core/SessionManager"
 import { WorkspaceGitService } from "./WorkspaceGitService"
 import { SessionTerminalManager } from "./SessionTerminalManager"
-import { startSessionMessageSchema, type StartSessionMessage } from "./types"
+import {
+	startSessionMessageSchema,
+	respondToTeamApprovalMessageSchema,
+	cancelTeamRunMessageSchema,
+	cancelTeamMemberMessageSchema,
+	type StartSessionMessage,
+} from "./types"
 import { openImage } from "../../../integrations/misc/image-handler"
 import { getModelsFromCache } from "../../../api/providers/fetchers/modelCache"
 import { isRouterName, type ModelRecord } from "../../../shared/api"
@@ -248,6 +254,7 @@ export class AgentManagerProvider implements vscode.Disposable {
 				mode,
 				model,
 				apiConfigurationOverride,
+				parallelMode,
 				teamRunId,
 				teamMemberId,
 				waveId,
@@ -255,7 +262,9 @@ export class AgentManagerProvider implements vscode.Disposable {
 				ownership,
 			}) => {
 				const beforeIds = new Set(this.registry.getSessions().map((session) => session.sessionId))
+				const sessionCountBefore = this.registry.getSessions().length
 				await this.startAgentSession(prompt, {
+					parallelMode,
 					labelOverride: label,
 					mode,
 					model,
@@ -266,7 +275,7 @@ export class AgentManagerProvider implements vscode.Disposable {
 					roleType,
 					ownership,
 				})
-				await this.waitForPendingSessionToClear()
+				await this.waitForPendingSessionToClear(sessionCountBefore)
 				const afterSessions = this.registry.getSessions()
 				const createdSession =
 					afterSessions.find((session) => !beforeIds.has(session.sessionId)) ?? afterSessions[0]
@@ -446,6 +455,54 @@ export class AgentManagerProvider implements vscode.Disposable {
 						message.text as string | undefined,
 					)
 					break
+				case "agentManager.respondToTeamApproval": {
+					const parsedMessage = respondToTeamApprovalMessageSchema.safeParse(message)
+					if (!parsedMessage.success) {
+						this.outputChannel.appendLine(
+							`[AgentManager] Invalid respondToTeamApproval message: ${parsedMessage.error.message}`,
+						)
+						break
+					}
+					void this.respondToTeamApproval(
+						parsedMessage.data.runId,
+						parsedMessage.data.approvalId,
+						parsedMessage.data.approved,
+						parsedMessage.data.reason,
+					)
+					break
+				}
+				case "agentManager.cancelTeamRun": {
+					const parsed = cancelTeamRunMessageSchema.safeParse(message)
+					if (!parsed.success) {
+						this.outputChannel.appendLine(
+							`[AgentManager] Invalid cancelTeamRun message: ${parsed.error.message}`,
+						)
+						break
+					}
+					if (this.teamCoordinator && parsed.data.runId) {
+						void this.teamCoordinator.cancelTeamRun(parsed.data.runId).then(() => {
+							this.postTeamRunStateToWebview()
+						})
+					}
+					break
+				}
+				case "agentManager.cancelTeamMember": {
+					const parsed = cancelTeamMemberMessageSchema.safeParse(message)
+					if (!parsed.success) {
+						this.outputChannel.appendLine(
+							`[AgentManager] Invalid cancelTeamMember message: ${parsed.error.message}`,
+						)
+						break
+					}
+					if (this.teamCoordinator && parsed.data.runId && parsed.data.teamMemberId) {
+						void this.teamCoordinator
+							.cancelTeamMember(parsed.data.runId, parsed.data.teamMemberId)
+							.then(() => {
+								this.postTeamRunStateToWebview()
+							})
+					}
+					break
+				}
 				case "agentManager.removeSession":
 					this.removeSession(message.sessionId as string)
 					break
@@ -555,6 +612,7 @@ export class AgentManagerProvider implements vscode.Disposable {
 		for (let i = 0; i < configs.length; i++) {
 			const config = configs[i]
 			this.outputChannel.appendLine(`[AgentManager] Starting version ${i + 1}/${configs.length}: ${config.label}`)
+			const sessionCountBefore = this.registry.getSessions().length
 			await this.startAgentSession(config.prompt, {
 				parallelMode: config.parallelMode,
 				labelOverride: config.label,
@@ -564,7 +622,7 @@ export class AgentManagerProvider implements vscode.Disposable {
 				images,
 			})
 			if (i < configs.length - 1) {
-				await this.waitForPendingSessionToClear()
+				await this.waitForPendingSessionToClear(sessionCountBefore)
 			}
 		}
 
@@ -574,23 +632,29 @@ export class AgentManagerProvider implements vscode.Disposable {
 	/**
 	 * Wait for any pending session to transition to active/error state.
 	 * Returns immediately if no session is pending.
+	 * When sessionCountBefore is provided, waits until a new session appears
+	 * (used by team coordinator to detect specific session creation).
 	 */
-	private waitForPendingSessionToClear(): Promise<void> {
+	private waitForPendingSessionToClear(sessionCountBefore?: number): Promise<void> {
 		return new Promise((resolve) => {
-			const hasPending = () => !!this.registry.pendingSession || this.processHandler?.hasPendingProcess()
+			const isDone = () => {
+				if (sessionCountBefore !== undefined) {
+					// Wait for a new session to appear beyond the snapshot count
+					return this.registry.getSessions().length > sessionCountBefore
+				}
+				// Legacy behavior: wait for all pending to clear
+				return !this.registry.pendingSession && !this.processHandler?.hasPendingProcess()
+			}
 
-			// Check immediately - if no pending session/process, resolve right away
-			if (!hasPending()) {
+			if (isDone()) {
 				resolve()
 				return
 			}
 
-			// Track timeout so we can clear it when session clears
 			let timeoutId: ReturnType<typeof setTimeout> | undefined
 
-			// Poll until pending session clears
 			const checkInterval = setInterval(() => {
-				if (!hasPending()) {
+				if (isDone()) {
 					clearInterval(checkInterval)
 					if (timeoutId) {
 						clearTimeout(timeoutId)
@@ -599,7 +663,6 @@ export class AgentManagerProvider implements vscode.Disposable {
 				}
 			}, 100)
 
-			// Timeout after 30 seconds to avoid hanging forever
 			timeoutId = setTimeout(() => {
 				clearInterval(checkInterval)
 				this.outputChannel.appendLine(`[AgentManager] Timeout waiting for pending session to clear`)
@@ -1744,6 +1807,33 @@ export class AgentManagerProvider implements vscode.Disposable {
 
 		await this.safeWriteToStdin(sessionId, message, approved ? "approval-yes" : "approval-no")
 		this.log(sessionId, `Approval response sent: ${approved ? "approved" : "rejected"}`)
+	}
+
+	private async respondToTeamApproval(
+		runId: string,
+		approvalId: string,
+		approved: boolean,
+		reason?: string,
+	): Promise<void> {
+		try {
+			const approval = await this.teamCoordinator.resolveApproval({ runId, approvalId, approved, reason })
+			if (!approval) {
+				this.outputChannel.appendLine(
+					`[AgentManager] Team approval not found: runId=${runId}, approvalId=${approvalId}`,
+				)
+				return
+			}
+
+			this.outputChannel.appendLine(
+				`[AgentManager] Team approval resolved: ${approvalId} -> ${approved ? "approved" : "rejected"}`,
+			)
+			this.postTeamRunStateToWebview()
+		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : String(error)
+			this.outputChannel.appendLine(
+				`[AgentManager] Failed to resolve team approval ${approvalId} for run ${runId}: ${errorMessage}`,
+			)
+		}
 	}
 
 	private async safeWriteToStdin(sessionId: string, payload: object, label: string): Promise<void> {
