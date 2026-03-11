@@ -78,3 +78,9 @@ qdrant_storage/
 ./plans/
 
 roo-cli-*.tar.gz*
+
+# Local Snow workspace runtime artifacts (keep important configs/plans tracked)
+.snow/agent-team/
+.snow/codebase/embeddings.db
+.snow/hooks/
+.novacode/setup-script

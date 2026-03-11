@@ -6,6 +6,11 @@ export interface CreateSessionOptions {
 	model?: string
 	mode?: string
 	yoloMode?: boolean
+	teamRunId?: string
+	teamMemberId?: string
+	waveId?: string
+	roleType?: AgentSession["roleType"]
+	ownership?: AgentSession["ownership"]
 }
 
 const MAX_SESSIONS = 10
@@ -14,7 +19,8 @@ const MAX_LOGS = 100
 export class AgentRegistry {
 	private sessions: Map<string, AgentSession> = new Map()
 	private _selectedId: string | null = null
-	private _pendingSession: PendingSession | null = null
+	private _pendingSessions: Map<string, PendingSession> = new Map()
+	private _pendingIdCounter = 0
 
 	public get selectedId(): string | null {
 		return this._selectedId
@@ -25,7 +31,16 @@ export class AgentRegistry {
 	}
 
 	public get pendingSession(): PendingSession | null {
-		return this._pendingSession
+		if (this._pendingSessions.size === 0) return null
+		return this._pendingSessions.values().next().value ?? null
+	}
+
+	public get pendingSessions(): PendingSession[] {
+		return Array.from(this._pendingSessions.values())
+	}
+
+	public get pendingSessionCount(): number {
+		return this._pendingSessions.size
 	}
 
 	/**
@@ -33,22 +48,43 @@ export class AgentRegistry {
 	 */
 	public setPendingSession(prompt: string, options?: CreateSessionOptions & { gitUrl?: string }): PendingSession {
 		const label = this.truncatePrompt(prompt)
-		this._pendingSession = {
+		const pendingId = `pending-${++this._pendingIdCounter}`
+		const session: PendingSession = {
 			prompt,
 			label,
 			startTime: Date.now(),
 			parallelMode: options?.parallelMode,
 			gitUrl: options?.gitUrl,
 			yoloMode: options?.yoloMode,
+			teamRunId: options?.teamRunId,
+			teamMemberId: options?.teamMemberId,
+			waveId: options?.waveId,
+			roleType: options?.roleType,
+			ownership: options?.ownership,
 		}
-		return this._pendingSession
+		this._pendingSessions.set(pendingId, session)
+		return session
 	}
 
 	/**
-	 * Clear the pending session (called after session is created or on error)
+	 * Clear all pending sessions (called after session is created or on error)
 	 */
 	public clearPendingSession(): void {
-		this._pendingSession = null
+		this._pendingSessions.clear()
+	}
+
+	public removePendingSession(pendingId: string): void {
+		this._pendingSessions.delete(pendingId)
+	}
+
+	/**
+	 * Remove the earliest pending session (for single pending clear scenarios)
+	 */
+	public removeFirstPendingSession(): void {
+		const firstKey = this._pendingSessions.keys().next().value
+		if (firstKey !== undefined) {
+			this._pendingSessions.delete(firstKey)
+		}
 	}
 
 	/**
@@ -75,6 +111,11 @@ export class AgentRegistry {
 			model: options?.model,
 			mode: options?.mode ?? DEFAULT_MODE_SLUG,
 			yoloMode: options?.yoloMode,
+			teamRunId: options?.teamRunId,
+			teamMemberId: options?.teamMemberId,
+			waveId: options?.waveId,
+			roleType: options?.roleType,
+			ownership: options?.ownership,
 		}
 
 		this.sessions.set(sessionId, session)
@@ -217,7 +258,7 @@ export class AgentRegistry {
 	}
 
 	public hasPendingOrRunningSessions(): boolean {
-		return this._pendingSession !== null || this.getRunningSessionCount() > 0
+		return this._pendingSessions.size > 0 || this.getRunningSessionCount() > 0
 	}
 
 	public hasRunningSessions(): boolean {

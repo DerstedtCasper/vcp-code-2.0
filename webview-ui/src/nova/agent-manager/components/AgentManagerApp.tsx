@@ -5,6 +5,7 @@ import { useMessageQueueProcessor } from "../state/hooks/useMessageQueueProcesso
 import { selectedSessionIdAtom } from "../state/atoms/sessions"
 import { SessionSidebar } from "./SessionSidebar"
 import { SessionDetail } from "./SessionDetail"
+import { TeamControlPlane } from "./TeamControlPlane"
 import { TooltipProvider } from "../../../components/ui/tooltip"
 import { STANDARD_TOOLTIP_DELAY } from "../../../components/ui/standard-tooltip"
 import "./AgentManagerApp.css"
@@ -37,7 +38,10 @@ function AgentManagerContent() {
 	return (
 		<div className="agent-manager-container">
 			<SessionSidebar />
-			<SessionDetail />
+			<div className="am-main">
+				<SessionDetail />
+				<TeamControlPlane />
+			</div>
 			{/* Portal container for dropdowns and popovers */}
 			<div id="roo-portal" />
 		</div>

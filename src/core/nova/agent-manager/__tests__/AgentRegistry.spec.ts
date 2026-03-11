@@ -96,6 +96,24 @@ describe("AgentRegistry", () => {
 			expect(registry.pendingSession).toBe(pending)
 		})
 
+		it("stores team ownership metadata in pending session", () => {
+			const pending = registry.setPendingSession("team prompt", {
+				parallelMode: true,
+				teamRunId: "run-1",
+				teamMemberId: "member-1",
+				waveId: "wave-1",
+				roleType: "implement",
+				ownership: { paths: ["src/a.ts"], summary: "Own file A" },
+			})
+
+			expect(pending.parallelMode).toBe(true)
+			expect(pending.teamRunId).toBe("run-1")
+			expect(pending.teamMemberId).toBe("member-1")
+			expect(pending.waveId).toBe("wave-1")
+			expect(pending.roleType).toBe("implement")
+			expect(pending.ownership).toEqual({ paths: ["src/a.ts"], summary: "Own file A" })
+		})
+
 		it("clearPendingSession clears the pending session", () => {
 			registry.setPendingSession("test prompt")
 			expect(registry.pendingSession).not.toBeNull()
@@ -318,6 +336,23 @@ describe("AgentRegistry", () => {
 				})
 
 				expect(session.gitUrl).toBe("https://github.com/org/repo.git")
+			})
+
+			it("stores team metadata when provided in options", () => {
+				const session = registry.createSession("session-1", "team prompt", undefined, {
+					gitUrl: "https://github.com/org/repo.git",
+					teamRunId: "run-1",
+					teamMemberId: "member-1",
+					waveId: "wave-1",
+					roleType: "research",
+					ownership: { paths: ["src/a.ts"], summary: "Research area" },
+				})
+
+				expect(session.teamRunId).toBe("run-1")
+				expect(session.teamMemberId).toBe("member-1")
+				expect(session.waveId).toBe("wave-1")
+				expect(session.roleType).toBe("research")
+				expect(session.ownership).toEqual({ paths: ["src/a.ts"], summary: "Research area" })
 			})
 
 			it("creates session without gitUrl when not provided", () => {

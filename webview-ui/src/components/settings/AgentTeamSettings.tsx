@@ -15,10 +15,26 @@ type DeepPartial<T> = {
 	[K in keyof T]?: T[K] extends Array<infer U> ? Array<U> : T[K] extends object ? DeepPartial<T[K]> : T[K]
 }
 
+type AgentTeamRoleType = "lead" | "research" | "implement" | "review" | "test" | "general"
+type VcpRoleType = VcpAgentTeamMember["roleType"]
+
+type ExtendedAgentTeamMember = VcpAgentTeamMember & {
+	roleType?: VcpRoleType
+}
+
 type AgentTeamSettingsProps = {
 	vcpConfig?: VcpConfig
 	onUpdateVcpConfig: (patch: DeepPartial<VcpConfig>) => void
 }
+
+const ROLE_TYPE_OPTIONS: Array<{ value: VcpRoleType; label: string }> = [
+	{ value: "lead", label: "Lead / 协调" },
+	{ value: "research", label: "Research / 调研" },
+	{ value: "implement", label: "Implement / 实现" },
+	{ value: "review", label: "Review / 审查" },
+	{ value: "test", label: "Test / 验证" },
+	{ value: "general", label: "General / 通用" },
+]
 
 const toInt = (value: string, min: number, fallback: number): number => {
 	const next = Number(value)
@@ -29,6 +45,12 @@ const toInt = (value: string, min: number, fallback: number): number => {
 }
 
 const normalizeAgentId = (value: string) => value.trim().replace(/\s+/g, "-")
+const parseList = (value: string) =>
+	value
+		.split(/[\n,]+/)
+		.map((entry) => entry.trim())
+		.filter(Boolean)
+const joinList = (value?: string[]) => (value && value.length > 0 ? value.join(", ") : "")
 
 export const AgentTeamSettings = ({ vcpConfig, onUpdateVcpConfig }: AgentTeamSettingsProps) => {
 	const defaults = getDefaultVcpConfig()
@@ -62,7 +84,6 @@ export const AgentTeamSettings = ({ vcpConfig, onUpdateVcpConfig }: AgentTeamSet
 			},
 		},
 	}
-	const members = currentVcpConfig.agentTeam.members
 	const { listApiConfigMeta } = useExtensionState()
 
 	const profileOptions = useMemo(
@@ -78,11 +99,32 @@ export const AgentTeamSettings = ({ vcpConfig, onUpdateVcpConfig }: AgentTeamSet
 		[listApiConfigMeta],
 	)
 
-	const updateMembers = (nextMembers: VcpAgentTeamMember[]) => {
-		onUpdateVcpConfig({ agentTeam: { members: nextMembers } })
+	const members = useMemo(
+		() =>
+			(currentVcpConfig.agentTeam.members as ExtendedAgentTeamMember[]).map(
+				(member): ExtendedAgentTeamMember => ({
+					...member,
+					enabled: member.enabled ?? true,
+					capabilities: member.capabilities ?? [],
+					phaseAffinity: member.phaseAffinity ?? [],
+					ownership: {
+						paths: member.ownership?.paths ?? [],
+						summary: member.ownership?.summary ?? undefined,
+					},
+				}),
+			),
+		[currentVcpConfig.agentTeam.members],
+	)
+
+	const updateMembers = (nextMembers: ExtendedAgentTeamMember[]) => {
+		onUpdateVcpConfig({
+			agentTeam: {
+				members: nextMembers as unknown as VcpAgentTeamMember[],
+			},
+		})
 	}
 
-	const updateMember = (index: number, patch: Partial<VcpAgentTeamMember>) => {
+	const updateMember = (index: number, patch: Partial<ExtendedAgentTeamMember>) => {
 		const nextMembers = [...members]
 		nextMembers[index] = { ...nextMembers[index], ...patch }
 		updateMembers(nextMembers)
@@ -92,19 +134,24 @@ export const AgentTeamSettings = ({ vcpConfig, onUpdateVcpConfig }: AgentTeamSet
 		const defaultProfile = profileOptions[0]
 		const nextIndex = members.length + 1
 		const id = `agent-${nextIndex}`
-		const newMember: VcpAgentTeamMember = {
+		const newMember: ExtendedAgentTeamMember = {
 			id,
 			name: id,
 			providerID: defaultProfile?.apiProvider ?? "anthropic",
 			modelID: defaultProfile?.modelId ?? "claude-sonnet-4-5",
 			rolePrompt: "",
+			apiConfigId: defaultProfile?.value,
+			roleType: "general",
+			phaseAffinity: [],
+			capabilities: [],
+			enabled: true,
+			ownership: { paths: [], summary: undefined },
 		}
 		updateMembers([...members, newMember])
 	}
 
 	const removeMember = (index: number) => {
-		const nextMembers = members.filter((_, i) => i !== index)
-		updateMembers(nextMembers)
+		updateMembers(members.filter((_, i) => i !== index))
 	}
 
 	const moveMember = (index: number, direction: -1 | 1) => {
@@ -121,8 +168,15 @@ export const AgentTeamSettings = ({ vcpConfig, onUpdateVcpConfig }: AgentTeamSet
 		<div className="space-y-3 p-4">
 			<div className="rounded border border-vscode-panel-border bg-[var(--vscode-editorWidget-background)] p-3 text-sm text-vscode-descriptionForeground">
 				<div className="font-medium text-vscode-foreground">Agent Team 团队编排</div>
-				<div className="mt-1">
-					在这里配置多代理协作模式。你可以为每个成员指定唯一 ID、职责提示词、模型和执行顺序。
+				<div className="mt-1 space-y-1">
+					<div>
+						在这里配置多代理协作模式。每个成员可单独设置启用状态、API 预设、角色类型、能力标签与阶段偏好。
+					</div>
+					<div>
+						自适应波次 = 运行时在顺序与并行之间按 maxParallel 自动分批；文件分离 =
+						尽量将成员限制在各自文件/路径上下文，降低冲突，并非严格沙箱。
+					</div>
+					<div>handoffFormat 仅作为前端展示偏好；后端 canonical handoff 始终保持 JSON。</div>
 				</div>
 			</div>
 
@@ -133,7 +187,7 @@ export const AgentTeamSettings = ({ vcpConfig, onUpdateVcpConfig }: AgentTeamSet
 				启用 Agent Team 编排
 			</VSCodeCheckbox>
 
-			<div className="flex items-center gap-3">
+			<div className="flex flex-wrap items-center gap-3">
 				<VSCodeTextField
 					value={String(currentVcpConfig.agentTeam.maxParallel)}
 					onInput={(e: any) =>
@@ -173,7 +227,9 @@ export const AgentTeamSettings = ({ vcpConfig, onUpdateVcpConfig }: AgentTeamSet
 					value={currentVcpConfig.agentTeam.handoffFormat}
 					onChange={(e: any) =>
 						onUpdateVcpConfig({
-							agentTeam: { handoffFormat: (e.target as HTMLSelectElement).value as "json" | "markdown" },
+							agentTeam: {
+								handoffFormat: (e.target as HTMLSelectElement).value as "json" | "markdown",
+							},
 						})
 					}
 					data-testid="agent-behaviour-vcp-agent-team-handoff-format-dropdown">
@@ -186,19 +242,19 @@ export const AgentTeamSettings = ({ vcpConfig, onUpdateVcpConfig }: AgentTeamSet
 				<div className="rounded border border-vscode-panel-border p-3">
 					<div className="font-medium text-vscode-foreground">顺序波次</div>
 					<div className="mt-1 text-xs text-vscode-descriptionForeground">
-						按成员顺序逐个执行，适合严格依赖前一个 Agent 输出的工作流。
+						严格按成员顺序执行，适合强依赖串行工作流。
 					</div>
 				</div>
 				<div className="rounded border border-vscode-panel-border p-3">
 					<div className="font-medium text-vscode-foreground">并行波次</div>
 					<div className="mt-1 text-xs text-vscode-descriptionForeground">
-						同一波次并发执行多个成员，适合拆分独立子任务，优先提升吞吐。
+						同一波次并发多个成员，适合独立子任务拆分。
 					</div>
 				</div>
 				<div className="rounded border border-vscode-panel-border p-3">
 					<div className="font-medium text-vscode-foreground">自适应波次</div>
 					<div className="mt-1 text-xs text-vscode-descriptionForeground">
-						根据团队规模和并行上限自动分批，适合多数常规协作场景。
+						根据团队规模、角色与 maxParallel 自动安排分波。
 					</div>
 				</div>
 			</div>
@@ -209,7 +265,7 @@ export const AgentTeamSettings = ({ vcpConfig, onUpdateVcpConfig }: AgentTeamSet
 					onUpdateVcpConfig({ agentTeam: { requireFileSeparation: e.target.checked === true } })
 				}
 				data-testid="agent-behaviour-vcp-agent-team-file-separation-checkbox">
-				要求每个 Agent 使用独立文件上下文
+				要求成员尽量使用分离的文件/路径上下文
 			</VSCodeCheckbox>
 
 			<div className="flex items-center justify-between pt-1">
@@ -224,8 +280,20 @@ export const AgentTeamSettings = ({ vcpConfig, onUpdateVcpConfig }: AgentTeamSet
 					<div
 						key={`${member.id ?? member.name}-${index}`}
 						className="rounded border border-vscode-panel-border p-3">
+						<div className="mb-2 flex items-center justify-between gap-3">
+							<VSCodeCheckbox
+								checked={member.enabled !== false}
+								onChange={(e: any) => updateMember(index, { enabled: e.target.checked === true })}
+								data-testid={`agent-behaviour-vcp-agent-team-member-enabled-checkbox-${index}`}>
+								启用该成员
+							</VSCodeCheckbox>
+							<div className="text-xs text-vscode-descriptionForeground">
+								禁用后保留配置但不参与 Team Run
+							</div>
+						</div>
+
 						<div className="grid grid-cols-1 gap-2">
-							<div className="flex items-center gap-2">
+							<div className="flex flex-wrap items-center gap-2">
 								<VSCodeTextField
 									value={member.id ?? member.name}
 									onInput={(e: any) => {
@@ -237,33 +305,45 @@ export const AgentTeamSettings = ({ vcpConfig, onUpdateVcpConfig }: AgentTeamSet
 									Agent ID
 								</VSCodeTextField>
 
-								{profileOptions.length > 0 && (
-									<VSCodeDropdown
-										value=""
-										onChange={(e: any) => {
-											const selected = profileOptions.find(
-												(option) => option.value === (e.target as HTMLSelectElement).value,
-											)
-											if (!selected) {
-												return
-											}
-											updateMember(index, {
-												providerID: selected.apiProvider,
-												modelID: selected.modelId,
-											})
-										}}
-										data-testid={`agent-behaviour-vcp-agent-team-member-profile-select-${index}`}>
-										<VSCodeOption value="">使用现有配置预设...</VSCodeOption>
-										{profileOptions.map((option) => (
-											<VSCodeOption key={option.value} value={option.value}>
-												{option.label}
-											</VSCodeOption>
-										))}
-									</VSCodeDropdown>
-								)}
+								<VSCodeDropdown
+									value={member.roleType ?? "general"}
+									onChange={(e: any) =>
+										updateMember(index, {
+											roleType: (e.target as HTMLSelectElement).value as AgentTeamRoleType,
+										})
+									}
+									data-testid={`agent-behaviour-vcp-agent-team-member-role-type-dropdown-${index}`}>
+									{ROLE_TYPE_OPTIONS.map((option) => (
+										<VSCodeOption key={option.value} value={option.value}>
+											{option.label}
+										</VSCodeOption>
+									))}
+								</VSCodeDropdown>
 							</div>
 
-							<div className="flex items-center gap-2">
+							{profileOptions.length > 0 && (
+								<VSCodeDropdown
+									value={member.apiConfigId ?? ""}
+									onChange={(e: any) => {
+										const selectedValue = (e.target as HTMLSelectElement).value
+										const selected = profileOptions.find((option) => option.value === selectedValue)
+										updateMember(index, {
+											apiConfigId: selectedValue || undefined,
+											providerID: selected?.apiProvider ?? member.providerID,
+											modelID: selected?.modelId ?? member.modelID,
+										})
+									}}
+									data-testid={`agent-behaviour-vcp-agent-team-member-api-config-dropdown-${index}`}>
+									<VSCodeOption value="">绑定 API 配置预设（可选）</VSCodeOption>
+									{profileOptions.map((option) => (
+										<VSCodeOption key={option.value} value={option.value}>
+											{option.label}
+										</VSCodeOption>
+									))}
+								</VSCodeDropdown>
+							)}
+
+							<div className="flex flex-wrap items-center gap-2">
 								<VSCodeTextField
 									value={member.providerID}
 									onInput={(e: any) =>
@@ -272,7 +352,6 @@ export const AgentTeamSettings = ({ vcpConfig, onUpdateVcpConfig }: AgentTeamSet
 									data-testid={`agent-behaviour-vcp-agent-team-member-provider-input-${index}`}>
 									Provider ID
 								</VSCodeTextField>
-
 								<VSCodeTextField
 									value={member.modelID}
 									onInput={(e: any) =>
@@ -282,6 +361,52 @@ export const AgentTeamSettings = ({ vcpConfig, onUpdateVcpConfig }: AgentTeamSet
 									Model ID
 								</VSCodeTextField>
 							</div>
+
+							<VSCodeTextField
+								value={joinList(member.capabilities)}
+								onInput={(e: any) =>
+									updateMember(index, { capabilities: parseList(String(e.target.value ?? "")) })
+								}
+								data-testid={`agent-behaviour-vcp-agent-team-member-capabilities-input-${index}`}>
+								Capabilities（逗号分隔）
+							</VSCodeTextField>
+
+							<VSCodeTextField
+								value={joinList(member.phaseAffinity)}
+								onInput={(e: any) =>
+									updateMember(index, { phaseAffinity: parseList(String(e.target.value ?? "")) })
+								}
+								data-testid={`agent-behaviour-vcp-agent-team-member-phase-affinity-input-${index}`}>
+								Phase Affinity（如 plan, implement, verify）
+							</VSCodeTextField>
+
+							<VSCodeTextField
+								value={joinList(member.ownership?.paths)}
+								onInput={(e: any) =>
+									updateMember(index, {
+										ownership: {
+											paths: parseList(String(e.target.value ?? "")),
+											summary: member.ownership?.summary ?? undefined,
+										},
+									})
+								}
+								data-testid={`agent-behaviour-vcp-agent-team-member-ownership-paths-input-${index}`}>
+								Ownership Paths（尽量负责的路径，逗号分隔）
+							</VSCodeTextField>
+
+							<VSCodeTextField
+								value={member.ownership?.summary ?? ""}
+								onInput={(e: any) =>
+									updateMember(index, {
+										ownership: {
+											paths: member.ownership?.paths ?? [],
+											summary: String(e.target.value ?? "").trim() || undefined,
+										},
+									})
+								}
+								data-testid={`agent-behaviour-vcp-agent-team-member-ownership-summary-input-${index}`}>
+								Ownership Summary
+							</VSCodeTextField>
 
 							<VSCodeTextArea
 								value={member.rolePrompt}

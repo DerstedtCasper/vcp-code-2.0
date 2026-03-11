@@ -6,6 +6,12 @@ import { updateSessionTodosAtom } from "../atoms/todos"
 import { updateBranchesAtom } from "../atoms/branches"
 import { updateModelsConfigAtom, modelsLoadFailedAtom, type AvailableModel } from "../atoms/models"
 import { updateAvailableModesAtom, type AvailableMode } from "../atoms/modes"
+import {
+	appendTeamRunEventAtom,
+	normalizeTeamRunEvent,
+	normalizeTeamRunState,
+	setTeamRunStateAtom,
+} from "../atoms/teamRun"
 import { extractTodosFromMessages } from "./extractTodosFromMessages"
 import {
 	upsertSessionAtom,
@@ -91,6 +97,16 @@ interface ModeChangedMessage {
 	previousMode?: string
 }
 
+interface TeamRunStateMessage {
+	type: "agentManager.teamRunState"
+	state: unknown
+}
+
+interface TeamRunEventMessage {
+	type: "agentManager.teamRunEvent"
+	event: unknown
+}
+
 type ExtensionMessage =
 	| ChatMessagesMessage
 	| StateMessage
@@ -103,6 +119,8 @@ type ExtensionMessage =
 	| ModelsLoadFailedMessage
 	| AvailableModesMessage
 	| ModeChangedMessage
+	| TeamRunStateMessage
+	| TeamRunEventMessage
 	| { type: string; [key: string]: unknown }
 
 /**
@@ -176,6 +194,8 @@ export function useAgentManagerMessages() {
 	const sendSessionEvent = useSetAtom(sendSessionEventAtom)
 	const cleanupSessionMachine = useSetAtom(cleanupSessionMachineAtom)
 	const updateSessionMode = useSetAtom(updateSessionModeAtom)
+	const setTeamRunState = useSetAtom(setTeamRunStateAtom)
+	const appendTeamRunEvent = useSetAtom(appendTeamRunEventAtom)
 	const sessionOrder = useAtomValue(sessionOrderAtom)
 	const hasInitializedSelection = useRef(false)
 	const knownSessionsRef = useRef(new Set<string>())
@@ -188,7 +208,6 @@ export function useAgentManagerMessages() {
 				case "agentManager.chatMessages": {
 					const { sessionId, messages } = message as ChatMessagesMessage
 					updateSessionMessages({ sessionId, messages })
-					// Extract and update todos from messages
 					const todos = extractTodosFromMessages(messages)
 					updateSessionTodos({ sessionId, todos })
 					break
@@ -197,11 +216,9 @@ export function useAgentManagerMessages() {
 				case "agentManager.state": {
 					const { state } = message as StateMessage
 					for (const session of state.sessions) {
-						// Check if this is a new session we haven't seen before
 						const isNewSession = !knownSessionsRef.current.has(session.sessionId)
 						upsertSession(session)
 
-						// Send state machine events for new sessions based on status
 						if (isNewSession) {
 							knownSessionsRef.current.add(session.sessionId)
 							if (session.status === "creating" || session.status === "running") {
@@ -213,9 +230,6 @@ export function useAgentManagerMessages() {
 									sessionId: session.sessionId,
 									event: { type: "session_created", sessionId: session.sessionId },
 								})
-								// If session is already running, also send api_req_started
-								// The state machine needs both session_created AND api_req_started
-								// to transition from "creating" to "streaming"
 								if (session.status === "running") {
 									sendSessionEvent({
 										sessionId: session.sessionId,
@@ -225,6 +239,7 @@ export function useAgentManagerMessages() {
 							}
 						}
 					}
+
 					const extensionSessionIds = new Set(state.sessions.map((s) => s.sessionId))
 					for (const sessionId of sessionOrder) {
 						if (!extensionSessionIds.has(sessionId)) {
@@ -233,6 +248,7 @@ export function useAgentManagerMessages() {
 							knownSessionsRef.current.delete(sessionId)
 						}
 					}
+
 					if (!hasInitializedSelection.current && state.selectedId !== undefined) {
 						setSelectedSessionId(state.selectedId)
 						hasInitializedSelection.current = true
@@ -241,9 +257,7 @@ export function useAgentManagerMessages() {
 				}
 
 				case "agentManager.startSessionFailed": {
-					// Increment counter so components can reset their loading state
 					setStartSessionFailedCounter((c) => c + 1)
-					// Also clear pending session
 					setPendingSession(null)
 					break
 				}
@@ -263,10 +277,9 @@ export function useAgentManagerMessages() {
 
 				case "agentManager.stateEvent": {
 					const { sessionId, eventType, partial } = message as StateEventMessage
-					// Convert extension state events to state machine events
-					const event = mapToStateMachineEvent(eventType, partial)
-					if (event) {
-						sendSessionEvent({ sessionId, event })
+					const stateEvent = mapToStateMachineEvent(eventType, partial)
+					if (stateEvent) {
+						sendSessionEvent({ sessionId, event: stateEvent })
 					}
 					break
 				}
@@ -300,6 +313,21 @@ export function useAgentManagerMessages() {
 					updateSessionMode({ sessionId, mode })
 					break
 				}
+
+				case "agentManager.teamRunState": {
+					const { state } = message as TeamRunStateMessage
+					setTeamRunState(normalizeTeamRunState(state))
+					break
+				}
+
+				case "agentManager.teamRunEvent": {
+					const { event: teamRunEvent } = message as TeamRunEventMessage
+					const normalizedEvent = normalizeTeamRunEvent(teamRunEvent)
+					if (normalizedEvent) {
+						appendTeamRunEvent(normalizedEvent)
+					}
+					break
+				}
 			}
 		}
 
@@ -322,6 +350,8 @@ export function useAgentManagerMessages() {
 		sendSessionEvent,
 		cleanupSessionMachine,
 		updateSessionMode,
+		setTeamRunState,
+		appendTeamRunEvent,
 		sessionOrder,
 	])
 }

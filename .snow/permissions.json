@@ -1,0 +1,16 @@
+{
+	"alwaysApprovedTools": [
+		"filesystem-read",
+		"terminal-execute",
+		"codebase-search",
+		"ace-text_search",
+		"ace-file_outline",
+		"notebook-add",
+		"ide-get_diagnostics",
+		"filesystem-edit_search",
+		"filesystem-edit",
+		"filesystem-create",
+		"ace-semantic_search",
+		"ace-find_definition"
+	]
+}
