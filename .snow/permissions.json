@@ -9,6 +9,8 @@
 		"ide-get_diagnostics",
 		"filesystem-edit_search",
 		"filesystem-edit",
-		"filesystem-create"
+		"filesystem-create",
+		"ace-semantic_search",
+		"ace-find_definition"
 	]
 }

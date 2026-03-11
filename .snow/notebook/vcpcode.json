@@ -17,6 +17,13 @@
 	],
 	"src/core/nova/agent-manager/AgentTeamCoordinator.ts": [
 		{
+			"id": "notebook-1773216446782_mmxukaxst",
+			"filePath": "src/core/nova/agent-manager/AgentTeamCoordinator.ts",
+			"note": "⚠️ launchWave() 对 parallel/adaptive 策略使用 Promise.allSettled 并发 launch。prompt context snapshot 必须在并发 launch 之前完成（wave 级快照）。launchMember() 是抽取出的单成员 launch 方法，不包含 try/catch（由调用方根据串行/并行策略决定错误处理）。shouldPauseForWaveApproval 新增了 detectOwnershipOverlap 条件。",
+			"createdAt": "2026-03-11T16:07:26.782",
+			"updatedAt": "2026-03-11T16:07:26.782"
+		},
+		{
 			"id": "notebook-1773035436895_xupfwm97f",
 			"filePath": "src/core/nova/agent-manager/AgentTeamCoordinator.ts",
 			"note": "⚠️ launchWave() now snapshots prompt context once per wave before launching members. If future true parallel launch is added, preserve this wave-level snapshot behavior or later launches may miss unread handoffs consumed by earlier members in the same wave.",
@@ -33,11 +40,70 @@
 	],
 	"webview-ui/src/nova/agent-manager/components/TeamControlPlane.tsx": [
 		{
+			"id": "notebook-1773220265587_a53uguu5j",
+			"filePath": "webview-ui/src/nova/agent-manager/components/TeamControlPlane.tsx",
+			"note": "⚠️ TeamControlPlane 现已支持 collapsed/expanded 两种布局状态。收起态仅保留 toggle 与紧凑状态徽标；展开态支持 cancelTeamRun、cancelTeamMember、selectSession。后续调整 UI 时必须保留这些 postMessage 行为与 aria-label 文案（collapse/expand/viewSession/cancelRun/cancelMember），否则现有测试会失效。",
+			"createdAt": "2026-03-11T17:11:05.587",
+			"updatedAt": "2026-03-11T17:11:05.587"
+		},
+		{
 			"id": "notebook-1773031661874_109lfw9j2",
 			"filePath": "webview-ui/src/nova/agent-manager/components/TeamControlPlane.tsx",
 			"note": "⚠️ TeamControlPlane now relies on both status and consumedAt for handoff/blackboard consume display: handoff is considered consumed when status === 'consumed' OR consumedAt exists; blackboard entries always render a consumed/pending pill, so future UI changes must preserve this distinction.",
 			"createdAt": "2026-03-09T12:47:41.874",
 			"updatedAt": "2026-03-09T12:47:41.874"
+		}
+	],
+	"packages/core-schemas/src/agent-manager/types.ts": [
+		{
+			"id": "notebook-1773062837707_byuti78qr",
+			"filePath": "packages/core-schemas/src/agent-manager/types.ts",
+			"note": "⚠️ Sprint 1 intentionally extends TeamBlackboardEntry with optional category and TeamApprovalRequest with optional askType/requestKey instead of changing existing kind/status enums; keep backward compatibility with current teamRun/teamRunEvent payloads and old run.json snapshots.",
+			"createdAt": "2026-03-09T21:27:17.707",
+			"updatedAt": "2026-03-09T21:27:17.707"
+		}
+	],
+	"webview-ui/src/nova/agent-manager/state/atoms/teamRun.ts": [
+		{
+			"id": "notebook-1773063370170_0aqhffivy",
+			"filePath": "webview-ui/src/nova/agent-manager/state/atoms/teamRun.ts",
+			"note": "⚠️ teamRun normalize must remain backward-compatible: blackboard.category and approval.askType/requestKey are optional additions. Do not replace existing kind-based validation; preserve old payload acceptance while preferring category for new UI grouping.",
+			"createdAt": "2026-03-09T21:36:10.170",
+			"updatedAt": "2026-03-09T21:36:10.170"
+		}
+	],
+	"src/core/nova/agent-manager/RuntimeProcessHandler.ts": [
+		{
+			"id": "notebook-1773216420702_l6orn7our",
+			"filePath": "src/core/nova/agent-manager/RuntimeProcessHandler.ts",
+			"note": "⚠️ pendingProcess 已改为 pendingProcesses: Map<number, PendingProcessInfo>（以 proc.pid 为 key）。所有新代码必须通过 getPendingForProcess(proc) 或 Map 操作访问 pending 状态，绝不能直接访问旧的 pendingProcess 属性。cancelPendingSession 支持可选 desiredSessionId 参数。",
+			"createdAt": "2026-03-11T16:07:00.702",
+			"updatedAt": "2026-03-11T16:07:00.702"
+		}
+	],
+	"webview-ui/src/nova/agent-manager/components/SessionSidebar.tsx": [
+		{
+			"id": "notebook-1773222516915_1srj417yo",
+			"filePath": "webview-ui/src/nova/agent-manager/components/SessionSidebar.tsx",
+			"note": "⚠️ SessionSidebar 使用 GroupedSessionList 按 teamRunId 分组聚合。session 列表渲染逻辑依赖 GroupedSessionList 组件中的 useMemo 分组。如果重构列表渲染，必须保留按 teamRunId 的分组逻辑和 team group header，否则 team session 的可视化分组体验会退化。",
+			"createdAt": "2026-03-11T17:48:36.915",
+			"updatedAt": "2026-03-11T17:48:36.915"
+		},
+		{
+			"id": "notebook-1773220265671_qkh1fv1sy",
+			"filePath": "webview-ui/src/nova/agent-manager/components/SessionSidebar.tsx",
+			"note": "⚠️ SessionSidebar 已消费 teamRunId/roleType 并显示 team 图标与 role badge。后续若重构 session item，必须保留 team session 的可视区分，否则 Team 调试体验会再次退化。",
+			"createdAt": "2026-03-11T17:11:05.671",
+			"updatedAt": "2026-03-11T17:11:05.671"
+		}
+	],
+	"src/core/prompts/system.ts": [
+		{
+			"id": "notebook-1773222507985_rcs6yo45b",
+			"filePath": "src/core/prompts/system.ts",
+			"note": "⚠️ getAgentTeamGuidanceSection() 现在生成 MANDATORY Ownership Constraints 和 ENFORCED File Separation Policy 段落。修改时必须保留 ownershipBlock 和 fileSeparationBlock 两个条件块，否则 ownership 约束会退化为建议性文本。",
+			"createdAt": "2026-03-11T17:48:27.985",
+			"updatedAt": "2026-03-11T17:48:27.985"
 		}
 	]
 }
