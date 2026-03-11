@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## [1.2.0]
+
+### Minor Changes
+
+- Add the Agent Team control plane to Agent Manager, including live team-run status, approvals, handoffs, blackboard entries, and per-member cancel/open-session actions.
+- Add configurable VCP Agent Team orchestration with role-aware members, ownership hints, wave strategies, and shared prompt context between member runs.
+
+### Patch Changes
+
+- Fix team approval, cancel-run, and cancel-member actions so coordinator updates are awaited and reliably propagate back into the UI state.
+- Normalize the new Agent Team control-plane strings across all shipped locales and preserve `stopped` team-member state so cancelled members render correctly.
+
 ## [1.1.0]
 
 ### Minor Changes
