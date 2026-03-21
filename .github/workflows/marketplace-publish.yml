@@ -29,7 +29,7 @@ jobs:
               with:
                   ref: ${{ env.GIT_REF }}
             - name: Install pnpm
-              uses: pnpm/action-setup@v4
+              uses: pnpm/action-setup@v5
               with:
                   version: ${{ env.PNPM_VERSION }}
             - name: Setup Node.js
@@ -133,7 +133,7 @@ jobs:
               with:
                   ref: ${{ env.GIT_REF }}
             - name: Install pnpm
-              uses: pnpm/action-setup@v4
+              uses: pnpm/action-setup@v5
               with:
                   version: ${{ env.PNPM_VERSION }}
             - name: Setup Node.js
@@ -176,7 +176,7 @@ jobs:
               with:
                   submodules: recursive
             - name: Install pnpm
-              uses: pnpm/action-setup@v4
+              uses: pnpm/action-setup@v5
               with:
                   version: ${{ env.PNPM_VERSION }}
             - name: Setup Node.js
