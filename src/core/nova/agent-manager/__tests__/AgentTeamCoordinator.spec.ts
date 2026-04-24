@@ -182,6 +182,60 @@ describe("AgentTeamCoordinator", () => {
 		expect(run.waves[0]?.status).toBe("completed")
 	})
 
+	it("stops launched member sessions when cancelling a team run", async () => {
+		const parallelConfig: VcpAgentTeamConfig = {
+			...baseConfig,
+			waveStrategy: "parallel",
+			maxParallel: 2,
+			requireFileSeparation: true,
+		}
+		const cancelSession = vi.fn().mockResolvedValue(undefined)
+		const coordinator = new AgentTeamCoordinator({
+			workspacePath: "C:/project/vcpcode",
+			readProviderState: async () => ({ listApiConfigMeta: [] }),
+			resolveProviderProfile: async () => ({ name: "default" }) as any,
+			launchSession: vi
+				.fn()
+				.mockResolvedValueOnce({ sessionId: "session-research" })
+				.mockResolvedValueOnce({ sessionId: "session-implement" }),
+			cancelSession,
+		})
+
+		await coordinator.startRun(parallelConfig, { prompt: "Ship feature", mode: "agent_team" })
+		const runId = coordinator.getState().runs[0]!.runId
+
+		await coordinator.cancelTeamRun(runId)
+
+		expect(cancelSession).toHaveBeenCalledWith("session-research")
+		expect(cancelSession).toHaveBeenCalledWith("session-implement")
+		const run = coordinator.getState().runs[0]
+		expect(run.status).toBe("cancelled")
+		expect(run.members.every((member) => member.status === "stopped")).toBe(true)
+	})
+
+	it("uses configured handoff format in launched member prompts", async () => {
+		const launchSession = vi.fn().mockResolvedValue({ sessionId: "session-markdown" })
+		const coordinator = new AgentTeamCoordinator({
+			workspacePath: "C:/project/vcpcode",
+			readProviderState: async () => ({ listApiConfigMeta: [] }),
+			resolveProviderProfile: async () => ({ name: "default" }) as any,
+			launchSession,
+		})
+
+		await coordinator.startRun(
+			{
+				...baseConfig,
+				handoffFormat: "markdown",
+				members: [baseConfig.members[0]],
+			},
+			{ prompt: "Ship feature", mode: "agent_team" },
+		)
+
+		const prompt = launchSession.mock.calls[0]?.[0]?.prompt as string
+		expect(prompt).toContain("Canonical handoff format: markdown")
+		expect(prompt).not.toContain("Canonical handoff format: json")
+	})
+
 	it("enables worktree mode and fallback ownership when requireFileSeparation is enabled", async () => {
 		const separatedConfig: VcpAgentTeamConfig = {
 			...baseConfig,

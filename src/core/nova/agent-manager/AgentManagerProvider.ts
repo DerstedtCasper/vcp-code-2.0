@@ -284,6 +284,7 @@ export class AgentManagerProvider implements vscode.Disposable {
 				}
 				return { sessionId: createdSession.sessionId }
 			},
+			cancelSession: (sessionId) => this.cancelSession(sessionId),
 			onStateUpdated: () => this.postTeamRunStateToWebview(),
 			onEvent: (event) => {
 				this.teamRunEvents = [event, ...this.teamRunEvents].slice(0, 40)

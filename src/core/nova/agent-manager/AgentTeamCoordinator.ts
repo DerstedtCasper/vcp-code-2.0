@@ -35,6 +35,7 @@ export interface AgentTeamCoordinatorDependencies {
 		roleType?: AgentTeamRoleType
 		ownership?: AgentTeamOwnership
 	}) => Promise<{ sessionId: string }>
+	cancelSession?: (sessionId: string) => Promise<void> | void
 	onStateUpdated?: (state: TeamRunState) => void
 	onEvent?: (event: TeamRunEvent) => void
 	log?: (message: string) => void
@@ -333,10 +334,21 @@ export class AgentTeamCoordinator {
 	): Promise<void> {
 		const cancelledAt = this.getNow()
 		const message = outcome.message || `Session cancelled (${outcome.source})`
-		member.status = "stopped"
+		for (const runMember of run.members) {
+			if (!isMemberTerminal(runMember.status)) {
+				runMember.status = "stopped"
+			}
+		}
 		wave.status = "cancelled"
 		wave.completedAt = cancelledAt
 		wave.error = message
+		for (const runWave of run.waves) {
+			if (runWave.status !== "completed" && runWave.status !== "failed" && runWave.status !== "cancelled") {
+				runWave.status = "cancelled"
+				runWave.completedAt = cancelledAt
+				runWave.error = message
+			}
+		}
 		run.status = "cancelled"
 		run.error = message
 		run.currentWaveId = undefined
@@ -399,17 +411,12 @@ export class AgentTeamCoordinator {
 		if (!run || run.status === "completed" || run.status === "failed" || run.status === "cancelled") {
 			return
 		}
-		// Cancel all running members via handleSessionOutcome
-		for (const member of run.members) {
-			if (member.sessionId && member.status === "running") {
-				await this.handleSessionOutcome({
-					sessionId: member.sessionId,
-					outcome: "cancelled",
-					source: "cancel_session",
-					message: "Team run cancelled by user",
-				})
-			}
+
+		const runningMembers = run.members.filter((member) => member.sessionId && member.status === "running")
+		for (const member of runningMembers) {
+			await this.cancelMemberSession(member, "Team run cancelled by user")
 		}
+
 		// If run is still not cancelled (e.g. no running members), force cancel
 		// Re-check status as a string because handleSessionOutcome may have mutated it
 		const currentStatus = run.status as string
@@ -444,12 +451,35 @@ export class AgentTeamCoordinator {
 			return
 		}
 
-		await this.handleSessionOutcome({
-			sessionId: member.sessionId,
-			outcome: "cancelled",
-			source: "cancel_session",
-			message: "Team member cancelled by user",
-		})
+		const runningMembers = run.members.filter((entry) => entry.sessionId && entry.status === "running")
+		await this.cancelMemberSession(member, "Team member cancelled by user")
+
+		if ((run.status as string) === "cancelled") {
+			for (const runningMember of runningMembers) {
+				if (runningMember.teamMemberId !== member.teamMemberId && runningMember.sessionId) {
+					await this.cancelMemberSession(runningMember, "Team run cancelled by user")
+				}
+			}
+		}
+	}
+
+	private async cancelMemberSession(member: TeamRunMember, message: string): Promise<void> {
+		if (!member.sessionId) {
+			return
+		}
+
+		if (this.deps.cancelSession) {
+			await this.deps.cancelSession(member.sessionId)
+		}
+
+		if (!isMemberTerminal(member.status)) {
+			await this.handleSessionOutcome({
+				sessionId: member.sessionId,
+				outcome: "cancelled",
+				source: "cancel_session",
+				message,
+			})
+		}
 	}
 
 	public async resolveApproval(params: {
@@ -1013,7 +1043,7 @@ export class AgentTeamCoordinator {
 			`Member: ${member.name}`,
 			`Role Type: ${member.roleType ?? "general"}`,
 			`Requested Mode: ${options.mode ?? "code"}`,
-			`Canonical handoff format: json`,
+			`Canonical handoff format: ${config.handoffFormat}`,
 			ownershipText,
 			member.rolePrompt?.trim() ? `Role instructions:\n${member.rolePrompt.trim()}` : undefined,
 			promptContext.sections.length > 0 ? promptContext.sections.join("\n\n") : undefined,
