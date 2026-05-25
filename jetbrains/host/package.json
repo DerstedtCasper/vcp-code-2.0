@@ -96,7 +96,7 @@
 		"@vscode/test-electron": "^2.4.0",
 		"@vscode/test-web": "^0.0.62",
 		"@vscode/v8-heap-parser": "^0.1.0",
-		"@vscode/vscode-perf": "^0.0.19",
+		"@vscode/vscode-perf": "^0.0.27",
 		"@webgpu/types": "^0.1.44",
 		"ansi-colors": "^3.2.3",
 		"asar": "^3.0.3",
